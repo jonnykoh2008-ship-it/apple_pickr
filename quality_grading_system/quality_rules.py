@@ -68,6 +68,13 @@ class FrameMeasurements:
     diameter_confidence: float | None = None
     damage_confidence: float | None = None
     severe_confidence: float | None = None
+    # 착색률을 면적으로 가중해 통합하려면 비율만으로는 부족하다. 뷰마다
+    # 보이는 표면 크기가 다르기 때문이다. 실측에서 원거리 view 는 2,212px,
+    # 근거리 view 는 5,501px 를 봤는데 비율 평균은 둘에 같은 가중치를 준다.
+    # 픽셀 수를 함께 실어 보내면 aggregate 가 sum(C)/sum(A) 를 계산할 수 있다.
+    # 합성 데이터처럼 비율만 있는 입력에서는 None 으로 남고 평균으로 되돌아간다.
+    color_pixels: int | None = None
+    measurable_pixels: int | None = None
 
     @property
     def confidence(self) -> float | None:
@@ -93,6 +100,31 @@ def grade_diameter_mm(diameter_mm: float) -> Grade:
     if diameter_mm >= 75.0:
         return Grade.HIGH
     return Grade.MEDIUM
+
+
+# 착색률 등급 경계. 사용자 승인을 받은 시험값이며 영구 확정값이 아니다.
+# docs/features/quality_grading.md 는 이 경계를 TBD 로 두고 있다.
+# 근거: 컨베이어 실측에서 잘 착색된 사과가 84~87%, 노란빛이 도는 사과가
+# 54~56% 로 나왔다. 두 무리가 각 경계에서 4~7%p 여유를 두고 떨어지며,
+# 이는 관측된 산포(약 +-1.5%p)보다 충분히 크다.
+COLOR_HIGH_MIN_RATIO = 0.80
+COLOR_MEDIUM_MIN_RATIO = 0.60
+
+
+def grade_color_ratio(color_ratio: float) -> Grade:
+    """Apply the approved colour-ratio boundaries.
+
+    경계값은 더 좋은 등급 쪽에 포함한다. 착색은 높을수록 좋으므로 정확히
+    0.80 은 HIGH 이고 정확히 0.60 은 MEDIUM 이다. 크기 규칙에서 정확히
+    75mm 가 HIGH 인 것과 같은 방향이다.
+    """
+    if not 0.0 <= color_ratio <= 1.0:
+        raise ValueError("color_ratio must be between 0 and 1")
+    if color_ratio >= COLOR_HIGH_MIN_RATIO:
+        return Grade.HIGH
+    if color_ratio >= COLOR_MEDIUM_MIN_RATIO:
+        return Grade.MEDIUM
+    return Grade.LOW
 
 
 def grade_measurements(measurements: AppleMeasurements) -> Grade:
@@ -146,6 +178,7 @@ def aggregate_measurement_frames(
     confidence_threshold: float = 0.5,
     min_valid_views: int = 1,
     min_damage_views: int = 0,
+    grade_by: str = "size",
 ) -> QualityResult:
     """Aggregate model measurements using the decided GPU PC 2 policy."""
 
@@ -155,6 +188,8 @@ def aggregate_measurement_frames(
         raise ValueError("frame_measurements and frame_indices must have equal length")
     if not 0.0 <= confidence_threshold <= 1.0:
         raise ValueError("confidence_threshold must be between 0 and 1")
+    if grade_by not in ("size", "color"):
+        raise ValueError("grade_by must be 'size' or 'color'")
 
     del min_damage_views
     if values and all(item.diameter_mm is None for item in values):
@@ -192,13 +227,52 @@ def aggregate_measurement_frames(
 
     diameters = [item.diameter_mm for _, item in valid_pairs]
     assert all(value is not None for value in diameters)
+
+    # G2-03 확정 통합 규칙 중 현재 쓰는 두 가지: 직경은 중앙값, 착색률은
+    # 여러 방향을 합쳐 특정 시점의 편향을 줄인다.
+    #
+    # 합치는 방법은 뷰별 비율의 단순 평균이 아니라 면적 가중이다. 착색률이
+    # 답하려는 질문은 "표면 중 얼마가 착색되었는가"인데, 뷰마다 보이는 표면
+    # 크기가 다르므로 비율을 그냥 평균하면 작은 뷰가 과대 대표된다. 실측
+    # apple1 은 뷰별로 0.188 / 0.892 / 0.708 이었고 단순 평균은 0.596,
+    # 면적 가중은 0.527 이다. 고르게 착색된 사과에서는 둘이 거의 같고
+    # (apple1_01 은 0.960 대 0.957) 착색이 치우친 사과에서만 갈린다.
+    color_pairs = [
+        (int(item.color_pixels), int(item.measurable_pixels))
+        for _, item in valid_pairs
+        if item.color_pixels is not None and item.measurable_pixels is not None
+    ]
+    color_values = [
+        float(item.color_ratio)
+        for _, item in valid_pairs
+        if item.color_ratio is not None
+    ]
+    total_measurable = sum(area for _, area in color_pairs)
+    if color_pairs and total_measurable > 0:
+        color_ratio = sum(coloured for coloured, _ in color_pairs) / total_measurable
+    elif color_values:
+        # 픽셀 수가 없는 입력(합성 데이터 라벨 등)은 비율 평균으로 되돌아간다.
+        color_ratio = sum(color_values) / len(color_values)
+    else:
+        color_ratio = None
     measurements = AppleMeasurements(
         diameter_mm=float(
             median(float(value) for value in diameters if value is not None)
         ),
+        color_ratio=color_ratio,
     )
+
+    if grade_by == "color":
+        if measurements.color_ratio is None:
+            return QualityResult(
+                None, ResultStatus.UNCLASSIFIED, final_confidence, measurements, used_indices
+            )
+        grade = grade_color_ratio(measurements.color_ratio)
+    else:
+        grade = grade_measurements(measurements)
+
     return QualityResult(
-        grade_measurements(measurements),
+        grade,
         ResultStatus.VALID,
         final_confidence,
         measurements,

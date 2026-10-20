@@ -1,12 +1,46 @@
-"""GPU PC 1용 수확 supervisor와 RobotMotion Action Client."""
+"""GPU PC 1용 수확 supervisor와 RobotMotion Action Client.
+
+한 로봇의 수확 전체 주기를 관리한다. 개인 PC 1이 발행한 target을 받아
+세대·시간·frame을 검증하고, RobotMotion Goal을 단계 순서대로 보낸다.
+
+멀티로봇 운용에서는 로봇마다 하나씩 띄운다. target과 Action은 로봇
+namespace 아래에 있으므로 두 supervisor가 서로의 로봇을 움직이지 않는다.
+다만 컨베이어는 한 대뿐이므로, 배치 구간만 ``/conveyor/place_command``
+mutex로 직렬화한다. 이 락이 없으면 두 로봇이 같은 순간에 같은 벨트 위로
+팔을 뻗는다.
+
+실행:
+    source /opt/ros/jazzy/setup.bash
+    ROS_DOMAIN_ID=102 python3 harvest_coordinator.py --robot-id robot_01
+    ROS_DOMAIN_ID=102 python3 harvest_coordinator.py --robot-id robot_01 --execute
+
+``--execute`` 없이 띄우면 target 수신과 검증만 관측하고 로봇에 Goal을
+보내지 않는다. 배선을 먼저 확인할 때 쓴다.
+"""
 
 import argparse
-from collections import deque
-from dataclasses import dataclass
 import math
+import sys
+import uuid
+from collections import deque
+from dataclasses import dataclass, field
 
 import numpy as np
 import rclpy
+from rclpy.action import ActionClient
+from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
+from rclpy.node import Node
+from rclpy.parameter import Parameter
+from rclpy.qos import (
+    DurabilityPolicy,
+    HistoryPolicy,
+    QoSProfile,
+    ReliabilityPolicy,
+)
+from rclpy.time import Time
+from tf2_ros import Buffer, TransformException, TransformListener
+
 from appleproj_interfaces.action import RobotMotion
 from appleproj_interfaces.msg import (
     HarvestPerceptionStatus,
@@ -17,23 +51,20 @@ from appleproj_interfaces.msg import (
     SimulationState,
 )
 from appleproj_interfaces.srv import GetPlanningScene, PlaceCommand
-from conveyor_place_coordinator import PlaceCoordinatorNode
 from geometry_msgs.msg import PoseStamped
+
+from harvest_namespace import HarvestNames, add_robot_id_argument
 from harvest_route_planner import (
     RoutePlanningError,
     approach_orientation_xyzw,
     validate_scene_version,
 )
-from rclpy.action import ActionClient
-from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
-from rclpy.node import Node
-from rclpy.parameter import Parameter
-from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
-from rclpy.time import Time
-from tf2_ros import Buffer, TransformException, TransformListener
 
 
-SEQUENCE = [
+# ══════════════════════════════════════════════════════════════
+# 수확 단계 순서 (docs/features/harvesting.md)
+# ══════════════════════════════════════════════════════════════
+SEQUENCE = (
     RobotMotion.Goal.APPROACH,
     RobotMotion.Goal.GRASP,
     RobotMotion.Goal.TWIST,
@@ -42,11 +73,51 @@ SEQUENCE = [
     RobotMotion.Goal.PLACE,
     RobotMotion.Goal.RELEASE,
     RobotMotion.Goal.RETRACT,
-]
+)
 
-# The physical harvest TCP is defined from the USD `palm` frame. GPU PC 1
-# publishes that frame in the dynamic TF tree, so no link_6-to-TCP
-# calibration or gripper_frame approximation is needed here.
+MOTION_NAMES = {
+    RobotMotion.Goal.APPROACH: "APPROACH",
+    RobotMotion.Goal.GRASP: "GRASP",
+    RobotMotion.Goal.TWIST: "TWIST",
+    RobotMotion.Goal.PULL: "PULL",
+    RobotMotion.Goal.TRANSPORT: "TRANSPORT",
+    RobotMotion.Goal.PLACE: "PLACE",
+    RobotMotion.Goal.RELEASE: "RELEASE",
+    RobotMotion.Goal.RETRACT: "RETRACT",
+}
+
+# 접촉 이후 단계. 여기서 실패하면 사과를 들었거나 로봇이 나무 안에 있을 수
+# 있으므로 다음 Goal을 보내지 않고 안전 정지한다.
+POST_CONTACT_MOTIONS = frozenset(
+    {
+        RobotMotion.Goal.GRASP,
+        RobotMotion.Goal.TWIST,
+        RobotMotion.Goal.PULL,
+        RobotMotion.Goal.TRANSPORT,
+        RobotMotion.Goal.PLACE,
+        RobotMotion.Goal.RELEASE,
+    }
+)
+
+# 컨베이어 락이 필요한 구간. TRANSPORT 직전에 잡고 RELEASE 뒤에 놓는다.
+PLACE_LOCK_START = RobotMotion.Goal.TRANSPORT
+PLACE_LOCK_END = RobotMotion.Goal.RELEASE
+
+# 로봇 base pose를 조회할 TF frame이다.
+#
+# Isaac의 ROS2PublishTransformTree에는 frame prefix 입력이 없어서, 두 로봇의
+# 링크를 모두 발행하면 양쪽 다 base_link/link_1/palm 이라는 같은 이름을
+# 주장한다. 그래서 로봇별로 유일한 USD 루트 prim 이름을 base frame으로 쓴다.
+# 이 이름은 USD에서 그대로 온 것이고 새로 지어낸 값이 아니다.
+BASE_FRAME_BY_ROBOT = {
+    "robot_01": "m0617_01",
+    "robot_02": "m0617_02",
+}
+
+# 물리 수확 TCP는 USD palm frame에서 palm 로컬 +Y로 0.0908 m 떨어진 점이다.
+# 멀티로봇에서는 위 이유로 palm frame을 TF에서 구분할 수 없다. GRASP와
+# RELEASE는 "현재 pose를 유지하고 그리퍼만 여닫는" 단계라 GPU PC 1의 Action
+# 서버가 실제 현재 pose를 그대로 쓰므로, 이 좌표가 실행 목표를 바꾸지 않는다.
 TCP_FRAME = "palm"
 PALM_TO_TCP_Y_M = 0.0908
 
@@ -57,14 +128,14 @@ MIN_TARGET_CONFIDENCE = -1.0
 MIN_VALID_DEPTH_RATIO = -1.0
 MAX_TF_TIME_ERROR_SEC = -1.0
 
-TARGET_TOPIC = "/harvest/target"
-PERCEPTION_STATUS_TOPIC = "/harvest/perception_status"
+# 한 프레임에서 여러 target이 연달아 오므로, 배치가 다 도착할 때까지
+# 잠깐 모았다가 거리순으로 정렬한다.
 TARGET_BATCH_DEBOUNCE_SEC = 0.05
-DEFAULT_ROBOT_ID = "robot_01"
-DEFAULT_MOTION_STATUS_TOPIC = "/harvest/motion_status"
-PLACE_STATUS_TOPIC = "/conveyor/place_coordinator_status"
-PLACE_COMMAND_SERVICE = "/conveyor/place_command"
-PLACE_COORDINATOR_MODES = ("auto", "host", "client")
+
+# 사과를 쥔 뒤에 place를 요청하므로, 서비스 탐색이 늦었다는 이유만으로
+# 즉시 포기하면 안 된다.
+PLACE_SERVICE_WAIT_SEC = 5.0
+
 APPLE_IDS_BY_ROBOT = {
     "robot_01": ("apple_001", "apple_002", "apple_003"),
     "robot_02": ("apple_004", "apple_005", "apple_006"),
@@ -74,35 +145,32 @@ PLACE_IDS_BY_ROBOT = {
     "robot_02": "CONVEYOR_PLACE_02_LANDING",
 }
 
-
-def should_host_place_coordinator(robot_id, mode):
-    """공유 Place service를 어느 coordinator 프로세스가 소유할지 결정한다."""
-    robot_id = str(robot_id).strip().strip("/")
-    mode = str(mode).strip().lower()
-    if mode not in PLACE_COORDINATOR_MODES:
-        raise ValueError(
-            "place coordinator mode는 auto, host, client 중 하나여야 합니다."
-        )
-    if mode == "host":
-        return True
-    if mode == "client":
-        return False
-    return robot_id == "robot_01"
+RELIABLE_QOS = QoSProfile(
+    reliability=ReliabilityPolicy.RELIABLE,
+    durability=DurabilityPolicy.VOLATILE,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=10,
+)
+LATCHED_QOS = QoSProfile(
+    reliability=ReliabilityPolicy.RELIABLE,
+    durability=DurabilityPolicy.TRANSIENT_LOCAL,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=1,
+)
 
 
-def validate_runtime_identity(robot_id, motion_status_topic):
-    """Validate the parameters that distinguish coordinator instances."""
-    robot_id = str(robot_id).strip().strip("/")
-    motion_status_topic = str(motion_status_topic).strip()
-    if not robot_id or "/" in robot_id:
-        raise ValueError("robot_id는 slash가 없는 비어 있지 않은 ID여야 합니다.")
-    if not motion_status_topic.startswith("/") or "//" in motion_status_topic:
-        raise ValueError("motion_status_topic은 유효한 absolute ROS topic이어야 합니다.")
-    return robot_id, motion_status_topic
+def stamp_to_ns(stamp):
+    return int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
+
+
+def optional_threshold(value):
+    """음수 sentinel이면 검사하지 않는다는 뜻이다."""
+    value = float(value)
+    return None if value < 0.0 else value
 
 
 def assign_apple_ids_by_distance(robot_id, robot_position, candidates):
-    """Freeze camera-local target IDs into the approved global apple IDs."""
+    """카메라 로컬 target ID를 승인된 전역 apple ID로 고정한다."""
     if robot_id not in APPLE_IDS_BY_ROBOT:
         raise ValueError(f"지원하지 않는 robot_id입니다: {robot_id}")
     robot_position = np.asarray(robot_position, dtype=float)
@@ -123,357 +191,342 @@ def assign_apple_ids_by_distance(robot_id, robot_position, candidates):
 
 @dataclass
 class PendingTarget:
+    """아직 시작하지 않았거나 실행 중인 수확 대상 하나."""
+
     key: tuple
     message: HarvestTarget
     center: np.ndarray
     stamp_ns: int
+    apple_id: str = ""
+    attempts: int = 0
 
 
 class HarvestCoordinator(Node):
-    def __init__(
-        self,
-        execute,
-        sample_count,
-        maximum_spread,
-        robot_id=DEFAULT_ROBOT_ID,
-        motion_status_topic=DEFAULT_MOTION_STATUS_TOPIC,
-    ):
-        if int(sample_count) <= 0:
-            raise ValueError("sample_count는 1 이상이어야 합니다.")
-        if float(maximum_spread) < 0.0:
-            raise ValueError("maximum_spread는 0 이상이어야 합니다.")
-        super().__init__(
-            "harvest_coordinator",
-            parameter_overrides=[Parameter("use_sim_time", value=True)],
-        )
-        configured_robot_id = self.declare_parameter("robot_id", robot_id).value
-        configured_status_topic = self.declare_parameter(
-            "motion_status_topic", motion_status_topic
-        ).value
-        self.robot_id, self.motion_status_topic = validate_runtime_identity(
-            configured_robot_id, configured_status_topic
-        )
-        self.execute_enabled = execute
-        self.sample_count = int(sample_count)
-        self.samples = deque(maxlen=sample_count)
-        self.target_samples = {}
-        self.pending_targets = {}
-        self.retry_targets = {}
-        self.completed_target_keys = set()
-        self.failed_once_target_keys = set()
-        self.final_failed_target_keys = set()
-        self._active_candidate = None
-        self.maximum_spread = maximum_spread
-        self.target = None
-        self.failed_target = None
-        self.index = 0
-        self.running = False
-        self.goal_handle = None
-        self.planning_scene = None
-        self.simulation_state = None
-        self.plan_reset_id = 0
-        self.plan_scene_version = 0
-        self.approach_orientation = None
-        self.snapshot_request_pending = False
-        self.generation = 0
-        self._last_tcp_lookup_failure = None
-        self._sample_target_key = None
-        self._active_target_key = None
-        self._latest_target_stamps = {}
-        self._started_target_keys = set()
-        self.target_apple_ids = {}
-        self.active_apple_id = ""
-        self.active_reservation_id = ""
-        self.place_status = None
-        self.place_command_pending = False
-        self.place_reservation_submitted = False
-        self.place_ready = False
-        self.place_service_wait_reported = False
-        self.safety_stopped = False
-        self.safety_stop_reason = None
-        self.target_max_age_sec = self._optional_threshold(TARGET_MAX_AGE_SEC)
-        self.minimum_target_confidence = self._optional_threshold(
-            MIN_TARGET_CONFIDENCE
-        )
-        self.minimum_valid_depth_ratio = self._optional_threshold(
-            MIN_VALID_DEPTH_RATIO
-        )
-        self.maximum_tf_time_error_sec = self._optional_threshold(
-            MAX_TF_TIME_ERROR_SEC
-        )
+    """target 대기열과 단계 순서를 관리하는 supervisor."""
 
-        latched_qos = QoSProfile(
-            history=HistoryPolicy.KEEP_LAST,
-            depth=1,
-            reliability=ReliabilityPolicy.RELIABLE,
-            durability=DurabilityPolicy.TRANSIENT_LOCAL,
-        )
-        self.client = ActionClient(self, RobotMotion, "/harvest/robot_motion")
-        status_qos = QoSProfile(
-            history=HistoryPolicy.KEEP_LAST,
-            depth=10,
-            reliability=ReliabilityPolicy.RELIABLE,
-            durability=DurabilityPolicy.VOLATILE,
-        )
-        self.status_publisher = self.create_publisher(
-            MotionStatus, self.motion_status_topic, status_qos
-        )
+    def __init__(self, robot_id, execute):
+        self.names = HarvestNames(robot_id)
+        super().__init__(f"harvest_coordinator_{self.names.robot_id}")
+        self.set_parameters([Parameter("use_sim_time", Parameter.Type.BOOL, True)])
+
+        self.execute = bool(execute)
+        self.robot_id = self.names.robot_id
+        self.place_position_id = PLACE_IDS_BY_ROBOT[self.robot_id]
+
+        # 시뮬레이션 세대
+        self.simulation_state = None
+        self.reset_id = 0
+        self.scene_version = 0
+        self.scene = None
+
+        # 대기열
+        self.pending = {}
+        self.retry_queue = deque()
+        self.completed = set()
+        self.failed = set()
+        self.active = None
+        self.sequence_index = 0
+        self.goal_handle = None
+        self.generation = 0
+        self.safety_stopped = False
+        self.batch_timer = None
+
+        # 컨베이어 락
+        self.place_state = None
+        self.reservation_id = ""
+        self.place_locked = False
+        self.waiting_for_place_lock = False
+
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
-        self.scene_client = self.create_client(
-            GetPlanningScene, "/planning_scene/get_snapshot"
-        )
-        self.place_client = self.create_client(
-            PlaceCommand, PLACE_COMMAND_SERVICE
-        )
+
         self.create_subscription(
-            PlanningScene, "/planning_scene", self.on_scene, latched_qos
-        )
-        self.create_subscription(
-            SimulationState, "/simulation/state", self.on_state, latched_qos
-        )
-        self.create_subscription(
-            PlaceCoordinatorStatus,
-            PLACE_STATUS_TOPIC,
-            self.on_place_status,
-            latched_qos,
-        )
-        target_qos = QoSProfile(
-            history=HistoryPolicy.KEEP_LAST,
-            depth=10,
-            reliability=ReliabilityPolicy.RELIABLE,
-            durability=DurabilityPolicy.VOLATILE,
-        )
-        self.create_subscription(
-            HarvestTarget, TARGET_TOPIC, self.on_target, target_qos
-        )
-        perception_status_qos = QoSProfile(
-            history=HistoryPolicy.KEEP_LAST,
-            depth=10,
-            reliability=ReliabilityPolicy.RELIABLE,
-            durability=DurabilityPolicy.VOLATILE,
+            HarvestTarget, self.names.target_topic, self.on_target, RELIABLE_QOS
         )
         self.create_subscription(
             HarvestPerceptionStatus,
-            PERCEPTION_STATUS_TOPIC,
+            self.names.perception_status_topic,
             self.on_perception_status,
-            perception_status_qos,
+            RELIABLE_QOS,
         )
-        self.snapshot_retry_timer = self.create_timer(0.5, self._retry_snapshot)
-        # 최초 후보 하나가 periodic timer 직전에 들어오면 나머지 후보보다 먼저
-        # 실행되는 race가 생긴다. 신규 target ID가 들어올 때마다 one-shot처럼
-        # deadline을 다시 시작해 마지막 신규 ID 이후에 전체 대기열을 dispatch한다.
-        self.queue_dispatch_timer = self.create_timer(
-            TARGET_BATCH_DEBOUNCE_SEC,
-            self._dispatch_pending_targets,
+        self.create_subscription(
+            SimulationState,
+            self.names.simulation_state_topic,
+            self.on_simulation_state,
+            LATCHED_QOS,
         )
-        self.queue_dispatch_timer.cancel()
-        self.place_retry_timer = self.create_timer(
-            0.5, self._retry_place_coordination
+        self.create_subscription(
+            PlanningScene, self.names.planning_scene_topic, self.on_scene, LATCHED_QOS
         )
-        self.place_retry_timer.cancel()
+        self.create_subscription(
+            MotionStatus,
+            self.names.motion_status_topic,
+            self.on_motion_status,
+            RELIABLE_QOS,
+        )
+        self.create_subscription(
+            PlaceCoordinatorStatus,
+            self.names.conveyor_place_status_topic,
+            self.on_place_status,
+            RELIABLE_QOS,
+        )
+
+        # 배치 락 서비스 응답 콜백 안에서 Action Goal 을 보내고, 그 Goal 의
+        # 응답과 결과 콜백을 다시 받아야 한다. 기본 MutuallyExclusive 그룹에
+        # 두면 바깥 콜백이 그룹을 잡고 있는 동안 안쪽 콜백이 실행될 자리가
+        # 없어서, 서버가 TRANSPORT 를 끝냈는데도 결과가 영영 도착하지 않는다.
+        # 실측에서 조율기가 "-> TRANSPORT" 에서 멈춰 있었다.
+        self.async_group = ReentrantCallbackGroup()
+        self.action_client = ActionClient(
+            self,
+            RobotMotion,
+            self.names.robot_motion_action,
+            callback_group=self.async_group,
+        )
+        self.scene_client = self.create_client(
+            GetPlanningScene,
+            self.names.planning_scene_service,
+            callback_group=self.async_group,
+        )
+        self.place_client = self.create_client(
+            PlaceCommand,
+            self.names.conveyor_place_service,
+            callback_group=self.async_group,
+        )
+
         self.get_logger().info(
-            f"robot_id={self.robot_id}, motion_status_topic={self.motion_status_topic}"
+            f"supervisor 시작 (execute={self.execute})\n" + self.names.describe()
         )
 
-    @staticmethod
-    def _optional_threshold(value):
-        value = float(value)
-        if not math.isfinite(value) or value < 0.0:
-            return None
-        return value
+    # ══════════════════════════════════════════════════════════
+    # 세대 관리
+    # ══════════════════════════════════════════════════════════
+    def on_simulation_state(self, message):
+        previous = self.simulation_state
+        self.simulation_state = message
 
-    @staticmethod
-    def _stamp_ns(stamp):
-        return int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
-
-    @staticmethod
-    def _point_is_finite(point):
-        return bool(
-            np.all(
-                np.isfinite(
-                    [float(point.x), float(point.y), float(point.z)]
-                )
+        if previous is None or message.reset_id != previous.reset_id:
+            self.get_logger().info(
+                f"reset_id {message.reset_id}. 대기열과 완료·실패 기록을 폐기합니다."
             )
-        )
+            self.clear_all()
+            # 안전 정지는 scene version 변경으로 풀리지 않고 reset으로만 풀린다.
+            self.safety_stopped = False
 
-    def _validate_target(self, message):
-        """Validate the v2 HarvestTarget contract before planning starts."""
-        if message.header.frame_id != "world":
-            return "HarvestTarget header.frame_id는 world여야 합니다."
-        if not str(message.target_id).strip():
-            return "HarvestTarget target_id가 비어 있습니다."
-        stamp_ns = self._stamp_ns(message.header.stamp)
-        source_stamp_ns = self._stamp_ns(message.source_point.header.stamp)
-        if stamp_ns <= 0:
-            return "HarvestTarget header timestamp가 유효하지 않습니다."
-        if source_stamp_ns != stamp_ns:
-            return "source_point와 target의 timestamp가 일치하지 않습니다."
-        if not str(message.source_point.header.frame_id).strip():
-            return "source_point 원본 camera frame이 비어 있습니다."
-        if message.source_point.header.frame_id == "world":
-            return "source_point는 원본 camera frame이어야 합니다."
-        if not self._point_is_finite(message.position):
-            return "HarvestTarget world position에 NaN 또는 Inf가 있습니다."
-        if not self._point_is_finite(message.source_point.point):
-            return "HarvestTarget source_point에 NaN 또는 Inf가 있습니다."
-        values = (
-            float(message.confidence),
-            float(message.valid_depth_ratio),
-            float(message.tf_time_error_sec),
-        )
-        if not all(math.isfinite(value) for value in values):
-            return "HarvestTarget 품질 메타데이터에 NaN 또는 Inf가 있습니다."
-        confidence, valid_depth_ratio, tf_time_error_sec = values
-        if not 0.0 <= confidence <= 1.0:
-            return "confidence는 0.0~1.0 범위여야 합니다."
-        if not 0.0 <= valid_depth_ratio <= 1.0:
-            return "valid_depth_ratio는 0.0~1.0 범위여야 합니다."
-        if tf_time_error_sec < 0.0:
-            return "tf_time_error_sec는 0 이상이어야 합니다."
-        if (
-            self.minimum_target_confidence is not None
-            and confidence < self.minimum_target_confidence
-        ):
-            return "target confidence threshold 미달입니다."
-        if (
-            self.minimum_valid_depth_ratio is not None
-            and valid_depth_ratio < self.minimum_valid_depth_ratio
-        ):
-            return "valid depth ratio threshold 미달입니다."
-        if (
-            self.maximum_tf_time_error_sec is not None
-            and tf_time_error_sec > self.maximum_tf_time_error_sec
-        ):
-            return "TF timestamp error threshold 초과입니다."
-        if self.target_max_age_sec is not None:
-            age_sec = (
-                self.get_clock().now().nanoseconds - stamp_ns
-            ) / 1_000_000_000.0
-            if age_sec > self.target_max_age_sec:
-                return (
-                    "target timestamp가 stale합니다: "
-                    f"age={age_sec:.3f}s, limit={self.target_max_age_sec:.3f}s"
-                )
-        return None
+        self.reset_id = message.reset_id
+        self.scene_version = message.scene_version
 
-    def _reject_target(self, message, reason, error_code="309:INVALID_TARGET_POSE"):
-        self.samples.clear()
-        self._sample_target_key = None
-        self._publish_status("TARGET_RECEIVED", False, 0.0, error_code, reason)
-        self.get_logger().warning(
-            f"HarvestTarget 거부 target_id={message.target_id}: {reason}"
-        )
+        if message.state in (SimulationState.STOPPED, SimulationState.INITIALIZING):
+            self.cancel_active("308:SIMULATION_RESET")
+
+    def on_scene(self, message):
+        self.scene = message
+        if message.reset_id != self.reset_id or message.scene_version != self.scene_version:
+            self.get_logger().debug(
+                "scene 세대가 simulation state와 다릅니다. 최신 snapshot을 요청합니다."
+            )
+            self.request_snapshot()
+
+    def request_snapshot(self):
+        if not self.scene_client.service_is_ready():
+            return
+        future = self.scene_client.call_async(GetPlanningScene.Request())
+        future.add_done_callback(self.on_snapshot_response)
+
+    def on_snapshot_response(self, future):
+        try:
+            response = future.result()
+        except Exception as error:  # noqa: BLE001
+            self.get_logger().warning(f"planning scene snapshot 요청 실패: {error}")
+            return
+        if response is not None and response.success:
+            self.scene = response.scene
 
     def on_perception_status(self, message):
-        if message.status == HarvestPerceptionStatus.OK:
+        if message.status != HarvestPerceptionStatus.OK:
             self.get_logger().debug(
-                f"perception OK target_id={message.target_id}"
+                f"perception status={message.status}: {message.message}"
             )
-            return
-        self.get_logger().warning(
-            "perception status: "
-            f"status={message.status}, target_id={message.target_id}, "
-            f"reset={message.reset_id}/{message.scene_version}, "
-            f"message={message.message}"
-        )
 
-    def _retry_snapshot(self):
-        if self.simulation_state is None or self.simulation_state.state not in (
+    def on_motion_status(self, message):
+        if not message.success and message.error_code:
+            self.get_logger().debug(
+                f"motion status {message.current_state}: {message.error_code}"
+            )
+
+    def clear_all(self):
+        self.waiting_for_place_lock = False
+        self.pending.clear()
+        self.retry_queue.clear()
+        self.completed.clear()
+        self.failed.clear()
+        self.active = None
+        self.sequence_index = 0
+        self.goal_handle = None
+
+    # ══════════════════════════════════════════════════════════
+    # target 검증과 대기열
+    # ══════════════════════════════════════════════════════════
+    def validate_target(self, message):
+        """계획에 쓸 수 있는 target인지 확인한다. 실패 사유 문자열을 돌려준다."""
+        if self.simulation_state is None:
+            return "SimulationState를 아직 받지 못했습니다."
+        if self.simulation_state.state not in (
             SimulationState.READY,
             SimulationState.PLAYING,
         ):
+            return f"simulation state={self.simulation_state.state}"
+        if message.header.frame_id != "world":
+            return f"frame_id가 world가 아닙니다: {message.header.frame_id}"
+        if message.reset_id != self.reset_id:
+            return f"reset_id 불일치: {message.reset_id} != {self.reset_id}"
+        if message.scene_version != self.scene_version:
+            return (
+                f"scene_version 불일치: {message.scene_version} != {self.scene_version}"
+            )
+        if not message.target_id:
+            return "target_id가 비어 있습니다."
+
+        center = np.array(
+            [message.position.x, message.position.y, message.position.z], dtype=float
+        )
+        if not np.all(np.isfinite(center)):
+            return "position이 유효하지 않습니다."
+
+        max_age = optional_threshold(TARGET_MAX_AGE_SEC)
+        if max_age is not None:
+            age = (self.get_clock().now().nanoseconds - stamp_to_ns(message.header.stamp)) / 1e9
+            if age > max_age:
+                return f"target이 {age:.2f}초 지났습니다."
+
+        min_confidence = optional_threshold(MIN_TARGET_CONFIDENCE)
+        if min_confidence is not None and message.confidence < min_confidence:
+            return f"confidence {message.confidence:.2f} 미달"
+
+        min_depth_ratio = optional_threshold(MIN_VALID_DEPTH_RATIO)
+        if min_depth_ratio is not None and message.valid_depth_ratio < min_depth_ratio:
+            return f"valid_depth_ratio {message.valid_depth_ratio:.2f} 미달"
+
+        max_tf_error = optional_threshold(MAX_TF_TIME_ERROR_SEC)
+        if max_tf_error is not None and message.tf_time_error_sec > max_tf_error:
+            return f"TF 시간 오차 {message.tf_time_error_sec:.3f}초 초과"
+
+        return ""
+
+    def on_target(self, message):
+        if self.safety_stopped:
             return
-        if self.planning_scene is None or (
-            self.planning_scene.reset_id != self.simulation_state.reset_id
-            or self.planning_scene.scene_version != self.simulation_state.scene_version
-        ):
-            self.request_snapshot()
+
+        reason = self.validate_target(message)
+        if reason:
+            self.get_logger().debug(f"target {message.target_id} 거부: {reason}")
             return
-        if self.execute_enabled:
-            self._tcp_pose_available()
 
-    def _publish_status(self, state, success, progress, error_code="", message=""):
-        value = MotionStatus()
-        value.header.stamp = self.get_clock().now().to_msg()
-        value.header.frame_id = "world"
-        value.current_state = str(state)
-        value.success = bool(success)
-        value.progress = float(np.clip(progress, 0.0, 1.0))
-        value.error_code = str(error_code)
-        value.message = str(message)
-        self.status_publisher.publish(value)
+        key = (message.reset_id, message.target_id)
+        if key in self.completed or key in self.failed:
+            # 같은 reset_id에서 성공했거나 재시도까지 실패한 target은 다시
+            # 실행하지 않는다.
+            return
 
-    @staticmethod
-    def _planning_error_code(error):
-        text = str(error).lower()
-        if "scene" in text or "simulation" in text or "version" in text:
-            return "308:SIMULATION_RESET"
-        if "collision" in text or "충돌" in text:
-            return "302:COLLISION_RISK"
-        if "ik" in text:
-            return "300:IK_FAILED"
-        if "singular" in text:
-            return "303:SINGULARITY_RISK"
-        if "tf" in text:
-            return "310:TF_UNAVAILABLE"
-        return "301:APPROACH_UNREACHABLE"
+        center = np.array(
+            [message.position.x, message.position.y, message.position.z], dtype=float
+        )
+        stamp_ns = stamp_to_ns(message.header.stamp)
 
-    @staticmethod
-    def _normalize_error_code(code):
-        """Action Server의 legacy 심볼을 공통 300번대 코드로 맞춘다."""
-        code = str(code or "")
-        if ":" in code:
-            return code
-        mapping = {
-            "CANCELED": "307:CANCELLED",
-            "CANCELLED": "307:CANCELLED",
-            "SCENE_MISMATCH": "308:SIMULATION_RESET",
-            "SIMULATION_STOPPED": "308:SIMULATION_RESET",
-            "INVALID_TARGET_POSE": "309:INVALID_TARGET_POSE",
-            "INVALID_FRAME": "309:INVALID_TARGET_POSE",
-            "INITIAL_COLLISION": "302:COLLISION_RISK",
-            "UNEXPECTED_CONTACT": "302:COLLISION_RISK",
-            "APPROACH_UNREACHABLE": "301:APPROACH_UNREACHABLE",
-            "STEM_NOT_BROKEN": "305:STEM_NOT_BROKEN",
-            "GOAL_REJECTED": "306:GOAL_REJECTED",
-        }
-        return mapping.get(code, "312:INTERNAL_ERROR")
+        if self.active is not None and self.active.key == key:
+            # 실행 중인 target의 갱신은 실행 목표를 바꾸지 않는다.
+            return
 
-    def _clear_run(self, remember_target=False):
-        if remember_target and self.target is not None:
-            self.failed_target = self._xyz(self.target.pose.position)
-        self.running = False
-        self.goal_handle = None
-        self._active_target_key = None
-        self.target = None
-        self._active_candidate = None
-        self.approach_orientation = None
-        self.active_apple_id = ""
-        self.active_reservation_id = ""
-        self.place_reservation_submitted = False
-        self.place_command_pending = False
-        self.place_ready = False
-        self.place_service_wait_reported = False
-        self.place_retry_timer.cancel()
-        self.samples.clear()
-        self._sample_target_key = None
+        existing = self.pending.get(key)
+        if existing is not None and existing.stamp_ns >= stamp_ns:
+            return
 
-    def _report_plan_failure(self, center, error):
-        code = self._planning_error_code(error)
-        if code != "308:SIMULATION_RESET":
-            self.failed_target = np.asarray(center, dtype=float)
-        self._publish_status("PRE_GRASP_PLANNING", False, 0.0, code, str(error))
-        self.get_logger().warning(f"APPROACH 계획 실패 {code}: {error}")
+        self.pending[key] = PendingTarget(
+            key=key,
+            message=message,
+            center=center,
+            stamp_ns=stamp_ns,
+            apple_id=existing.apple_id if existing else "",
+            attempts=existing.attempts if existing else 0,
+        )
 
-    @staticmethod
-    def _matrix_from_quaternion_xyzw(x, y, z, w):
-        q = np.array([x, y, z, w], dtype=float)
-        norm = float(np.linalg.norm(q))
-        if not np.isfinite(norm) or norm <= 1e-12:
-            raise RoutePlanningError("quaternion이 유효하지 않습니다.")
-        x, y, z, w = q / norm
-        return np.array(
+        # 한 프레임의 target이 다 도착할 때까지 잠깐 모은다.
+        if self.batch_timer is None:
+            self.batch_timer = self.create_timer(
+                TARGET_BATCH_DEBOUNCE_SEC,
+                self.on_batch_ready,
+                callback_group=self.async_group,
+            )
+
+    def on_batch_ready(self):
+        if self.batch_timer is not None:
+            self.batch_timer.cancel()
+            self.batch_timer = None
+        self.assign_apple_ids()
+        self.start_next_target()
+
+    def assign_apple_ids(self):
+        """대기 중 target에 전역 apple ID를 부여한다."""
+        unassigned = [item for item in self.pending.values() if not item.apple_id]
+        if not unassigned:
+            return
+        robot_position = self.robot_base_position()
+        if robot_position is None:
+            return
+        try:
+            mapping = assign_apple_ids_by_distance(
+                self.robot_id, robot_position, list(self.pending.values())
+            )
+        except ValueError as error:
+            self.get_logger().warning(f"apple ID 부여 실패: {error}")
+            return
+        for key, apple_id in mapping.items():
+            if key in self.pending:
+                self.pending[key].apple_id = apple_id
+
+    def robot_base_position(self):
+        """이 로봇의 world base 위치.
+
+        ``/planning_scene`` 의 ``robot_base_pose`` 는 세계 하나를 기술하는
+        전역 토픽이라 로봇이 둘이면 어느 쪽 base 인지 정해지지 않는다.
+        그래서 로봇별로 유일한 USD 루트 prim frame 을 먼저 조회한다.
+        """
+        frame = BASE_FRAME_BY_ROBOT.get(self.robot_id)
+        if frame:
+            try:
+                transform = self.tf_buffer.lookup_transform("world", frame, Time())
+            except TransformException:
+                transform = None
+            if transform is not None:
+                translation = transform.transform.translation
+                return np.array(
+                    [translation.x, translation.y, translation.z], dtype=float
+                )
+        if self.scene is not None:
+            position = self.scene.robot_base_pose.pose.position
+            candidate = np.array([position.x, position.y, position.z], dtype=float)
+            if np.any(np.abs(candidate) > 1e-9):
+                return candidate
+        return None
+
+    def current_tcp_pose(self):
+        """world 기준 물리 수확 TCP pose.
+
+        palm frame에서 palm 로컬 +Y로 0.0908 m 떨어진 점이다.
+        """
+        try:
+            transform = self.tf_buffer.lookup_transform("world", TCP_FRAME, Time())
+        except TransformException:
+            return None, None
+        translation = transform.transform.translation
+        rotation = transform.transform.rotation
+        x, y, z, w = (
+            float(rotation.x),
+            float(rotation.y),
+            float(rotation.z),
+            float(rotation.w),
+        )
+        matrix = np.array(
             [
                 [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
                 [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
@@ -481,927 +534,541 @@ class HarvestCoordinator(Node):
             ],
             dtype=float,
         )
+        palm = np.array(
+            [translation.x, translation.y, translation.z], dtype=float
+        )
+        tcp = palm + matrix[:, 1] * PALM_TO_TCP_Y_M
+        return tcp, np.array([x, y, z, w], dtype=float)
 
-    @staticmethod
-    def _quaternion_xyzw_from_matrix(matrix):
-        matrix = np.asarray(matrix, dtype=float)
-        trace = float(np.trace(matrix))
-        if trace > 0.0:
-            scale = np.sqrt(trace + 1.0) * 2.0
-            q = np.array(
-                [
-                    (matrix[2, 1] - matrix[1, 2]) / scale,
-                    (matrix[0, 2] - matrix[2, 0]) / scale,
-                    (matrix[1, 0] - matrix[0, 1]) / scale,
-                    0.25 * scale,
-                ]
-            )
-        else:
-            index = int(np.argmax(np.diag(matrix)))
-            if index == 0:
-                scale = np.sqrt(1.0 + matrix[0, 0] - matrix[1, 1] - matrix[2, 2]) * 2.0
-                q = np.array(
-                    [
-                        0.25 * scale,
-                        (matrix[0, 1] + matrix[1, 0]) / scale,
-                        (matrix[0, 2] + matrix[2, 0]) / scale,
-                        (matrix[2, 1] - matrix[1, 2]) / scale,
-                    ]
+    # ══════════════════════════════════════════════════════════
+    # 실행
+    # ══════════════════════════════════════════════════════════
+    def select_next(self):
+        """robot base에서 가까운 순서로 다음 target을 고른다."""
+        if not self.pending:
+            if not self.retry_queue:
+                return None
+            # 일반 대기열이 비면 재시도 대기열을 1회만 처리한다.
+            while self.retry_queue:
+                candidate = self.retry_queue.popleft()
+                if candidate.key in self.completed or candidate.key in self.failed:
+                    continue
+                return candidate
+            return None
+
+        robot_position = self.robot_base_position()
+        candidates = list(self.pending.values())
+        if robot_position is None:
+            return candidates[0]
+        return min(
+            candidates,
+            key=lambda item: float(np.linalg.norm(item.center - robot_position)),
+        )
+
+    def start_next_target(self):
+        if self.safety_stopped or self.active is not None:
+            return
+        if not self.execute:
+            if self.pending:
+                names = ", ".join(
+                    f"{item.apple_id or item.key[1]}" for item in self.pending.values()
                 )
-            elif index == 1:
-                scale = np.sqrt(1.0 + matrix[1, 1] - matrix[0, 0] - matrix[2, 2]) * 2.0
-                q = np.array(
-                    [
-                        (matrix[0, 1] + matrix[1, 0]) / scale,
-                        0.25 * scale,
-                        (matrix[1, 2] + matrix[2, 1]) / scale,
-                        (matrix[0, 2] - matrix[2, 0]) / scale,
-                    ]
-                )
-            else:
-                scale = np.sqrt(1.0 + matrix[2, 2] - matrix[0, 0] - matrix[1, 1]) * 2.0
-                q = np.array(
-                    [
-                        (matrix[0, 2] + matrix[2, 0]) / scale,
-                        (matrix[1, 2] + matrix[2, 1]) / scale,
-                        0.25 * scale,
-                        (matrix[1, 0] - matrix[0, 1]) / scale,
-                    ]
-                )
-        return q / np.linalg.norm(q)
-
-    def _lookup_tcp_frame(self, stamp):
-        """Return the world-to-palm transform as rotation and position."""
-        try:
-            transform = self.tf_buffer.lookup_transform(
-                "world", TCP_FRAME, stamp
-            )
-        except TransformException as error:
-            raise RoutePlanningError(
-                f"{TCP_FRAME} TF is unavailable: {error}"
-            )
-        rotation = self._matrix_from_quaternion_xyzw(
-            transform.transform.rotation.x,
-            transform.transform.rotation.y,
-            transform.transform.rotation.z,
-            transform.transform.rotation.w,
-        )
-        position = np.array(
-            [
-                transform.transform.translation.x,
-                transform.transform.translation.y,
-                transform.transform.translation.z,
-            ],
-            dtype=float,
-        )
-        return rotation, position
-
-    def _report_tcp_lookup_failure(self, message):
-        """Report a changed TCP lookup failure with the live TF tree."""
-        try:
-            frames = self.tf_buffer.all_frames_as_string()
-        except Exception as error:
-            frames = f"Unable to read TF tree: {error}"
-        failure = f"{message}\nCurrent TF tree:\n{frames}"
-        if failure == self._last_tcp_lookup_failure:
+                self.get_logger().info(f"[관측 전용] 실행 가능한 target: {names}")
+                self.pending.clear()
             return
-        self._last_tcp_lookup_failure = failure
-        self.get_logger().warning(failure)
 
-    def _tcp_pose_available(self):
-        try:
-            self._lookup_tcp_frame(Time())
-        except RoutePlanningError as error:
-            self._report_tcp_lookup_failure(str(error))
-            return False
-        self._last_tcp_lookup_failure = None
-        return True
-
-    def _current_tcp_pose(self):
-        """Read the current world-to-palm TF and apply the palm-local TCP offset."""
-        palm_rotation, palm_position = self._lookup_tcp_frame(Time())
-        tcp_position = palm_position + palm_rotation @ np.array(
-            [0.0, PALM_TO_TCP_Y_M, 0.0],
-            dtype=float,
-        )
-        quaternion = self._quaternion_xyzw_from_matrix(palm_rotation)
-        value = PoseStamped()
-        value.header.stamp = self.get_clock().now().to_msg()
-        value.header.frame_id = "world"
-        value.pose.position.x = float(tcp_position[0])
-        value.pose.position.y = float(tcp_position[1])
-        value.pose.position.z = float(tcp_position[2])
-        value.pose.orientation.x = float(quaternion[0])
-        value.pose.orientation.y = float(quaternion[1])
-        value.pose.orientation.z = float(quaternion[2])
-        value.pose.orientation.w = float(quaternion[3])
-        return value
-
-    def on_state(self, message):
-        previous = self.simulation_state
-        self.simulation_state = message
-        if previous is None or (
-            previous.state != message.state
-            or previous.reset_id != message.reset_id
-            or previous.scene_version != message.scene_version
-        ):
-            self.get_logger().info(
-                f"simulation state={message.state}, reset={message.reset_id}, "
-                f"scene={message.scene_version}: {message.message}"
-            )
-        version_changed = previous is not None and (
-            previous.reset_id != message.reset_id
-            or previous.scene_version != message.scene_version
-        )
-        reset_changed = previous is not None and (
-            previous.reset_id != message.reset_id
-        )
-        if reset_changed and self.safety_stopped:
-            self.safety_stopped = False
-            self.safety_stop_reason = None
-            self.get_logger().info(
-                "reset_id 변경으로 연속 수확 SAFETY_STOPPED 상태를 해제합니다."
-            )
-        invalidating = message.state in (
-            SimulationState.STOPPED,
-            SimulationState.INITIALIZING,
-        )
-        if version_changed or invalidating:
-            self.queue_dispatch_timer.cancel()
-            self.generation += 1
-            if self.running and self.goal_handle is not None:
-                self.get_logger().warning(
-                    "Stop/Reset 또는 scene 변경을 감지해 실행 중 Goal을 취소합니다."
-                )
-                self.goal_handle.cancel_goal_async()
-            self.running = False
-            self.goal_handle = None
-            self.target = None
-            self.approach_orientation = None
-            self.samples.clear()
-            self.target_samples.clear()
-            self.pending_targets.clear()
-            self.retry_targets.clear()
-            self._sample_target_key = None
-            self._active_target_key = None
-            self._active_candidate = None
-            if version_changed:
-                self.failed_target = None
-                self.planning_scene = None
-                self._latest_target_stamps.clear()
-                if previous.reset_id != message.reset_id:
-                    self._started_target_keys.clear()
-                    self.completed_target_keys.clear()
-                    self.failed_once_target_keys.clear()
-                    self.final_failed_target_keys.clear()
-                    self.target_apple_ids.clear()
-        if message.state in (SimulationState.READY, SimulationState.PLAYING):
-            if (
-                self.planning_scene is None
-                or self.planning_scene.reset_id != message.reset_id
-                or self.planning_scene.scene_version != message.scene_version
-            ):
-                self.request_snapshot()
-
-    def on_scene(self, message):
-        if message.header.frame_id != "world":
-            self.get_logger().error("planning scene frame_id가 world가 아닙니다.")
-            return
-        if not message.obstacles:
-            self.get_logger().error("planning scene obstacle 목록이 비어 있습니다.")
-            return
-        if self.simulation_state is not None and (
-            message.reset_id != self.simulation_state.reset_id
-            or message.scene_version != self.simulation_state.scene_version
-        ):
-            self.get_logger().warning(
-                "simulation state와 버전이 다른 planning scene을 폐기합니다."
-            )
-            return
-        self.planning_scene = message
-        self.snapshot_request_pending = False
-        self.get_logger().info(
-            f"planning scene 동기화: reset={message.reset_id}, "
-            f"version={message.scene_version}, obstacles={len(message.obstacles)}"
-        )
-
-    def request_snapshot(self):
-        if self.snapshot_request_pending or not self.scene_client.service_is_ready():
-            return
-        self.snapshot_request_pending = True
-        future = self.scene_client.call_async(GetPlanningScene.Request())
-        future.add_done_callback(self.on_snapshot_response)
-
-    def on_snapshot_response(self, future):
-        self.snapshot_request_pending = False
-        try:
-            response = future.result()
-        except Exception as error:
-            self.get_logger().warning(f"planning scene 재요청 실패: {error}")
-            return
-        if response.success:
-            self.on_scene(response.scene)
-        else:
-            self.get_logger().warning(response.message)
-
-    @staticmethod
-    def _xyz(position):
-        return np.array([position.x, position.y, position.z], dtype=float)
-
-    def _planning_inputs_synchronized(self):
-        state = self.simulation_state
-        if state is None or state.state not in (
-            SimulationState.READY,
-            SimulationState.PLAYING,
-        ):
-            return False
-        scene = self.planning_scene
-        if scene is None:
-            self.request_snapshot()
-            return False
-        if (
-            scene.reset_id != state.reset_id
-            or scene.scene_version != state.scene_version
-        ):
-            self.planning_scene = None
-            self.request_snapshot()
-            return False
-        if self.execute_enabled and not self._tcp_pose_available():
-            return False
-        return True
-
-    def _prepare_approach_goal(self, center):
-        """현재 scene 세대를 고정하고 GPU PC 1의 기본 접근 자세를 계산한다.
-
-        실제 c-space 경로 생성과 collision 재검증은 같은 GPU PC 1에서 실행되는
-        RobotMotion Action 서버가 담당한다. 이 coordinator는 외부 waypoint를
-        만들어 Action Goal에 주입하지 않는다.
-        """
-        if self.simulation_state is None or self.simulation_state.state not in (
-            SimulationState.READY,
-            SimulationState.PLAYING,
-        ):
-            raise RoutePlanningError("GPU PC 1 simulation이 READY/PLAYING 상태가 아닙니다.")
-        scene = self.planning_scene
-        if scene is None:
-            self.request_snapshot()
-            raise RoutePlanningError("planning scene snapshot을 아직 받지 못했습니다.")
-        try:
-            validate_scene_version(
-                scene.reset_id,
-                scene.scene_version,
-                self.simulation_state.reset_id,
-                self.simulation_state.scene_version,
-            )
-        except RoutePlanningError:
-            self.planning_scene = None
-            self.request_snapshot()
-            raise RoutePlanningError("planning scene 버전이 현재 simulation과 다릅니다.")
-        robot_base = self._xyz(scene.robot_base_pose.pose.position)
-        approach_orientation = approach_orientation_xyzw(robot_base, center)
-        self.get_logger().info(
-            "APPROACH target 승인: GPU PC 1 Action 서버가 현재 관절 상태와 "
-            f"scene {scene.reset_id}/{scene.scene_version}으로 경로를 생성합니다."
-        )
-        return (
-            scene.reset_id,
-            scene.scene_version,
-            approach_orientation,
-        )
-
-    def _candidate_distance_from_robot(self, candidate):
-        if self.planning_scene is None:
-            return float("inf")
-        robot_base = self._xyz(
-            self.planning_scene.robot_base_pose.pose.position
-        )
-        return float(np.linalg.norm(candidate.center - robot_base))
-
-    def _assign_pending_apple_ids(self):
-        """Personal PC 1이 확정해 보낸 target_id를 apple_id로 고정한다."""
-        unassigned = [
-            candidate
-            for candidate in self.pending_targets.values()
-            if candidate.key not in self.target_apple_ids
-        ]
-        if not unassigned:
-            return
-        for candidate in unassigned:
-            apple_id = str(candidate.message.target_id).strip()
-            if not apple_id:
-                raise RoutePlanningError("Personal PC 1 target_id가 비어 있습니다.")
-            self.target_apple_ids[candidate.key] = apple_id
-            self.get_logger().info(
-                f"Personal PC 1 target_id={candidate.key[1]}를 "
-                f"apple_id={apple_id}로 유지"
-            )
-
-    def _defer_or_finish_failed_candidate(self, candidate, reason):
-        """접촉 전 첫 실패만 후순위 큐로 보내고 두 번째 실패는 종료한다."""
+        candidate = self.select_next()
         if candidate is None:
             return
-        key = candidate.key
-        if key not in self.failed_once_target_keys:
-            self.failed_once_target_keys.add(key)
-            self.retry_targets[key] = candidate
-            self.get_logger().warning(
-                f"target_id={key[1]} 첫 실패; 다른 사과 처리 후 1회 재시도: "
-                f"{reason}"
-            )
-            return
-        self.retry_targets.pop(key, None)
-        self.final_failed_target_keys.add(key)
-        self.get_logger().error(
-            f"target_id={key[1]} 재시도 실패; 최종 실패 처리: {reason}"
-        )
+        self.pending.pop(candidate.key, None)
 
-    def _handle_active_failure(
-        self,
-        reason,
-        allow_deferred_retry,
-        error_code="301:APPROACH_UNREACHABLE",
-    ):
-        candidate = self._active_candidate
-        self._clear_run(remember_target=True)
-        # APPROACH 단계라는 이유만으로 실제 접촉까지 planning 실패로 재시도하면
-        # 접촉 자세에서 다음 사과의 RRT가 시작된다. 301의 순수 접근 불가만
-        # 후순위로 보내고 302는 접촉 이후 실패로 안전 정지한다.
-        normalized_error = self._normalize_error_code(error_code)
-        if allow_deferred_retry and normalized_error == "301:APPROACH_UNREACHABLE":
-            self._defer_or_finish_failed_candidate(candidate, reason)
-            self._start_next_target()
-            return
-        if candidate is not None:
-            self.final_failed_target_keys.add(candidate.key)
-        self.safety_stopped = True
-        self.safety_stop_reason = str(reason)
-        self.pending_targets.clear()
-        self.retry_targets.clear()
-        self.queue_dispatch_timer.cancel()
-        self._publish_status(
-            "SAFETY_STOPPED",
-            False,
-            0.0,
-            "302:COLLISION_RISK",
-            "접촉 이후 실패로 reset 전까지 연속 수확을 중단합니다: "
-            f"{reason}",
-        )
-        self.get_logger().error(
-            "접촉 이후 실패로 SAFETY_STOPPED 상태에 진입했습니다. "
-            "reset_id가 변경될 때까지 다음 target을 실행하지 않습니다: "
-            f"{reason}"
-        )
-
-    def _start_next_target(self):
-        """일반 대기열을 모두 처리한 뒤 후순위 재시도 대기열을 실행한다."""
-        self.queue_dispatch_timer.cancel()
-        if self.running or self.safety_stopped:
-            return
-        try:
-            self._assign_pending_apple_ids()
-        except RoutePlanningError as error:
-            self.safety_stopped = True
-            self.safety_stop_reason = str(error)
-            self._publish_status(
-                "TARGET_ID_ASSIGNMENT",
-                False,
-                0.0,
-                "312:INTERNAL_ERROR",
-                str(error),
-            )
-            return
-        while self.pending_targets or self.retry_targets:
-            queue = self.pending_targets if self.pending_targets else self.retry_targets
-            candidate = min(
-                queue.values(),
-                key=self._candidate_distance_from_robot,
-            )
-            queue.pop(candidate.key, None)
-            try:
-                reset_id, scene_version, approach_orientation = (
-                    self._prepare_approach_goal(candidate.center)
-                )
-            except (RoutePlanningError, ValueError) as error:
-                self._report_plan_failure(candidate.center, error)
-                self._defer_or_finish_failed_candidate(candidate, error)
-                continue
-
-            if not self.execute_enabled:
-                self._publish_status(
-                    "PRE_GRASP_PLANNING",
-                    True,
-                    1.0,
-                    "",
-                    f"target_id={candidate.key[1]} target·scene·접근 자세 검증 완료; "
-                    "경로 실행은 비활성화됨",
-                )
-                self.completed_target_keys.add(candidate.key)
-                continue
-
-            self.target = PoseStamped()
-            self.target.header = candidate.message.header
-            self.target.pose.position.x = float(candidate.center[0])
-            self.target.pose.position.y = float(candidate.center[1])
-            self.target.pose.position.z = float(candidate.center[2])
-            if approach_orientation is None:
-                self.target.pose.orientation.w = 1.0
-            else:
-                self.target.pose.orientation.x = float(approach_orientation[0])
-                self.target.pose.orientation.y = float(approach_orientation[1])
-                self.target.pose.orientation.z = float(approach_orientation[2])
-                self.target.pose.orientation.w = float(approach_orientation[3])
-            self.failed_target = None
-            self.plan_reset_id = int(reset_id)
-            self.plan_scene_version = int(scene_version)
-            self.approach_orientation = approach_orientation
-            self._active_target_key = candidate.key
-            self._active_candidate = candidate
-            self.active_apple_id = self.target_apple_ids[candidate.key]
-            self.active_reservation_id = (
-                f"{self.robot_id}:{candidate.key[0]}:{self.active_apple_id}"
-            )
-            self.place_reservation_submitted = False
-            self.place_command_pending = False
-            self.place_ready = False
-            self.running, self.index = True, 0
-            self.get_logger().info(
-                f"연속 수확 시작 target_id={candidate.key[1]}, "
-                f"apple_id={self.active_apple_id}, "
-                f"pending={len(self.pending_targets)}, retry={len(self.retry_targets)}"
-            )
-            self.send_next()
-            return
-
-    def _dispatch_pending_targets(self):
-        """마지막 신규 target 이후 모인 후보가 하나라도 있으면 dispatch한다."""
-        self.queue_dispatch_timer.cancel()
-        if not self.pending_targets:
-            return
-        self._start_next_target()
-
-    def on_place_status(self, message):
-        self.place_status = message
-        if (
-            self.running
-            and self.index < len(SEQUENCE)
-            and SEQUENCE[self.index] == RobotMotion.Goal.PLACE
-            and message.state == PlaceCoordinatorStatus.RESERVED
-            and message.lock_owner_robot_id == self.robot_id
-            and message.reservation_id == self.active_reservation_id
-            and not self.place_command_pending
-        ):
-            self.send_next()
-
-    def _place_request(self, command, error_code="", message=""):
-        request = PlaceCommand.Request()
-        request.header.stamp = self.get_clock().now().to_msg()
-        request.header.frame_id = "world"
-        request.command = int(command)
-        request.robot_id = self.robot_id
-        request.reservation_id = self.active_reservation_id
-        request.apple_id = self.active_apple_id
-        request.place_position_id = PLACE_IDS_BY_ROBOT[self.robot_id]
-        request.reset_id = int(self.plan_reset_id)
-        request.scene_version = int(self.plan_scene_version)
-        request.error_code = str(error_code)
-        request.message = str(message)
-        return request
-
-    def _send_place_command(self, request, callback):
-        if self.place_command_pending:
-            return False
-        if not self.place_client.service_is_ready():
-            if not self.place_service_wait_reported:
-                reason = (
-                    "Place Coordinator service가 아직 준비되지 않았습니다. "
-                    "수확 상태를 유지하고 service discovery를 재시도합니다."
-                )
-                self.get_logger().warning(reason)
-                self._publish_status(
-                    "PLACE_COORDINATOR_WAIT", True, 0.0, "", reason
-                )
-                self.place_service_wait_reported = True
-            self.place_retry_timer.reset()
-            return False
-        self.place_retry_timer.cancel()
-        if self.place_service_wait_reported:
-            self.get_logger().info(
-                "Place Coordinator service 연결이 확인되어 PLACE를 재개합니다."
-            )
-            self.place_service_wait_reported = False
-        self.place_command_pending = True
-        future = self.place_client.call_async(request)
-        future.add_done_callback(callback)
-        return True
-
-    def _retry_place_coordination(self):
-        """PLACE 대기 중 service가 늦게 시작되면 현재 수확을 그대로 재개한다."""
-        waiting_for_place = (
-            self.running
-            and self.index < len(SEQUENCE)
-            and SEQUENCE[self.index] == RobotMotion.Goal.PLACE
-            and not self.place_command_pending
-            and not self.place_ready
-        )
-        if not waiting_for_place:
-            self.place_retry_timer.cancel()
-            return
-        if self.place_client.service_is_ready():
-            self.place_retry_timer.cancel()
-            self.send_next()
-
-    def _place_response(self, future):
-        self.place_command_pending = False
-        try:
-            response = future.result()
-        except Exception as error:
-            self._place_integration_failure(f"Place 명령 호출 실패: {error}")
-            return None
-        if not response.accepted:
-            self._place_integration_failure(
-                f"Place 명령 거부 {response.error_code}: {response.message}"
-            )
-            return None
-        return response
-
-    def _on_reserve_response(self, future):
-        response = self._place_response(future)
-        if response is None:
-            return
-        self.place_reservation_submitted = True
-        self.get_logger().info(
-            f"Place 예약 승인 apple_id={self.active_apple_id}, queued={response.queued}"
-        )
-        self.send_next()
-
-    def _on_start_placing_response(self, future):
-        response = self._place_response(future)
-        if response is None:
-            return
-        self.place_ready = True
-        self.send_next()
-
-    def _on_released_response(self, future):
-        response = self._place_response(future)
-        if response is not None:
-            self.get_logger().info(
-                f"RELEASED 전달 완료 apple_id={self.active_apple_id}; landing 확인 대기"
-            )
-
-    def _on_fail_place_response(self, future):
-        self.place_command_pending = False
-        try:
-            response = future.result()
-        except Exception as error:
-            self.get_logger().error(f"Place ERROR 전달 실패: {error}")
-            return
-        if not response.accepted:
-            self.get_logger().error(
-                f"Place ERROR 전달 거부 {response.error_code}: {response.message}"
-            )
-
-    def _notify_place_failure(self, error_code, message):
-        if (
-            not self.active_reservation_id
-            or self.place_command_pending
-            or not self.place_client.service_is_ready()
-        ):
-            return
-        request = self._place_request(
-            PlaceCommand.Request.FAIL,
-            error_code=error_code,
-            message=message,
-        )
-        self.place_command_pending = True
-        self.place_client.call_async(request).add_done_callback(
-            self._on_fail_place_response
-        )
-
-    def _place_integration_failure(self, reason):
-        self.safety_stopped = True
-        self.safety_stop_reason = str(reason)
-        self.pending_targets.clear()
-        self.retry_targets.clear()
-        self._publish_status(
-            "PLACE_COORDINATION",
-            False,
-            0.0,
-            "312:INTERNAL_ERROR",
-            str(reason),
-        )
-        self.get_logger().error(str(reason))
-
-    def _ensure_place_ready(self):
-        if self.place_ready:
-            return True
-        if not self.place_reservation_submitted:
-            request = self._place_request(PlaceCommand.Request.RESERVE)
-            self._send_place_command(request, self._on_reserve_response)
-            return False
-        status = self.place_status
-        owns_reserved_lock = status is not None and (
-            status.state == PlaceCoordinatorStatus.RESERVED
-            and status.lock_owner_robot_id == self.robot_id
-            and status.reservation_id == self.active_reservation_id
-            and status.apple_id == self.active_apple_id
-        )
-        if owns_reserved_lock:
-            request = self._place_request(PlaceCommand.Request.START_PLACING)
-            self._send_place_command(request, self._on_start_placing_response)
-        return False
-
-    def on_target(self, message):
-        """Receive and validate the v2 HarvestTarget contract."""
-        validation_error = self._validate_target(message)
-        if validation_error is not None:
-            self._reject_target(message, validation_error)
-            return
-        if self.safety_stopped:
-            self._reject_target(
-                message,
-                "접촉 이후 실패로 SAFETY_STOPPED 상태입니다. "
-                "Timeline reset 후 다시 시도해야 합니다."
-                + (
-                    ""
-                    if not self.safety_stop_reason
-                    else f" 원인: {self.safety_stop_reason}"
-                ),
-                "302:COLLISION_RISK",
-            )
-            return
-
-        state = self.simulation_state
-        if state is None or state.state not in (
-            SimulationState.READY,
-            SimulationState.PLAYING,
-        ):
-            self._reject_target(
-                message,
-                "SimulationState가 READY 또는 PLAYING이 아닙니다.",
-                "306:GOAL_REJECTED",
-            )
-            return
-        if (
-            int(message.reset_id) != int(state.reset_id)
-            or int(message.scene_version) != int(state.scene_version)
-        ):
-            self._reject_target(
-                message,
-                "target reset_id/scene_version이 현재 SimulationState와 다릅니다.",
-                "308:SIMULATION_RESET",
-            )
-            return
-        if not self._planning_inputs_synchronized():
-            self._reject_target(
-                message,
-                "planning scene 또는 현재 TCP가 아직 동기화되지 않았습니다.",
-                "306:GOAL_REJECTED",
-            )
-            return
-
-        target_key = (int(message.reset_id), str(message.target_id))
-        if (
-            target_key in self._started_target_keys
-            or target_key in self.completed_target_keys
-            or target_key in self.failed_once_target_keys
-            or target_key in self.final_failed_target_keys
-            or target_key == self._active_target_key
-        ):
-            self.get_logger().debug(
-                "이미 시작·완료·최종 실패한 HarvestTarget 갱신 무시: "
-                f"target_id={message.target_id}, reset_id={message.reset_id}"
-            )
-            return
-        stamp_ns = self._stamp_ns(message.header.stamp)
-        previous_stamp_ns = self._latest_target_stamps.get(target_key)
-        if previous_stamp_ns is not None and stamp_ns <= previous_stamp_ns:
-            self.get_logger().debug(
-                "오래된 HarvestTarget 무시: "
-                f"target_id={message.target_id}, stamp={stamp_ns}, "
-                f"latest={previous_stamp_ns}"
-            )
-            return
-        self._latest_target_stamps[target_key] = stamp_ns
-
-        sample = self._xyz(message.position)
-        samples = self.target_samples.get(target_key)
-        if samples is None:
-            samples = deque(maxlen=self.sample_count)
-            self.target_samples[target_key] = samples
-        samples.append(sample)
-        if len(samples) < samples.maxlen:
-            return
-        values = np.asarray(samples)
-        center = np.median(values, axis=0)
-        spread = float(np.max(np.linalg.norm(values - center, axis=1)))
-        self.get_logger().info(
-            f"target_id={message.target_id} median={center}, "
-            f"spread={spread:.4f} m"
-        )
-        if spread > self.maximum_spread:
-            return
-        is_new_candidate = target_key not in self.pending_targets
-        candidate = PendingTarget(
-            key=target_key,
-            message=message,
-            center=np.asarray(center, dtype=float).copy(),
-            stamp_ns=stamp_ns,
-        )
-        self.pending_targets[target_key] = candidate
-        self.get_logger().info(
-            f"target_id={message.target_id} 연속 수확 대기열 등록; "
-            f"pending={len(self.pending_targets)}"
-        )
-        if is_new_candidate and not self.running and not self.safety_stopped:
-            self.queue_dispatch_timer.reset()
-
-    def send_next(self):
-        if self.index >= len(SEQUENCE):
-            completed_key = self._active_target_key
-            if completed_key is not None:
-                self.completed_target_keys.add(completed_key)
-                self.retry_targets.pop(completed_key, None)
-            self.get_logger().info(
-                "수확 Action 시퀀스 완료"
-                + (
-                    ""
-                    if completed_key is None
-                    else f" target_id={completed_key[1]}"
-                )
-            )
-            self._clear_run(remember_target=False)
-            self._start_next_target()
-            return
-        generation = self.generation
-        motion_type = SEQUENCE[self.index]
-        if motion_type == RobotMotion.Goal.PLACE and not self._ensure_place_ready():
-            return
-        if motion_type in (RobotMotion.Goal.GRASP, RobotMotion.Goal.RELEASE):
-            try:
-                target_pose = self._current_tcp_pose()
-            except RoutePlanningError as error:
-                self._report_plan_failure(self._xyz(self.target.pose.position), error)
-                self._handle_active_failure(
-                    error,
-                    allow_deferred_retry=(self.index == 0),
-                )
+        if not self.action_client.server_is_ready():
+            self.action_client.wait_for_server(timeout_sec=1.0)
+            if not self.action_client.server_is_ready():
+                self.get_logger().warning("Action 서버가 준비되지 않았습니다.")
+                self.pending[candidate.key] = candidate
                 return
-        else:
-            target_pose = self.target
-        if not self.client.wait_for_server(timeout_sec=2.0):
-            self.get_logger().error("/harvest/robot_motion 서버를 찾을 수 없습니다.")
-            self._publish_status(
-                "ACTION_WAIT", False, 0.0, "306:GOAL_REJECTED", "RobotMotion 서버를 찾을 수 없습니다."
-            )
-            self._handle_active_failure(
-                "RobotMotion 서버를 찾을 수 없습니다.",
-                allow_deferred_retry=(self.index == 0),
-            )
-            return
+
+        self.active = candidate
+        self.sequence_index = 0
+        self.generation += 1
+        self.get_logger().info(
+            f"수확 시작: {candidate.apple_id or candidate.key[1]} "
+            f"center={np.round(candidate.center, 3)}"
+        )
+        self.send_current_step()
+
+    def build_goal(self, motion_type):
+        """단계별 Goal을 만든다.
+
+        GRASP와 RELEASE의 target_pose는 Goal 전송 시점의 현재 pose로 채운다.
+        그 두 단계는 이동 없이 그리퍼만 여닫기 때문이다.
+        """
         goal = RobotMotion.Goal()
         goal.motion_type = motion_type
-        goal.target_pose = target_pose
-        goal.reset_id = self.plan_reset_id
-        goal.scene_version = self.plan_scene_version
-        future = self.client.send_goal_async(goal, feedback_callback=self.on_feedback)
+        goal.reset_id = self.reset_id
+        goal.scene_version = self.scene_version
+
+        pose = PoseStamped()
+        pose.header.stamp = self.get_clock().now().to_msg()
+        pose.header.frame_id = "world"
+
+        if motion_type in (RobotMotion.Goal.GRASP, RobotMotion.Goal.RELEASE):
+            tcp, orientation = self.current_tcp_pose()
+            if tcp is None:
+                # palm frame 을 못 읽어도 이 두 단계는 이동이 없다. GPU PC 1이
+                # 자기 articulation 의 실제 현재 pose 를 그대로 유지하므로,
+                # 여기 채우는 좌표가 실행 목표를 바꾸지 않는다. 참고용으로
+                # 현재 target 중심을 넣는다.
+                tcp = self.active.center if self.active is not None else np.zeros(3)
+                orientation = np.array([0.0, 0.0, 0.0, 1.0])
+            pose.pose.position.x = float(tcp[0])
+            pose.pose.position.y = float(tcp[1])
+            pose.pose.position.z = float(tcp[2])
+            pose.pose.orientation.x = float(orientation[0])
+            pose.pose.orientation.y = float(orientation[1])
+            pose.pose.orientation.z = float(orientation[2])
+            pose.pose.orientation.w = float(orientation[3])
+        else:
+            center = self.active.center
+            pose.pose.position.x = float(center[0])
+            pose.pose.position.y = float(center[1])
+            pose.pose.position.z = float(center[2])
+            robot_position = self.robot_base_position()
+            if robot_position is None:
+                orientation = np.array([0.0, 0.0, 0.0, 1.0])
+            else:
+                orientation = approach_orientation_xyzw(robot_position, center)
+            pose.pose.orientation.x = float(orientation[0])
+            pose.pose.orientation.y = float(orientation[1])
+            pose.pose.orientation.z = float(orientation[2])
+            pose.pose.orientation.w = float(orientation[3])
+
+        goal.target_pose = pose
+        # waypoints는 GPU PC 1 내부 planner가 만든다. 외부에서 주입하지 않는다.
+        goal.waypoints = []
+        return goal
+
+    def send_current_step(self):
+        if self.active is None or self.sequence_index >= len(SEQUENCE):
+            return
+        motion_type = SEQUENCE[self.sequence_index]
+
+        # 컨베이어는 한 대뿐이다. 배치 구간에 들어가기 전에 락을 잡는다.
+        if motion_type == PLACE_LOCK_START and not self.place_locked:
+            self.reserve_place_slot()
+            return
+
+        try:
+            goal = self.build_goal(motion_type)
+        except RoutePlanningError as error:
+            self.handle_step_failure(motion_type, "310:TF_UNAVAILABLE", str(error))
+            return
+
+        if self.scene is not None:
+            try:
+                validate_scene_version(
+                    self.scene.reset_id,
+                    self.scene.scene_version,
+                    self.reset_id,
+                    self.scene_version,
+                )
+            except RoutePlanningError as error:
+                self.handle_step_failure(
+                    motion_type, "312:INTERNAL_ERROR", f"scene 세대 불일치: {error}"
+                )
+                return
+
+        self.get_logger().info(f"  -> {MOTION_NAMES[motion_type]}")
+        generation = self.generation
+        future = self.action_client.send_goal_async(
+            goal, feedback_callback=self.on_feedback
+        )
         future.add_done_callback(
-            lambda result_future: self.on_goal_response(result_future, generation)
+            lambda result: self.on_goal_response(result, generation)
         )
 
     def on_goal_response(self, future, generation):
+        if generation != self.generation:
+            return
         try:
             handle = future.result()
-        except Exception as error:
-            self._publish_status("ACTION_WAIT", False, 0.0, "312:INTERNAL_ERROR", str(error))
-            self._handle_active_failure(
-                error,
-                allow_deferred_retry=(self.index == 0),
+        except Exception as error:  # noqa: BLE001
+            self.handle_step_failure(
+                SEQUENCE[self.sequence_index], "312:INTERNAL_ERROR", str(error)
             )
             return
-        if generation != self.generation or not self.running:
-            if handle.accepted:
-                handle.cancel_goal_async()
-            return
-        if not handle.accepted:
-            self._publish_status(
-                "GOAL_REJECTED",
-                False,
-                0.0,
+        if handle is None or not handle.accepted:
+            self.handle_step_failure(
+                SEQUENCE[self.sequence_index],
                 "306:GOAL_REJECTED",
-                "simulation/scene 버전 또는 Action 상태로 Goal이 거부되었습니다.",
-            )
-            self._handle_active_failure(
-                "RobotMotion Goal이 거부되었습니다.",
-                allow_deferred_retry=(self.index == 0),
+                "Action 서버가 Goal을 거부했습니다.",
             )
             return
-        if self.index == 0 and self._active_target_key is not None:
-            self._started_target_keys.add(self._active_target_key)
         self.goal_handle = handle
-        handle.get_result_async().add_done_callback(
-            lambda result_future: self.on_result(result_future, generation)
+        result_future = handle.get_result_async()
+        result_future.add_done_callback(
+            lambda result: self.on_result(result, generation)
         )
 
     def on_feedback(self, message):
         feedback = message.feedback
-        self.get_logger().info(
-            f"{feedback.current_state}: {100.0 * feedback.progress:.0f}%"
+        self.get_logger().debug(
+            f"     {feedback.current_state} {feedback.progress * 100:.0f}%"
         )
 
     def on_result(self, future, generation):
-        if generation != self.generation or not self.running:
+        if generation != self.generation:
             return
-        self.goal_handle = None
-        motion_type = SEQUENCE[self.index]
+        motion_type = SEQUENCE[self.sequence_index]
         try:
             result = future.result().result
-        except Exception as error:
-            if motion_type in (RobotMotion.Goal.PLACE, RobotMotion.Goal.RELEASE):
-                self._notify_place_failure("312:INTERNAL_ERROR", str(error))
-            self._publish_status("ACTION_RESULT", False, 0.0, "312:INTERNAL_ERROR", str(error))
-            self._handle_active_failure(
-                error,
-                allow_deferred_retry=(self.index == 0),
-            )
+        except Exception as error:  # noqa: BLE001
+            self.handle_step_failure(motion_type, "312:INTERNAL_ERROR", str(error))
             return
+
+        self.goal_handle = None
         if not result.success:
-            self.get_logger().error(f"{result.error_code}: {result.message}")
-            error_code = self._normalize_error_code(result.error_code)
-            if motion_type in (RobotMotion.Goal.PLACE, RobotMotion.Goal.RELEASE):
-                self._notify_place_failure(error_code, result.message)
-            self._publish_status(
-                "ACTION_RESULT", False, 0.0, error_code, result.message
+            self.handle_step_failure(motion_type, result.error_code, result.message)
+            return
+
+        self.get_logger().info(f"     {MOTION_NAMES[motion_type]} 완료")
+
+        # RELEASE가 끝나면 컨베이어 락을 놓는다. 다른 로봇이 기다린다.
+        if motion_type == PLACE_LOCK_END and self.place_locked:
+            self.release_place_slot()
+
+        self.sequence_index += 1
+        if self.sequence_index >= len(SEQUENCE):
+            self.finish_active(success=True)
+            return
+        self.send_current_step()
+
+    def handle_step_failure(self, motion_type, error_code, message):
+        name = MOTION_NAMES.get(motion_type, "UNKNOWN")
+        self.get_logger().error(f"     {name} 실패 [{error_code}] {message}")
+
+        if self.place_locked:
+            self.fail_place_slot(error_code, message)
+
+        if motion_type in POST_CONTACT_MOTIONS:
+            # 사과를 들었거나 로봇이 나무 안에 있을 수 있다. 다음 Goal을
+            # 보내지 않고 안전 정지한다. reset으로만 해제된다.
+            self.get_logger().error(
+                "접촉 이후 실패입니다. SAFETY_STOPPED로 전환하고 대기열을 폐기합니다."
             )
-            self._handle_active_failure(
-                result.message,
-                allow_deferred_retry=(self.index == 0),
-                error_code=error_code,
+            self.safety_stopped = True
+            if self.active is not None:
+                self.failed.add(self.active.key)
+            self.pending.clear()
+            self.retry_queue.clear()
+            self.active = None
+            return
+
+        # 접촉 전 첫 실패는 재시도 대기열로 보낸다. 다른 사과를 모두
+        # 처리한 뒤 1회만 재시도한다.
+        candidate = self.active
+        self.active = None
+        if candidate is None:
+            return
+        candidate.attempts += 1
+        if candidate.attempts >= 2:
+            self.failed.add(candidate.key)
+            self.get_logger().error(
+                f"{candidate.apple_id or candidate.key[1]} 최종 실패"
+            )
+        else:
+            self.retry_queue.append(candidate)
+            self.get_logger().warning(
+                f"{candidate.apple_id or candidate.key[1]} 재시도 대기열로 이동"
+            )
+        self.start_next_target()
+
+    def finish_active(self, success):
+        candidate = self.active
+        self.active = None
+        self.sequence_index = 0
+        if candidate is None:
+            return
+        if success:
+            self.completed.add(candidate.key)
+            self.get_logger().info(
+                f"수확 완료: {candidate.apple_id or candidate.key[1]}"
+            )
+        self.start_next_target()
+
+    def cancel_active(self, error_code):
+        if self.goal_handle is not None:
+            self.goal_handle.cancel_goal_async()
+            self.goal_handle = None
+        if self.place_locked:
+            self.fail_place_slot(error_code, "simulation reset")
+        self.active = None
+        self.sequence_index = 0
+
+    # ══════════════════════════════════════════════════════════
+    # 공유 컨베이어 배치 락
+    # ══════════════════════════════════════════════════════════
+    def on_place_status(self, message):
+        self.place_state = message
+        mine = (
+            message.lock_owner_robot_id == self.robot_id
+            and message.reservation_id == self.reservation_id
+        )
+        if mine:
+            self.place_locked = message.state in (
+                PlaceCoordinatorStatus.RESERVED,
+                PlaceCoordinatorStatus.PLACING,
+                PlaceCoordinatorStatus.LANDING_CHECK,
+            )
+        # 대기열에 넣어 둔 예약이 내 차례가 되었는지는 이 토픽으로만 알 수
+        # 있다. 락 서비스는 승격 시점에 별도 응답을 주지 않는다.
+        if (
+            self.waiting_for_place_lock
+            and mine
+            and message.state == PlaceCoordinatorStatus.RESERVED
+        ):
+            self.begin_placing()
+
+    def place_request(self, command, error_code="", message=""):
+        request = PlaceCommand.Request()
+        request.header.stamp = self.get_clock().now().to_msg()
+        request.header.frame_id = "world"
+        request.command = command
+        request.robot_id = self.robot_id
+        request.reservation_id = self.reservation_id
+        request.apple_id = self.active.apple_id if self.active else ""
+        request.place_position_id = self.place_position_id
+        request.reset_id = self.reset_id
+        request.scene_version = self.scene_version
+        request.safety_confirmed = True
+        request.error_code = error_code
+        request.message = message
+        return request
+
+    def send_place_command(self, request, callback):
+        if not self.place_client.service_is_ready():
+            self.place_client.wait_for_service(timeout_sec=PLACE_SERVICE_WAIT_SEC)
+        if not self.place_client.service_is_ready():
+            self.handle_step_failure(
+                PLACE_LOCK_START,
+                "312:INTERNAL_ERROR",
+                f"{self.names.conveyor_place_service} 서비스를 찾지 못했습니다.",
             )
             return
-        if motion_type == RobotMotion.Goal.RELEASE:
-            request = self._place_request(PlaceCommand.Request.RELEASED)
-            self._send_place_command(request, self._on_released_response)
-            self.place_ready = False
-            self.place_service_wait_reported = False
-            self.place_retry_timer.cancel()
-        self.index += 1
-        self.send_next()
+        future = self.place_client.call_async(request)
+        future.add_done_callback(callback)
+
+    def reserve_place_slot(self):
+        """컨베이어 배치 슬롯을 예약한다. 락을 받으면 TRANSPORT를 보낸다."""
+        self.reservation_id = uuid.uuid4().hex[:12]
+        self.waiting_for_place_lock = True
+        self.get_logger().info(
+            f"  -> 컨베이어 배치 예약 요청 ({self.place_position_id})"
+        )
+        self.send_place_command(
+            self.place_request(PlaceCommand.Request.RESERVE), self.on_reserve_response
+        )
+
+    def begin_placing(self):
+        """락을 실제로 소유한 뒤에만 배치 구간을 시작한다."""
+        if not self.waiting_for_place_lock:
+            return
+        self.waiting_for_place_lock = False
+        self.place_locked = True
+        self.get_logger().info("     컨베이어 배치 슬롯 확보")
+        self.send_place_command(
+            self.place_request(PlaceCommand.Request.START_PLACING),
+            self.on_start_placing_response,
+        )
+
+    def on_reserve_response(self, future):
+        try:
+            response = future.result()
+        except Exception as error:  # noqa: BLE001
+            self.handle_step_failure(
+                PLACE_LOCK_START, "312:INTERNAL_ERROR", str(error)
+            )
+            return
+        if response is None or not response.accepted:
+            self.waiting_for_place_lock = False
+            self.handle_step_failure(
+                PLACE_LOCK_START,
+                response.error_code if response else "312:INTERNAL_ERROR",
+                response.message if response else "예약 응답이 없습니다.",
+            )
+            return
+        if response.queued:
+            # 대기열 등록도 accepted=True 로 온다. queued 를 먼저 보지 않으면
+            # 락을 받지 못한 채 START_PLACING 을 보내서 LOCK_OWNER_MISMATCH
+            # 또는 INVALID_STATE 로 실패한다. 두 로봇이 거의 동시에 PULL 을
+            # 끝냈을 때 실제로 그렇게 터졌다.
+            self.get_logger().info(
+                "     컨베이어 사용 중. 대기열에 등록했고 차례를 기다립니다."
+            )
+            return
+        self.begin_placing()
+
+    def on_start_placing_response(self, future):
+        try:
+            response = future.result()
+        except Exception as error:  # noqa: BLE001
+            self.handle_step_failure(
+                PLACE_LOCK_START, "312:INTERNAL_ERROR", str(error)
+            )
+            return
+        if response is None or not response.accepted:
+            self.handle_step_failure(
+                PLACE_LOCK_START,
+                response.error_code if response else "312:INTERNAL_ERROR",
+                response.message if response else "배치 시작 응답이 없습니다.",
+            )
+            return
+        # 락을 잡았으니 TRANSPORT부터 이어서 실행한다.
+        self.send_current_step_after_lock()
+
+    def send_current_step_after_lock(self):
+        """락 확보 뒤 TRANSPORT Goal을 실제로 보낸다."""
+        if self.active is None:
+            return
+        motion_type = SEQUENCE[self.sequence_index]
+        try:
+            goal = self.build_goal(motion_type)
+        except RoutePlanningError as error:
+            self.handle_step_failure(motion_type, "310:TF_UNAVAILABLE", str(error))
+            return
+        self.get_logger().info(f"  -> {MOTION_NAMES[motion_type]}")
+        generation = self.generation
+        future = self.action_client.send_goal_async(
+            goal, feedback_callback=self.on_feedback
+        )
+        future.add_done_callback(
+            lambda result: self.on_goal_response(result, generation)
+        )
+
+    def release_place_slot(self):
+        """배치 구간을 끝내고 락을 완전히 놓는다.
+
+        락 서비스의 정상 흐름은 RESERVE -> START_PLACING -> RELEASED ->
+        CONFIRM_LANDING 이다. RELEASED 는 상태를 LANDING_CHECK 로 옮길 뿐이고,
+        락을 IDLE 로 되돌려 다음 로봇을 승격시키는 것은 CONFIRM_LANDING 이다.
+        여기서 멈추면 robot_01 이 컨베이어를 계속 점유해서 robot_02 는
+        수확을 끝내고도 배치 예약을 못 받는다.
+
+        reservation_id 는 CONFIRM_LANDING 이 끝날 때까지 유지해야 한다.
+        락 서비스가 소유자 확인에 그 값을 쓴다.
+        """
+        self.get_logger().info("     컨베이어 배치 완료 보고 (RELEASED)")
+        self.send_place_command(
+            self.place_request(PlaceCommand.Request.RELEASED),
+            self.on_released_response,
+        )
+
+    def on_released_response(self, future):
+        try:
+            response = future.result()
+        except Exception as error:  # noqa: BLE001
+            self.get_logger().warning(f"배치 반납 응답 실패: {error}")
+            self.place_locked = False
+            self.waiting_for_place_lock = False
+            return
+        if response is None or not response.accepted:
+            self.get_logger().warning(
+                f"RELEASED 거절: "
+                f"{response.error_code if response else ''} "
+                f"{response.message if response else ''}"
+            )
+            self.place_locked = False
+            self.waiting_for_place_lock = False
+            return
+        self.get_logger().info("     착지 확인 보고 (CONFIRM_LANDING)")
+        self.send_place_command(
+            self.place_request(PlaceCommand.Request.CONFIRM_LANDING),
+            self.on_confirm_landing_response,
+        )
+
+    def on_confirm_landing_response(self, future):
+        try:
+            response = future.result()
+        except Exception as error:  # noqa: BLE001
+            self.get_logger().warning(f"착지 확인 응답 실패: {error}")
+        else:
+            if response is not None and response.accepted:
+                self.get_logger().info("     컨베이어 락 반납 완료")
+            else:
+                self.get_logger().warning(
+                    f"CONFIRM_LANDING 거절: "
+                    f"{response.error_code if response else ''}"
+                )
+        self.place_locked = False
+        self.waiting_for_place_lock = False
+        self.reservation_id = ""
+
+    def fail_place_slot(self, error_code, message):
+        """실패를 보고하고 락을 풀어 준다.
+
+        FAIL 은 상태를 ERROR 로 옮기기만 한다. ERROR 에서 락을 놓으려면
+        CLEAR_ERROR 를 안전 확인과 함께 보내야 한다. 이게 빠지면 실패한
+        로봇이 컨베이어를 영구히 잡고 있게 된다.
+        """
+        self.send_place_command(
+            self.place_request(PlaceCommand.Request.FAIL, error_code, message),
+            self.on_fail_place_response,
+        )
+
+    def on_fail_place_response(self, future):
+        try:
+            future.result()
+        except Exception as error:  # noqa: BLE001
+            self.get_logger().warning(f"배치 실패 보고 응답 실패: {error}")
+            self.place_locked = False
+            self.waiting_for_place_lock = False
+            self.reservation_id = ""
+            return
+        self.send_place_command(
+            self.place_request(PlaceCommand.Request.CLEAR_ERROR),
+            self.on_clear_error_response,
+        )
+
+    def on_clear_error_response(self, future):
+        try:
+            future.result()
+        except Exception as error:  # noqa: BLE001
+            self.get_logger().warning(f"배치 오류 해제 응답 실패: {error}")
+        self.place_locked = False
+        self.waiting_for_place_lock = False
+        self.reservation_id = ""
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--execute", action="store_true", help="없으면 좌표만 검증")
-    parser.add_argument("--samples", type=int, default=10)
-    parser.add_argument("--maximum-spread", type=float, default=0.04)
-    parser.add_argument("--robot-id", default=DEFAULT_ROBOT_ID)
+    parser = argparse.ArgumentParser(description="GPU PC 1 수확 supervisor")
+    add_robot_id_argument(parser)
     parser.add_argument(
-        "--motion-status-topic", default=DEFAULT_MOTION_STATUS_TOPIC
+        "--execute",
+        action="store_true",
+        help="RobotMotion Goal을 실제로 보낸다. 없으면 관측만 한다.",
     )
-    parser.add_argument(
-        "--place-coordinator-mode",
-        choices=PLACE_COORDINATOR_MODES,
-        default="auto",
-        help=(
-            "auto는 robot_01 coordinator가 공유 /conveyor/place_command를 "
-            "호스팅하고 robot_02는 client로 사용"
-        ),
-    )
-    args, ros_args = parser.parse_known_args()
-    rclpy.init(args=ros_args)
-    node = HarvestCoordinator(
-        args.execute,
-        args.samples,
-        args.maximum_spread,
-        robot_id=args.robot_id,
-        motion_status_topic=args.motion_status_topic,
-    )
-    place_node = None
-    if should_host_place_coordinator(args.robot_id, args.place_coordinator_mode):
-        if node.place_client.wait_for_service(timeout_sec=0.5):
-            node.get_logger().info(
-                "기존 외부 Place Coordinator service를 사용합니다."
-            )
-        else:
-            place_node = PlaceCoordinatorNode()
-            node.get_logger().info(
-                "공유 Place Coordinator service를 이 프로세스에서 호스팅합니다."
-            )
-    executor = MultiThreadedExecutor(num_threads=2)
-    executor.add_node(node)
-    if place_node is not None:
-        executor.add_node(place_node)
+    parsed, remaining = parser.parse_known_args()
+
+    rclpy.init(args=[sys.argv[0], *remaining])
+    node = None
+    executor = None
     try:
+        node = HarvestCoordinator(parsed.robot_id, parsed.execute)
+        executor = MultiThreadedExecutor()
+        executor.add_node(node)
         executor.spin()
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
-        executor.shutdown()
-        if place_node is not None:
-            place_node.destroy_node()
-        node.destroy_node()
+        if executor is not None:
+            executor.shutdown()
+        if node is not None:
+            node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

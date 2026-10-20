@@ -8,7 +8,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Generic, TypeVar
 
-from depth_geometry import combine_prediction_with_geometry
+from depth_geometry import (
+    combine_prediction_with_geometry,
+    decode_apple_mask,
+    decode_ignore_mask,
+)
 from inspection_session import (
     InspectionCompletion,
     InspectionContractError,
@@ -24,6 +28,7 @@ from predictor import (
     load_measurement_predictor,
     predict_declared_frames,
 )
+from opencv_color_predictor import decode_rgb
 from quality_rules import (
     QualityResult as CoreQualityResult,
     ResultStatus,
@@ -34,12 +39,26 @@ from quality_rules import (
 INPUT_TOPIC = "/quality/inspection_images"
 COMPLETION_TOPIC = "/quality/inspection_completed"
 OUTPUT_TOPIC = "/quality/results"
+COLOR_DISTRIBUTION_TOPIC = "/quality/color_distribution_debug/compressed"
 RESULT_QOS_DEPTH = 10
 COMPLETION_QOS_DEPTH = 10
+COLOR_DISTRIBUTION_QOS_DEPTH = 1
+# 컨베이어 2는 카메라 3대로 사과의 서로 다른 면을 본다. 한 면만 보고 판정하면
+# 3면 구성을 쓰는 의미가 없고 반대편 손상을 놓치므로, 기본값은 전 면 요구다.
+# 미달이면 측정값을 만들지 않고 INSUFFICIENT_VIEWS 로 보고한다.
+DEFAULT_MIN_VALID_VIEWS = 3
+# 등급을 무엇으로 매길지. "size" 는 직경, "color" 는 착색률 기준이다.
+# 착색 기준은 color_mask 를 내는 predictor 와 함께 써야 한다
+# (model_backend:=opencv_color).
+DEFAULT_GRADE_BY = "size"
 INPUT_QOS_DEPTH = 6
 DEFAULT_CONFIDENCE_THRESHOLD = 0.5
 DEFAULT_STALE_SESSION_TIMEOUT_SEC = 3.0
 RECENT_FINALIZED_LIMIT = 64
+COLOR_DISTRIBUTION_WIDTH = 800
+COLOR_DISTRIBUTION_HEIGHT = 520
+COLOR_DISTRIBUTION_JPEG_QUALITY = 80
+HUE_BIN_WIDTH = 5
 
 try:
     import rclpy
@@ -57,6 +76,7 @@ try:
         QoSProfile,
         ReliabilityPolicy,
     )
+    from sensor_msgs.msg import CompressedImage
 
     _ROS_IMPORT_ERROR: ImportError | None = None
 except ImportError as exc:
@@ -64,6 +84,7 @@ except ImportError as exc:
     InspectionCompleted = None  # type: ignore[assignment,misc]
     InspectionImage = None  # type: ignore[assignment,misc]
     QualityResultMessage = None  # type: ignore[assignment,misc]
+    CompressedImage = None  # type: ignore[assignment,misc]
     Clock = None  # type: ignore[assignment,misc]
     ClockType = None  # type: ignore[assignment,misc]
     Parameter = None  # type: ignore[assignment,misc]
@@ -98,6 +119,251 @@ class ProcessingEvent(Generic[PredictionT]):
     total_frames: int
     predictions: tuple[IndexedPrediction[PredictionT], ...] = ()
     deadline_time_ns: int | None = None
+
+
+@dataclass(frozen=True)
+class ColorDistribution:
+    """Hue and named-colour counts from measurable apple-surface pixels."""
+
+    hue_histogram: tuple[int, ...]
+    category_counts: tuple[tuple[str, int], ...]
+    apple_pixels: int
+    valid_pixels: int
+    ignored_pixels: int
+    frame_indices: tuple[int, ...]
+
+    @property
+    def category_ratios(self) -> tuple[tuple[str, float], ...]:
+        if self.valid_pixels <= 0:
+            return tuple((name, 0.0) for name, _ in self.category_counts)
+        return tuple(
+            (name, count / self.valid_pixels)
+            for name, count in self.category_counts
+        )
+
+
+def measure_color_distribution(
+    frames: tuple[InspectionFrame, ...],
+    frame_indices: tuple[int, ...] | list[int],
+) -> ColorDistribution:
+    """Aggregate colour only from ``apple_mask AND NOT ignore_mask`` pixels."""
+
+    import cv2
+    import numpy as np
+
+    selected = set(int(index) for index in frame_indices)
+    ordered = tuple(frame for frame in frames if frame.frame_index in selected)
+    hue_parts = []
+    apple_pixels = 0
+    valid_pixels = 0
+    ignored_pixels = 0
+    used_indices = []
+
+    for frame in ordered:
+        rgb = decode_rgb(frame)
+        apple_mask = decode_apple_mask(frame)
+        ignore_mask = decode_ignore_mask(frame)
+        if rgb.shape[:2] != apple_mask.shape or apple_mask.shape != ignore_mask.shape:
+            raise InspectionContractError(
+                "RGB, apple_mask and ignore_mask dimensions must match for colour graph"
+            )
+        valid = apple_mask & ~ignore_mask
+        apple_pixels += int(apple_mask.sum())
+        ignored_pixels += int((apple_mask & ignore_mask).sum())
+        frame_valid_pixels = int(valid.sum())
+        if frame_valid_pixels <= 0:
+            continue
+        hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+        hue_parts.append(hsv[..., 0][valid])
+        valid_pixels += frame_valid_pixels
+        used_indices.append(frame.frame_index)
+
+    if not hue_parts:
+        raise InspectionContractError(
+            "no measurable apple pixels remain after applying ignore_mask"
+        )
+
+    hues = np.concatenate(hue_parts).astype(np.uint8, copy=False)
+    bin_edges = np.arange(0, 181, HUE_BIN_WIDTH, dtype=np.int16)
+    histogram, _ = np.histogram(hues, bins=bin_edges)
+    counts = (
+        ("RED", int(((hues <= 10) | (hues >= 170)).sum())),
+        ("ORANGE", int(((hues >= 11) & (hues <= 25)).sum())),
+        ("YELLOW", int(((hues >= 26) & (hues <= 35)).sum())),
+        ("GREEN", int(((hues >= 36) & (hues <= 85)).sum())),
+        ("OTHER", int(((hues >= 86) & (hues <= 169)).sum())),
+    )
+    return ColorDistribution(
+        hue_histogram=tuple(int(value) for value in histogram),
+        category_counts=counts,
+        apple_pixels=apple_pixels,
+        valid_pixels=valid_pixels,
+        ignored_pixels=ignored_pixels,
+        frame_indices=tuple(used_indices),
+    )
+
+
+def _enum_text(value: Any, fallback: str = "NONE") -> str:
+    if value is None:
+        return fallback
+    return str(getattr(value, "value", value))
+
+
+def render_color_distribution_jpeg(
+    distribution: ColorDistribution,
+    event: ProcessingEvent[Any],
+    result: CoreQualityResult,
+) -> bytes:
+    """Render a compact graph without matplotlib or per-frame publication."""
+
+    import cv2
+    import numpy as np
+
+    width = COLOR_DISTRIBUTION_WIDTH
+    height = COLOR_DISTRIBUTION_HEIGHT
+    canvas = np.full((height, width, 3), 247, dtype=np.uint8)
+    ink = (35, 35, 35)
+    muted = (105, 105, 105)
+    cv2.putText(
+        canvas,
+        "Apple colour distribution",
+        (24, 32),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.78,
+        ink,
+        2,
+        cv2.LINE_AA,
+    )
+    confidence = "N/A" if result.confidence is None else f"{result.confidence:.3f}"
+    ratio = (
+        "N/A"
+        if result.measurements is None or result.measurements.color_ratio is None
+        else f"{result.measurements.color_ratio:.1%}"
+    )
+    cv2.putText(
+        canvas,
+        f"inspection={event.inspection_id}  apple={event.apple_id}",
+        (24, 58),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.48,
+        muted,
+        1,
+        cv2.LINE_AA,
+    )
+    cv2.putText(
+        canvas,
+        f"status={_enum_text(result.status)}  grade={_enum_text(result.grade)}  "
+        f"target-red={ratio}  confidence={confidence}  frames={list(result.frames_used)}",
+        (24, 82),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.47,
+        ink,
+        1,
+        cv2.LINE_AA,
+    )
+
+    plot_x, plot_y, plot_w, plot_h = 48, 116, 704, 150
+    cv2.putText(
+        canvas,
+        "Hue histogram (OpenCV H: 0-179)",
+        (plot_x, plot_y - 10),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.48,
+        ink,
+        1,
+        cv2.LINE_AA,
+    )
+    cv2.rectangle(canvas, (plot_x, plot_y), (plot_x + plot_w, plot_y + plot_h), muted, 1)
+    maximum = max(distribution.hue_histogram, default=0)
+    bar_width = plot_w / max(1, len(distribution.hue_histogram))
+    for index, count in enumerate(distribution.hue_histogram):
+        bar_height = 0 if maximum <= 0 else int((count / maximum) * (plot_h - 4))
+        hue = min(179, index * HUE_BIN_WIDTH + HUE_BIN_WIDTH // 2)
+        hsv_colour = np.uint8([[[hue, 230, 230]]])
+        bgr = tuple(int(value) for value in cv2.cvtColor(hsv_colour, cv2.COLOR_HSV2BGR)[0, 0])
+        x1 = plot_x + int(index * bar_width) + 1
+        x2 = plot_x + max(int((index + 1) * bar_width), int(index * bar_width) + 1)
+        cv2.rectangle(
+            canvas,
+            (x1, plot_y + plot_h - bar_height - 1),
+            (x2, plot_y + plot_h - 1),
+            bgr,
+            -1,
+        )
+    for hue_tick in (0, 30, 60, 90, 120, 150, 179):
+        tick_x = plot_x + int((hue_tick / 179.0) * plot_w)
+        cv2.putText(
+            canvas,
+            str(hue_tick),
+            (tick_x - 8, plot_y + plot_h + 18),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.36,
+            muted,
+            1,
+            cv2.LINE_AA,
+        )
+
+    category_colours = {
+        "RED": (40, 40, 220),
+        "ORANGE": (30, 135, 245),
+        "YELLOW": (25, 210, 235),
+        "GREEN": (65, 175, 65),
+        "OTHER": (155, 105, 120),
+    }
+    bar_x, bar_width_px = 132, 570
+    for row, (name, ratio_value) in enumerate(distribution.category_ratios):
+        y = 316 + row * 30
+        cv2.putText(
+            canvas,
+            name,
+            (48, y + 15),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.42,
+            ink,
+            1,
+            cv2.LINE_AA,
+        )
+        cv2.rectangle(canvas, (bar_x, y), (bar_x + bar_width_px, y + 17), (220, 220, 220), -1)
+        filled = int(bar_width_px * ratio_value)
+        if filled > 0:
+            cv2.rectangle(
+                canvas,
+                (bar_x, y),
+                (bar_x + filled, y + 17),
+                category_colours[name],
+                -1,
+            )
+        cv2.putText(
+            canvas,
+            f"{ratio_value:6.1%}",
+            (710, y + 15),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            ink,
+            1,
+            cv2.LINE_AA,
+        )
+
+    cv2.putText(
+        canvas,
+        f"measurable={distribution.valid_pixels:,} px   "
+        f"ignored={distribution.ignored_pixels:,} px   "
+        f"apple-mask total={distribution.apple_pixels:,} px",
+        (48, 493),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.45,
+        ink,
+        1,
+        cv2.LINE_AA,
+    )
+    encoded, payload = cv2.imencode(
+        ".jpg",
+        canvas,
+        (cv2.IMWRITE_JPEG_QUALITY, COLOR_DISTRIBUTION_JPEG_QUALITY),
+    )
+    if not encoded:
+        raise RuntimeError("failed to encode colour-distribution JPEG")
+    return bytes(payload)
 
 
 class DiameterOnlyPredictor:
@@ -342,6 +608,17 @@ def make_result_qos() -> Any:
     return _reliable_qos(RESULT_QOS_DEPTH)
 
 
+def make_color_distribution_qos() -> Any:
+    if QoSProfile is None:
+        raise RuntimeError("rclpy is required to construct QoS profiles")
+    return QoSProfile(
+        reliability=ReliabilityPolicy.BEST_EFFORT,
+        durability=DurabilityPolicy.VOLATILE,
+        history=HistoryPolicy.KEEP_LAST,
+        depth=COLOR_DISTRIBUTION_QOS_DEPTH,
+    )
+
+
 class QualityInspectionNode(Node):  # type: ignore[misc]
     def __init__(self, predictor: FramePredictor[Any] | None = None) -> None:
         if _ROS_IMPORT_ERROR is not None:
@@ -360,6 +637,8 @@ class QualityInspectionNode(Node):  # type: ignore[misc]
             ("model_backend", "auto"),
             ("confidence_threshold", DEFAULT_CONFIDENCE_THRESHOLD),
             ("stale_session_timeout_sec", DEFAULT_STALE_SESSION_TIMEOUT_SEC),
+            ("min_valid_views", DEFAULT_MIN_VALID_VIEWS),
+            ("grade_by", DEFAULT_GRADE_BY),
         ):
             if not self.has_parameter(name):
                 self.declare_parameter(name, default)
@@ -368,12 +647,20 @@ class QualityInspectionNode(Node):  # type: ignore[misc]
         if configured_predictor is None:
             model_path = str(self.get_parameter("model_path").value)
             backend = str(self.get_parameter("model_backend").value)
-            configured_predictor = (
-                load_measurement_predictor(model_path, backend=backend)
-                if model_path
-                else DiameterOnlyPredictor()
-            )
+            # opencv_color 는 학습 모델 파일이 없으므로 model_path 없이도 고른다.
+            if backend == "opencv_color" or model_path:
+                configured_predictor = load_measurement_predictor(
+                    model_path, backend=backend
+                )
+            else:
+                configured_predictor = DiameterOnlyPredictor()
         self._confidence_threshold = float(self.get_parameter("confidence_threshold").value)
+        self._min_valid_views = int(self.get_parameter("min_valid_views").value)
+        if self._min_valid_views < 1:
+            raise ValueError("min_valid_views must be positive")
+        self._grade_by = str(self.get_parameter("grade_by").value)
+        if self._grade_by not in ("size", "color"):
+            raise ValueError("grade_by must be 'size' or 'color'")
         self._stale_timeout_ns = int(
             float(self.get_parameter("stale_session_timeout_sec").value) * 1_000_000_000
         )
@@ -382,6 +669,11 @@ class QualityInspectionNode(Node):  # type: ignore[misc]
             QualityResultMessage,
             OUTPUT_TOPIC,
             make_result_qos(),
+        )
+        self._color_distribution_publisher = self.create_publisher(
+            CompressedImage,
+            COLOR_DISTRIBUTION_TOPIC,
+            make_color_distribution_qos(),
         )
         self._inspection_subscription = self.create_subscription(
             InspectionImage,
@@ -409,6 +701,14 @@ class QualityInspectionNode(Node):  # type: ignore[misc]
         self.get_logger().info(
             f"GPU PC 2 quality node ready: {INPUT_TOPIC} + {COMPLETION_TOPIC} "
             f"-> {OUTPUT_TOPIC}; use_sim_time=true"
+        )
+        self.get_logger().info(
+            f"grading by {self._grade_by}, "
+            f"min_valid_views={self._min_valid_views}, "
+            f"predictor={type(configured_predictor).__name__}"
+        )
+        self.get_logger().info(
+            f"colour graph on completion: {COLOR_DISTRIBUTION_TOPIC}"
         )
 
     def _simulation_time_ns(self) -> int:
@@ -563,9 +863,50 @@ class QualityInspectionNode(Node):  # type: ignore[misc]
             measurements,
             successful_indices,
             confidence_threshold=self._confidence_threshold,
+            min_valid_views=self._min_valid_views,
+            grade_by=self._grade_by,
         )
         self._publish_result(event, result)
+        if self._grade_by == "color" and successful_indices:
+            self._publish_color_distribution(
+                event,
+                result,
+                session,
+                successful_indices,
+            )
         self._coordinator.finalize(event.inspection_id)
+
+    def _publish_color_distribution(
+        self,
+        event: ProcessingEvent[Any],
+        result: CoreQualityResult,
+        session: InspectionSession,
+        successful_indices: list[int],
+    ) -> None:
+        try:
+            distribution = measure_color_distribution(
+                session.ordered_frames,
+                successful_indices,
+            )
+            payload = render_color_distribution_jpeg(distribution, event, result)
+            message = CompressedImage()
+            message.header.stamp = self.get_clock().now().to_msg()
+            message.header.frame_id = "quality_grading"
+            message.format = "bgr8; jpeg compressed bgr8"
+            message.data = payload
+            self._color_distribution_publisher.publish(message)
+            self.get_logger().info(
+                f"Published colour graph for {event.inspection_id}: "
+                f"frames={list(distribution.frame_indices)}, "
+                f"valid={distribution.valid_pixels}, "
+                f"ignored={distribution.ignored_pixels}"
+            )
+        except Exception as exc:
+            # 시각화 실패가 품질 판정과 /quality/results 발행을 막아서는 안 된다.
+            self.get_logger().warning(
+                f"COLOR_GRAPH_FAILED inspection_id={event.inspection_id} "
+                f"error_type={type(exc).__name__} error={exc}"
+            )
 
     def _publish_timeout(self, event: ProcessingEvent[Any]) -> None:
         result = CoreQualityResult(

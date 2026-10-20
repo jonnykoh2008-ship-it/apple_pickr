@@ -1,109 +1,65 @@
 # 컨베이어
 
-컨베이어의 물리 이송과 checkpoint 및 컨베이어 카메라 raw 스트림 발행은 GPU PC 1의
-Isaac Sim이 소유한다. GPU PC 2는 해당 raw 스트림을 구독해 ROI/tracker, 후보 프레임
-수집과 대표 프레임 선택을 수행한다. 개인 PC 1의 영상 기반 수확 인식과 GPU PC 1의
-Lula RRT 경로 계획은 컨베이어 품질 검사와 분리되며, RViz는 컨베이어와 수확 상태를
-원격 표시하는 용도로만 사용한다.
+컨베이어 물리, checkpoint와 raw 카메라 스트림은 GPU PC 1의 Isaac Sim이 소유한다.
+GPU PC 2는 raw 스트림을 구독해 사과를 추적하고 검사 프레임을 만든다. 개인 PC 2는
+checkpoint와 품질 결과를 모니터링한다.
 
 ## 공통 사양
 
-- MVP 모듈 수: 3개
-- 모듈 길이: 각 0.5m
-- MVP 총 길이: 1.5m
-- 2차 개발에서는 푸셔 전용 컨베이어 4를 추가해 총 4개, 2.0m로 확장한다.
-- 모듈 사이 간격 목표: 5mm 이하
-- 모듈 상면 높이 차 목표: 2mm 이하
-- 모듈 중심선 오차 목표: 5mm 이하
+- 모듈 수: 2개
+- 전체 길이: 3.3m
+- 1번 모듈: 입력·이송
+- 2번 모듈: 롤러 방식 검사 구간
 - 유효 폭: 0.25~0.30m
 - 측면 가이드 안쪽 폭: 0.14~0.16m
-- 측면 가이드 높이: 40~60mm
 - 롤러/벨트 상면 높이: 40~60mm
-- 초기 명령 속도: 0.30m/s
-- 검증 범위: 0.10~0.30m/s
-- 최종 속도는 회전 및 촬영 시험 후 확정한다.
-- encoder 및 belt-state는 사용하지 않는다.
-- 세 모듈은 동일한 0.30m/s로 운전하며 한 실행 중에는 속도를 변경하지 않는다.
+- 기본 속도: 0.10m/s
+- 검증 속도 범위: 0.10~0.40m/s
+- 모든 사과는 rigid body와 collider를 갖는다.
 
-모든 사과는 rigid body와 collider를 가지며 컨베이어 및 다른 사과와 충돌한다.
+## 컨베이어 1: 입력·이송
 
-## 컨베이어 1: 투입·안정화
+- 입력·이송용 모듈
+- 로봇은 시작점에서 0.15~0.20m 지점에 사과를 투입한다.
+- 벨트 상면에서 30mm 이하 높이로 배치한다.
+- 중심선 기준 좌우 배치 오차 목표는 ±30mm다.
 
-- 형식: 평벨트
-- 길이: 0.5m
-- 로봇 투입 위치: 시작점에서 0.15~0.20m
-- 투입 높이: 벨트 상면 위 30mm 이하
-- 목표 투입 오차: 중심선 기준 좌우 ±30mm
-- 역할: 낙하 충격 완화, 흔들림 감소, 검사 구간 진입 자세 안정화
+## 컨베이어 2: 롤러 검사
 
-## 컨베이어 2: 회전·촬영
+- 롤러 방식 모듈
+- 전체 3.3m 중 2번 모듈을 검사 구간으로 사용한다.
+- 롤러의 surface velocity와 마찰로 사과를 이송·회전한다.
+- 모듈 상부에 D455 카메라 1대를 설치한다.
+- 상부 카메라의 RGB-D 스트림만 품질 검사에 사용한다.
+- GPU PC 1은 `/conveyor_camera/{color,image_raw,depth,image_raw,camera_info}`와
+  `/tf_static`을 발행한다.
+- GPU PC 2의 adapter는 `roi_mode=full_frame`과 3D tracker로 검사 세션을
+  관리하고 `/quality/inspection_images`를 발행한다.
+- 검사 세션은 동일 `apple_id`를 유지하고 ROI 이탈 시
+  `/quality/inspection_completed`를 발행한다.
+- 화면 경계에 닿은 사과는 측정에서 제외한다.
 
-- 형식: 롤러형
-- 길이: 0.5m
-- 실제 이송·촬영 유효 구간: 0.35~0.40m
-- 진입·이탈 trigger collider 배치
-- RGB 카메라와 영상 토픽은 상시 활성화
-- 현재 크기 단일 파일럿은 고정 카메라, 한 화면 한 사과 조건에서 OpenCV contour와
-  bounding box 검출을 먼저 검증한다.
-- 파일럿은 저장 RGB 한 장에서 픽셀 직경, 보정된 mm 직경과 크기 등급을
-  오버레이해 사람이 직접 확인한다.
-- 파일럿 합격 후 GPU PC 2가 bounding box 검출과 `apple_id` tracker를 상시
-  수행하고 검사 ROI 진입 시 프레임 수집을 시작한다.
-- GPU PC 2가 ROI 이탈 시 최종 크기 등급 확정 절차를 시작한다.
-- 카메라 ROI는 품질검사 프레임 수집의 시작과 종료를 판단한다.
-- trigger collider는 컨베이어 진입·이탈 시각, 점유시간 및 공정 상태 전환을 측정하며 프레임 선택에는 직접 사용하지 않는다.
-- ID 유실·변경 시 `RECHECK`
-- 크기 단일 ROS 통합에서는 흔들림·blur를 제외한 유효 대표 프레임을 최대 3장
-  선택하고 직경 중앙값을 사용한다.
-- 대표 프레임은 GPU PC 2가 사과 mask가 영상 경계에 닿지 않고, mask의 90% 이상이
-  검사 ROI 안에 있으며, 유효 depth 픽셀 비율이 80% 이상이고, Laplacian variance가
-  100 이상인 프레임 중에서 선택한다.
-- 90%, 80%, 100은 초기 시험값이며 시험 결과에 따라 조정한다.
-- 유효한 직경 프레임이 없으면 GPU PC 2가 `UNCLASSIFIED`로 처리한다.
-- 검사 결과에는 실제 사용한 `frame_index`를 기록한다.
-- 현재 크기 단일 합격 기준은 경계값 아래·위 합성 사과를 정확히 검출하고
-  contour, bounding box, 직경과 등급이 오버레이에서 일치하는 것이다.
-- 다중 시점 4~6장, 회전 차이 45°와 가시 표면 비율은 착색·손상 확장 시 다시
-  검증하며 현재 크기 단일 MVP 필수 조건에는 포함하지 않는다.
-- 롤러 mesh는 우선 시각적으로 회전
-- 이송은 collision surface의 surface velocity 사용
-- 회전은 마찰계수와 angular damping으로 유도
-- 사과 rigid body의 angular velocity를 simulation time으로 적분해 실제 회전량을 추정한다.
-- 회전 부족 시에만 검사 롤러에 revolute joint 적용
-- 0.30m/s 기준 목표 검사 시간은 약 1.3초다.
+## 검사 완료 및 라인 끝 배출
 
-## 컨베이어 3: 결과 확인·배출
+- `apple_id`와 `/quality/results`의 연결 상태를 확인한다.
+- 정상 결과와 예외 결과 모두 라인 끝으로 이동시킨다.
+- `CheckpointEvent`의 `ENTER`·`EXIT`로 공정 순서와 점유 시간을 기록한다.
 
-- 형식: 평벨트
-- 사과 이동시간을 simulation time으로 측정
-- `apple_id`와 품질 결과의 연결 상태를 확인한다.
-- 정상 판정 및 `TIMEOUT`, `LATE_RESULT`, `RECHECK`, `UNCLASSIFIED`, 놓친 사과는 라인 끝으로 배출한다.
-- MVP에서는 가상 푸셔, 실제 푸셔, prismatic joint 및 상자 분류를 모두 구현하지 않는다.
-- 컨베이어 2·3 진입은 trigger collider로 감지한다.
+## 검사 프레임과 품질 계산
 
-## 컨베이어 4: 푸셔 분류 구간(2차 개발)
+- RGB, depth, CameraInfo timestamp는 동일해야 한다.
+- adapter 기본 카메라 namespace는 `/conveyor_camera`다.
+- adapter는 추적 위치의 연속성으로 같은 사과의 세션을 재사용한다.
+- 결과 deadline은 ROI 이탈 후 0.5 simulation-second다.
+- deadline 전 결과는 `VALID` 또는 품질 상태로 확정하고, 이후 결과는
+  `LATE_RESULT`로 기록한다.
+- 착색률은 모든 유효 픽셀의 목표 착색 픽셀 수를 유효 사과 표면 픽셀 수로
+  나눈 값이다.
 
-- 2차 개발에서 0.5m 평벨트 모듈을 추가한다.
-- 푸셔 3개를 모두 컨베이어 4에 배치한다.
-- 상세 사양은 `docs/phases/phase_2_pusher.md`에서 관리한다.
+## 시간 및 정지
 
-## 시간
-
-- ROS wall time이 아닌 Isaac Sim simulation time을 사용한다.
-- 일시정지 시 모든 이송 timer도 정지한다.
-- 실제 이동시간을 시험으로 측정하고 이론값과 비교한다.
-- 품질 결과 deadline은 카메라 ROI 이탈 후 simulation time 0.5초다. deadline까지 결과가 없으면 `TIMEOUT`, 이후 도착하면 `LATE_RESULT`로 기록한다.
-
-```text
-최소 투입 시간 간격 = max(
-  로봇 수확시간 상위 95%,
-  컨베이어 2 점유시간,
-  분류 결과 산출시간 + 안전 여유시간
-)
-
-최소 중심 간격 = 컨베이어 속도 × 최소 투입 시간 간격
-```
-
-## 미확정 사항
-
-최종 이송 속도는 사과의 회전량과 대표 프레임 품질을 함께 시험한 뒤 확정한다. surface velocity 환경에서 사용할 마찰계수와 angular damping, 사과 간 충돌·정체·추월 처리 정책, trigger 크기와 debounce 시간도 구현 시험 결과를 근거로 결정한다. 최소 투입 간격 계산에 필요한 수확시간 P95 산출 방법과 안전 여유시간은 실측 데이터가 확보될 때까지 TBD로 둔다.
+- 이송 timer와 품질 deadline은 `/clock`을 사용한다.
+- Timeline Pause에서는 timer와 deadline이 정지한다.
+- Stop/Reset 시 GPU PC 1은 컨베이어 실행 context와 사과 대기열을 초기화하고
+  새 `SimulationState.reset_id`를 발행한다.
+- 통신 장애가 감지되면 stale target과 stale 품질 결과를 재사용하지 않는다.

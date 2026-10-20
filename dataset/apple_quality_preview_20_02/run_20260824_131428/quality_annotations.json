@@ -1,0 +1,142 @@
+{
+  "rgb_0000.png": {
+    "target_color_mask": "masks/target_color_mask_0000.png",
+    "damage_mask": "masks/damage_mask_0000.png",
+    "ignore_mask": "masks/ignore_mask_0000.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0000.png",
+    "apple_mask": "masks/apple_mask_0000.png"
+  },
+  "rgb_0001.png": {
+    "target_color_mask": "masks/target_color_mask_0001.png",
+    "damage_mask": "masks/damage_mask_0001.png",
+    "ignore_mask": "masks/ignore_mask_0001.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0001.png",
+    "apple_mask": "masks/apple_mask_0001.png"
+  },
+  "rgb_0002.png": {
+    "target_color_mask": "masks/target_color_mask_0002.png",
+    "damage_mask": "masks/damage_mask_0002.png",
+    "ignore_mask": "masks/ignore_mask_0002.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0002.png",
+    "apple_mask": "masks/apple_mask_0002.png"
+  },
+  "rgb_0003.png": {
+    "target_color_mask": "masks/target_color_mask_0003.png",
+    "damage_mask": "masks/damage_mask_0003.png",
+    "ignore_mask": "masks/ignore_mask_0003.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0003.png",
+    "apple_mask": "masks/apple_mask_0003.png"
+  },
+  "rgb_0004.png": {
+    "target_color_mask": "masks/target_color_mask_0004.png",
+    "damage_mask": "masks/damage_mask_0004.png",
+    "ignore_mask": "masks/ignore_mask_0004.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0004.png",
+    "apple_mask": "masks/apple_mask_0004.png"
+  },
+  "rgb_0005.png": {
+    "target_color_mask": "masks/target_color_mask_0005.png",
+    "damage_mask": "masks/damage_mask_0005.png",
+    "ignore_mask": "masks/ignore_mask_0005.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0005.png",
+    "apple_mask": "masks/apple_mask_0005.png"
+  },
+  "rgb_0006.png": {
+    "target_color_mask": "masks/target_color_mask_0006.png",
+    "damage_mask": "masks/damage_mask_0006.png",
+    "ignore_mask": "masks/ignore_mask_0006.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0006.png",
+    "apple_mask": "masks/apple_mask_0006.png"
+  },
+  "rgb_0007.png": {
+    "target_color_mask": "masks/target_color_mask_0007.png",
+    "damage_mask": "masks/damage_mask_0007.png",
+    "ignore_mask": "masks/ignore_mask_0007.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0007.png",
+    "apple_mask": "masks/apple_mask_0007.png"
+  },
+  "rgb_0008.png": {
+    "target_color_mask": "masks/target_color_mask_0008.png",
+    "damage_mask": "masks/damage_mask_0008.png",
+    "ignore_mask": "masks/ignore_mask_0008.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0008.png",
+    "apple_mask": "masks/apple_mask_0008.png"
+  },
+  "rgb_0009.png": {
+    "target_color_mask": "masks/target_color_mask_0009.png",
+    "damage_mask": "masks/damage_mask_0009.png",
+    "ignore_mask": "masks/ignore_mask_0009.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0009.png",
+    "apple_mask": "masks/apple_mask_0009.png"
+  },
+  "rgb_0010.png": {
+    "target_color_mask": "masks/target_color_mask_0010.png",
+    "damage_mask": "masks/damage_mask_0010.png",
+    "ignore_mask": "masks/ignore_mask_0010.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0010.png",
+    "apple_mask": "masks/apple_mask_0010.png"
+  },
+  "rgb_0011.png": {
+    "target_color_mask": "masks/target_color_mask_0011.png",
+    "damage_mask": "masks/damage_mask_0011.png",
+    "ignore_mask": "masks/ignore_mask_0011.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0011.png",
+    "apple_mask": "masks/apple_mask_0011.png"
+  },
+  "rgb_0012.png": {
+    "target_color_mask": "masks/target_color_mask_0012.png",
+    "damage_mask": "masks/damage_mask_0012.png",
+    "ignore_mask": "masks/ignore_mask_0012.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0012.png",
+    "apple_mask": "masks/apple_mask_0012.png"
+  },
+  "rgb_0013.png": {
+    "target_color_mask": "masks/target_color_mask_0013.png",
+    "damage_mask": "masks/damage_mask_0013.png",
+    "ignore_mask": "masks/ignore_mask_0013.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0013.png",
+    "apple_mask": "masks/apple_mask_0013.png"
+  },
+  "rgb_0014.png": {
+    "target_color_mask": "masks/target_color_mask_0014.png",
+    "damage_mask": "masks/damage_mask_0014.png",
+    "ignore_mask": "masks/ignore_mask_0014.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0014.png",
+    "apple_mask": "masks/apple_mask_0014.png"
+  },
+  "rgb_0015.png": {
+    "target_color_mask": "masks/target_color_mask_0015.png",
+    "damage_mask": "masks/damage_mask_0015.png",
+    "ignore_mask": "masks/ignore_mask_0015.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0015.png",
+    "apple_mask": "masks/apple_mask_0015.png"
+  },
+  "rgb_0016.png": {
+    "target_color_mask": "masks/target_color_mask_0016.png",
+    "damage_mask": "masks/damage_mask_0016.png",
+    "ignore_mask": "masks/ignore_mask_0016.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0016.png",
+    "apple_mask": "masks/apple_mask_0016.png"
+  },
+  "rgb_0017.png": {
+    "target_color_mask": "masks/target_color_mask_0017.png",
+    "damage_mask": "masks/damage_mask_0017.png",
+    "ignore_mask": "masks/ignore_mask_0017.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0017.png",
+    "apple_mask": "masks/apple_mask_0017.png"
+  },
+  "rgb_0018.png": {
+    "target_color_mask": "masks/target_color_mask_0018.png",
+    "damage_mask": "masks/damage_mask_0018.png",
+    "ignore_mask": "masks/ignore_mask_0018.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0018.png",
+    "apple_mask": "masks/apple_mask_0018.png"
+  },
+  "rgb_0019.png": {
+    "target_color_mask": "masks/target_color_mask_0019.png",
+    "damage_mask": "masks/damage_mask_0019.png",
+    "ignore_mask": "masks/ignore_mask_0019.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0019.png",
+    "apple_mask": "masks/apple_mask_0019.png"
+  }
+}

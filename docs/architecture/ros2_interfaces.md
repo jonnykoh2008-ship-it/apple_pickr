@@ -1,519 +1,83 @@
 # ROS 2 인터페이스
 
-이 문서는 노드 간 데이터 계약의 기준이다.
+이 문서는 네 PC가 공유하는 현재 ROS 2 데이터 계약이다.
 
 ## 공통 규칙
 
-- custom interface 패키지는 `appleproj_interfaces`를 사용한다.
-- 모든 header timestamp는 `/clock` 기준이다.
-- 모든 ROS 2 노드는 `use_sim_time:=true`를 사용한다.
-- `apple_id`와 `inspection_id`는 한 처리 주기 동안 변경하지 않는다.
-- 센서 스트림에는 Sensor Data QoS를 기본 후보로 사용한다.
-- 상태·결과 메시지는 신뢰성 우선 QoS를 사용한다. 정확한 QoS는 TBD다.
-- 로봇별 최상위 namespace는 `/<robot_id>`로 하고, 현재 값은
-  `/robot_01`, `/robot_02`로 확정한다.
-- target, perception status, motion action/status, joint state, camera 및
-  planning visualization은 해당 robot namespace 아래에 둔다.
-- `/clock`, `/simulation/state`, `/planning_scene`, `/quality/*` 및
-  `/conveyor/*`는 global/shared interface로 유지한다.
-- TF transport는 `/tf`와 `/tf_static` global topic을 사용하고, frame ID는
-  `robot_01/...`, `robot_02/...`처럼 robot prefix를 사용한다.
-- v2.0에서 영상의 송신·센서 권위자는 GPU PC 1이고, 영상 수신·사과 3D 좌표
-  계산·target 발행 주체는 개인 PC 1이다.
-- `/<robot_id>/harvest/target`은 개인 PC 1에서 GPU PC 1으로 전달하는 로봇별
-  수확 target 계약이며, `/<robot_id>/harvest/perception_status`는 target
-  생성 전후의 로봇별 인식 상태 계약이다.
-- v2.0에서 경로 계획·궤적 생성·로봇 실행의 권위자는 GPU PC 1이다. 개인 PC 1은
-  최종 waypoint를 발행하지 않는다.
+- 패키지: `appleproj_interfaces`
+- 시간: Isaac Sim `/clock`, 모든 노드 `use_sim_time=true`
+- DDS: Fast DDS, `ROS_DOMAIN_ID=101`
+- 로봇 namespace: `/robot_01`, `/robot_02`
+- `/clock`, `/simulation/state`, `/planning_scene`, `/quality/*`, `/conveyor/*`는
+  global topic이다.
+- TF transport는 `/tf`, `/tf_static`이며 frame ID에는 robot prefix를 사용한다.
 
 ## 인터페이스 목록
 
-| 종류 | 이름 | 타입 | 송신/서버 | 수신/클라이언트 |
+| 종류 | 이름 | 타입 | 송신 | 수신 |
 |---|---|---|---|---|
-| Topic | `/base_camera/color/image_raw` | `sensor_msgs/msg/Image` (raw) | GPU PC 1 | 개인 PC 1 |
-| Topic | `/base_camera/depth/image_raw` | `sensor_msgs/msg/Image` (raw) | GPU PC 1 | 개인 PC 1 |
-| Topic | `/base_camera/camera_info` | `sensor_msgs/msg/CameraInfo` | GPU PC 1 | 개인 PC 1 |
-| Topic | `/harvest/target` | `appleproj_interfaces/msg/HarvestTarget` | 개인 PC 1 | GPU PC 1 |
-| Topic | `/harvest/perception_status` | `appleproj_interfaces/msg/HarvestPerceptionStatus` | 개인 PC 1 | GPU PC 1·모니터링 |
-| Topic | `/simulation/state` | `appleproj_interfaces/msg/SimulationState` | GPU PC 1 | 개인 PC 1 |
+| Topic | `/<robot_id>/base_camera/color/image_raw` | `sensor_msgs/msg/Image` | GPU PC 1 | 개인 PC 1 |
+| Topic | `/<robot_id>/base_camera/depth/image_raw` | `sensor_msgs/msg/Image` | GPU PC 1 | 개인 PC 1 |
+| Topic | `/<robot_id>/base_camera/camera_info` | `sensor_msgs/msg/CameraInfo` | GPU PC 1 | 개인 PC 1 |
+| Topic | `/<robot_id>/harvest/target` | `appleproj_interfaces/msg/HarvestTarget` | 개인 PC 1 | GPU PC 1 |
+| Topic | `/<robot_id>/harvest/perception_status` | `appleproj_interfaces/msg/HarvestPerceptionStatus` | 개인 PC 1 | GPU PC 1 |
+| Action | `/<robot_id>/harvest/robot_motion` | `appleproj_interfaces/action/RobotMotion` | GPU PC 1 내부 | GPU PC 1 내부 |
+| Topic | `/<robot_id>/harvest/motion_status` | `appleproj_interfaces/msg/MotionStatus` | GPU PC 1 | 모니터 |
+| Topic | `/simulation/state` | `appleproj_interfaces/msg/SimulationState` | GPU PC 1 | 전체 |
 | Topic | `/planning_scene` | `appleproj_interfaces/msg/PlanningScene` | GPU PC 1 | 개인 PC 1 |
-| Service | `/planning_scene/get_snapshot` | `appleproj_interfaces/srv/GetPlanningScene` | GPU PC 1 | 개인 PC 1 (debug/RViz) |
-| Action | `/harvest/robot_motion` | `appleproj_interfaces/action/RobotMotion` | GPU PC 1 | GPU PC 1 내부 supervisor |
-| Topic | `/harvest/motion_status` | `appleproj_interfaces/msg/MotionStatus` | GPU PC 1 | 개인 PC 1·개인 PC 2 |
-| Topic | `/harvest/planning_markers` | `visualization_msgs/msg/MarkerArray` | GPU PC 1 | 개인 PC 1 RViz |
-| Topic | `/harvest/planned_path` | `nav_msgs/msg/Path` | GPU PC 1 | 개인 PC 1 RViz |
-| Topic | `/harvest/planned_joint_trajectory` | `trajectory_msgs/msg/JointTrajectory` | GPU PC 1 | 개인 PC 1 RViz/debug tool |
-| Topic | 컨베이어 raw RGB/depth/CameraInfo 토픽 (`TBD`) | `sensor_msgs/msg/Image`, `sensor_msgs/msg/CameraInfo` | GPU PC 1 | GPU PC 2 |
+| Service | `/planning_scene/get_snapshot` | `appleproj_interfaces/srv/GetPlanningScene` | GPU PC 1 | 디버그 |
+| Service | `/conveyor/place_command` | `appleproj_interfaces/srv/PlaceCommand` | GPU PC 1 | GPU PC 1 내부 |
+| Topic | `/conveyor_camera/color/image_raw` | `sensor_msgs/msg/Image` | GPU PC 1 | GPU PC 2 |
+| Topic | `/conveyor_camera/depth/image_raw` | `sensor_msgs/msg/Image` | GPU PC 1 | GPU PC 2 |
+| Topic | `/conveyor_camera/camera_info` | `sensor_msgs/msg/CameraInfo` | GPU PC 1 | GPU PC 2 |
+| Topic | `/quality/inspection_images` | `appleproj_interfaces/msg/InspectionImage` | GPU PC 2 adapter | GPU PC 2 검사 노드 |
+| Topic | `/quality/inspection_completed` | `appleproj_interfaces/msg/InspectionCompleted` | GPU PC 2 adapter | GPU PC 2 검사 노드 |
 | Topic | `/quality/results` | `appleproj_interfaces/msg/QualityResult` | GPU PC 2 | 개인 PC 2 |
-| Service | `/quality/retry_inspection` | `appleproj_interfaces/srv/RetryInspection` | GPU PC 1 | 개인 PC 2 |
 | Topic | `/conveyor/checkpoint_events` | `appleproj_interfaces/msg/CheckpointEvent` | GPU PC 1 | 개인 PC 2 |
-| Service | `/conveyor/sort_command` | `appleproj_interfaces/srv/SortCommand` | GPU PC 1 | 개인 PC 2 |
-| Topic | `/conveyor/sort_status` | `appleproj_interfaces/msg/SortStatus` | GPU PC 1 | 개인 PC 2 |
+| Topic | `/clock` | `rosgraph_msgs/msg/Clock` | Isaac Sim | 전체 |
+| Topic | `/tf`, `/tf_static` | `tf2_msgs/msg/TFMessage` | GPU PC 1 | 개인 PC 1/RViz |
 
-Action과 Service 표에서 서버는 요청을 실행하는 쪽이고 클라이언트는 요청을 보내는 쪽이다.
+## QoS
 
-## USD 멀티로봇 센서·자산 매핑
+| 데이터 | Reliability | Durability | History |
+|---|---|---|---|
+| RGB/depth/CameraInfo | Reliable | Volatile | Keep Last 6 |
+| HarvestTarget/MotionStatus | Reliable | Volatile | Keep Last 10 |
+| QualityResult/CheckpointEvent | Reliable | Volatile | Keep Last 10 |
+| SimulationState/PlanningScene | Reliable | Transient Local | Keep Last 1 |
 
-GPU PC 1은 실행 시 `--robot-id`로 다음 USD 수확 프로파일을 선택한다.
+## HarvestTarget
 
-| robot ID | 로봇 Prim | 초기 관절 자세 (deg) | 담당 tree/사과 영역 | D455 Prim |
-|---|---|---|---|---|
-| `robot_01` | `/World/Xform_01/m0617_01` | `[0, 0, -90, 0, 90, 0]` | `/World/Xform` | `/World/base_rsd455_01` |
-| `robot_02` | `/World/Xform_02/m0617_02` | `[0, 0, 90, 0, -90, 0]` | `/World/Xform_03` | `/World/base_rsd455_02` |
-
-각 M0617은 `m0617_rail/root_joint`를 Articulation root로 사용하며, 본체의
-`FixedJoint`로 rail mount에 연결된다. 사과 fixed joint는 각
-`apple_branch_xx` 내부에서 `branchbody`와 `applebody`를 연결한다. 현재 표의
-`/base_camera/...` 센서 topic은 v2.0 호환 계약으로 유지한다. 두 카메라를
-동시에 운용하기 위한 robot별 topic/action/service namespace와 `HarvestTarget`
-내부의 최종 robot/tree 식별 필드는 아직 `TBD`다.
-
-## 공통 표준 인터페이스
-
-| 토픽 | 타입 | 의미 |
-|---|---|---|
-| `/clock` | `rosgraph_msgs/msg/Clock` | Isaac Sim simulation time |
-| `/joint_states` | `sensor_msgs/msg/JointState` | 로봇 관절 상태 |
-| `/tf` | `tf2_msgs/msg/TFMessage` | 동적 TF |
-| `/tf_static` | `tf2_msgs/msg/TFMessage` | 고정 TF |
-
-## 사과 목표
-
-```text
-토픽: /harvest/target
-타입: appleproj_interfaces/msg/HarvestTarget
-송신: 개인 PC 1
-수신: GPU PC 1
-QoS: Reliable, Volatile, Keep Last 10
-frame_id: world
-```
-
-동일 토픽에 여러 `target_id`가 연속 발행되므로 publisher와 subscriber 모두
-위 QoS를 사용한다.
-
-필드:
-
-- `header`: RGB-D 촬영 시각, `/clock` 기준, `frame_id=world`
-- `target_id`: 동일 `reset_id` 내 수확 대상 식별자
-- `reset_id`, `scene_version`: 개인 PC 1이 마지막으로 확인한 SimulationState 세대
-- `position`: world 좌표계 사과 중심
-- `source_point`: world 변환 전 카메라 좌표 검출점
-- `confidence`: 0.0~1.0 검출 신뢰도
-- `valid_depth_ratio`: 검출 영역 내 유효 depth 픽셀 비율
-- `tf_time_error_sec`: 영상 timestamp와 사용 TF timestamp의 절대 차이
-
-GPU PC 1은 다음 조건을 모두 확인한 뒤 target을 계획에 사용한다.
-
-- `SimulationState`가 `READY` 또는 `PLAYING`
-- `header.frame_id == "world"`
-- target timestamp가 stale하지 않음
-- 현재 `reset_id`, `scene_version`과 일치
-- confidence, valid depth ratio, TF 시간 오차가 각 threshold를 만족
-
-confidence·depth·TF 시간 threshold 값은 `TBD`다. 개인 PC 1은 orientation과
-pre-grasp pose를 발행하지 않으며, GPU PC 1이 현재 로봇 상태와 planning scene을
-기준으로 계산한다. 동일 `(reset_id, target_id)`에서는 최신 timestamp만 사용하고,
-Action 실행이 시작된 target의 후속 갱신은 새 Goal로 실행하지 않는다. 실패한 target은
-`/harvest/motion_status`로 거부 사유를 반환한다. `/harvest/target`에는 Transient
-Local을 사용하지 않는다.
-
-GPU PC 1은 아직 시작하지 않은 target을 ID별 대기열에 보관하고 robot base에서
-가까운 순서로 실행한다. 접촉 전 첫 실패는 일반 대기열 뒤의 재시도 대기열로
-이동하며 다른 target을 모두 처리한 뒤 1회만 재시도한다. 접촉 이후 실패는 다음
-Goal을 보내지 않고 안전 정지한다. 이 정책은 메시지 필드를 추가하지 않으며 모든
-lifecycle key는 `(reset_id, target_id)`를 사용한다.
-
-## HarvestPerceptionStatus
-
-```text
-토픽: /harvest/perception_status
-타입: appleproj_interfaces/msg/HarvestPerceptionStatus
-송신: 개인 PC 1
-수신: GPU PC 1·모니터링 노드
-QoS: Reliable, Volatile, Keep Last 10
-```
-
-`status` 값은 `OK`, `NO_DETECTION`, `DEPTH_INVALID`, `TF_UNAVAILABLE`,
-`STALE_FRAME`, `LOW_CONFIDENCE`, `RESET_MISMATCH`, `SIMULATION_NOT_READY`,
-`INPUT_NOT_SYNCHRONIZED`, `INTERNAL_ERROR` 중 하나다. target 생성 전 실패한 경우
-`target_id`는 빈 문자열이며, 계산할 수 없는 수치 필드는 NaN으로 채운다. `header`는
-검사 대상 RGB-D 프레임의 촬영 시각과 원본 카메라 frame을 사용한다.
-
-## SimulationState
-
-GPU PC 1이 `/clock`만으로 구별할 수 없는 Timeline 상태와 scene 세대를
-명시적으로 전달한다.
-
-```text
-토픽: /simulation/state
-타입: appleproj_interfaces/msg/SimulationState
-QoS: Reliable, Transient Local, Keep Last 1
-```
-
-필드:
-
-- `header`: `/clock` 기준 시각, `frame_id=world`
-- `state`: `STOPPED`, `INITIALIZING`, `READY`, `PLAYING`, `PAUSED`
-- `reset_id`: Timeline Stop 후 물리 재초기화마다 증가
-- `scene_version`: 새 obstacle snapshot마다 증가
-- `message`: 상태 전환 원인
-
-GPU PC 1은 `READY` 또는 `PLAYING`에서만 target을 계획·실행한다. `STOPPED` 또는
-`INITIALIZING`을 받으면 실행 Goal, RRT tree 및 trajectory를 폐기하고 개인 PC 1에
-새 target 발행을 중지하도록 알린다. `PAUSED`는 새 계획과 Goal 전송을 금지하되
-현재 실행 문맥은 재개 가능하도록 유지한다. 개인 PC 1은 `READY/PLAYING`이 아니면
-영상 검출을 계속할 수 있지만 target을 발행하지 않는다.
-
-## PlanningScene 및 ObstacleProxy
-
-```text
-토픽: /planning_scene
-타입: appleproj_interfaces/msg/PlanningScene
-QoS: Reliable, Transient Local, Keep Last 1
-```
-
-`PlanningScene` 필드:
-
-- `header`: snapshot 생성 simulation time, `frame_id=world`
-- `reset_id`, `scene_version`
-- `robot_base_pose`: 계획 시점 M0617 base pose
-- `robot_tcp_pose`: 계획 시작점의 물리 수확 TCP pose
-- `obstacles`: 전체 정적 나무 proxy 배열
-
-`ObstacleProxy` 필드:
-
-- `obstacle_id`
-- `shape`: `SHAPE_SPHERE`, `SHAPE_BOX`, `SHAPE_CAPSULE`
-- `obstacle_class`: `CLASS_TRUNK`, `CLASS_BRANCH`
-- `pose`: world 기준 proxy 중심과 자세
-- `dimensions`: box는 전체 XYZ 크기, sphere는 X에 반지름, capsule은 X에
-  반지름과 Y에 중심선 길이
-- `safety_margin`: 형상 크기와 별도로 적용할 최소 안전거리
-
-MVP snapshot은 몸통 box와 가지 sphere만 사용한다. 잎은 포함하지 않는다.
-snapshot에는 안전거리가 적용되기 전 형상 크기와 `safety_margin`을 넣는다. GPU
-PC 1의 RRT와 RMPflow가 동일한 safety margin을 적용한다. 개인 PC 1은 이를
-시각화할 뿐 실행용 obstacle을 재구성하지 않는다.
-
-개인 PC 1은 snapshot을 RViz 표시 또는 디버그 검증에 사용할 수 있다. snapshot을
-받지 못했거나 version 누락을 감지하면 `/planning_scene/get_snapshot`을 호출할 수
-있다. 성공 응답에는 최신 전체 `PlanningScene` 한 개가 포함된다. 경로 계획과
-안전거리 적용의 최종 권위자는 GPU PC 1이며, 개인 PC 1의 snapshot 처리는 실행
-admission에 영향을 주지 않는다.
-
-## InspectionImage
-
-현재 OpenCV 크기 단일 단계 A는 저장된 RGB 파일을 직접 처리하므로
-`InspectionImage`를 사용하지 않는다. 단계 A 합격 후 GPU PC 2가 컨베이어 raw
-스트림에서 후보 프레임을 수집하고 대표 프레임을 선택해 RGB-D 직경 측정에
-전달할 때 이 메시지를 사용한다. GPU PC 2 내부 토픽 이름/QoS와 별도 cross-PC
-발행 여부는 `TBD`다.
-
-필드:
-
-- `header`: `/clock` 기준 촬영 시각과 카메라 frame
-- `inspection_id`: 한 번의 품질검사 식별자
-- `apple_id`: 검사 대상 사과 식별자
-- `frame_index`: 해당 검사에서의 프레임 번호
-- `total_frames`: 해당 검사에서 전송할 전체 대표 프레임 수
-- `image`: 압축 RGB 이미지
-- `apple_mask`: lossless mono8 PNG 사과 mask
-- `ignore_mask`: lossless mono8 PNG 평가 제외 mask. 크기 단일 MVP에서는
-  직경 계산에 사용하지 않지만 후속 착색·손상 확장을 위해 유지한다.
-- `aligned_depth`: RGB에 정렬된 16UC1 millimetre compressedDepth PNG
-- `camera_info`: 해당 raw 프레임과 동일한 CameraInfo
-
-모든 구성요소의 timestamp와 frame_id는 동일해야 한다.
+`HarvestTarget.header.frame_id`는 `world`이며, position은 world 좌표의 사과 중심이다.
+`source_point`는 검출 카메라 좌표를 보존한다. `reset_id`와 `scene_version`은
+target 생성 당시의 시뮬레이션 세대다. GPU PC 1은 현재 세대와 timestamp, confidence,
+valid depth ratio, TF 오차를 검증한 뒤 계획한다.
 
 ## QualityResult
 
-GPU PC 2가 이미지별 크기 측정과 사과 단위 통합을 완료한 뒤 개인 PC 2로
-전달한다. 현재 MVP 등급은 `diameter_mm`만 사용한다.
+`grade`는 `color_ratio`로 계산한다.
 
-```text
-토픽: /quality/results
-타입: appleproj_interfaces/msg/QualityResult
-```
+- `HIGH`: `color_ratio >= 0.80`
+- `MEDIUM`: `0.60 <= color_ratio < 0.80`
+- `LOW`: `color_ratio < 0.60`
 
-필드:
-
-- `header`: `/clock` 기준 메시지 생성 시각
-- `inspection_id`
-- `apple_id`
-- `grade`: `HIGH`, `MEDIUM`, `LOW`
-- `confidence`
-- `color_ratio`
-- `diameter_mm`
-- `damage_area_cm2`
-- `frames_used`
-- `frame_indices`
-- `result_timestamp`
-- `status`: `VALID`, `RECHECK`, `UNCLASSIFIED`, `TIMEOUT`, `LATE_RESULT`, `ID_MISMATCH`, `INSUFFICIENT_VIEWS`
-
-현재 크기 단일 MVP에서 `color_ratio`와 `damage_area_cm2`는 NaN이다.
-화면 검증용 픽셀 직경은 `diameter_mm`에 넣지 않는다. 단계 A의 파일 기반
-OpenCV 도구는 ROS 결과를 발행하지 않고 오버레이 이미지와 CSV만 생성한다.
-
-카메라 ROI 이탈 후 simulation time 0.5초를 결과 deadline으로 사용한다. deadline까지 결과가 없으면 `TIMEOUT`, 이후 도착한 결과는 `LATE_RESULT`로 기록한다. 컨베이어 2의 tracker ID와 컨베이어 3 checkpoint의 rigid body prim이 일치하지 않으면 `ID_MISMATCH`로 처리한다.
+`diameter_mm`은 측정값이고 등급 계산에는 사용하지 않는다. `status`는
+`VALID`, `RECHECK`, `UNCLASSIFIED`, `TIMEOUT`, `LATE_RESULT`, `ID_MISMATCH`,
+`INSUFFICIENT_VIEWS` 중 하나다. 정상 결과의 `error_code`는 빈 문자열을 사용한다.
 
 ## CheckpointEvent
 
-GPU PC 1의 Isaac Sim 컨베이어 I/O 상태를 개인 PC 2로 전달한다.
+`event`는 `ENTER=1` 또는 `EXIT=2`다. `apple_id`와 `checkpoint_id`는 비어 있지
+않아야 하며 개인 PC 2는 사과별 ENTER/EXIT 순서를 기록한다.
 
-```text
-토픽: /conveyor/checkpoint_events
-타입: appleproj_interfaces/msg/CheckpointEvent
-```
+## SimulationState
 
-필드:
+`state`는 `STOPPED`, `INITIALIZING`, `READY`, `PLAYING`, `PAUSED` 중 하나다.
+GPU PC 1은 `READY` 또는 `PLAYING` 상태에서만 target을 실행한다. Stop/Reset 시
+`reset_id`를 증가시키고 이전 실행 context를 폐기한다.
 
-- `header`: `/clock` 기준 I/O 발생 시각과 checkpoint frame
-- `apple_id`: checkpoint를 통과한 사과
-- `checkpoint_id`: 컨베이어 I/O 지점 식별자
-- `event`: `ENTER` 또는 `EXIT`
+## PlanningScene
 
-카메라 ROI는 품질검사 프레임 수집의 시작과 종료를 판단한다. CheckpointEvent는 컨베이어 진입·이탈 시각, 점유시간 및 공정 상태 전환 검증에 사용하며 프레임 선택에는 직접 사용하지 않는다.
-
-## RobotMotion
-
-GPU PC 1의 수확 supervisor가 planner와 executor를 연결하는 내부 Action으로
-사용한다. v2.0에서 개인 PC 1은 RobotMotion Goal을 보내지 않고 `/harvest/target`
-만 발행한다.
-
-```text
-액션: /harvest/robot_motion
-타입: appleproj_interfaces/action/RobotMotion
-```
-
-Goal:
-
-- `motion_type`: `APPROACH`, `GRASP`, `TWIST`, `PULL`, `TRANSPORT`, `PLACE`, `RETRACT`, `RELEASE`
-- `target_pose`: 동작 목표 pose
-- `reset_id`, `scene_version`: GPU PC 1이 계획에 사용한 planning scene 세대
-- `waypoints`: GPU PC 1의 Lula RRT/trajectory 단계가 생성한 내부 world 기준
-  TCP waypoint 배열. 외부 PC가 주입하지 않는다.
-- planner seed 및 재계획 정책은 구현 파라미터로 두고 정식 인터페이스에는
-  노출하지 않는 것을 기본으로 한다 (`TBD`).
-
-Result:
-
-- `success`
-- `error_code`
-- `message`
-
-Feedback:
-
-- `current_state`
-- `progress`: `0.0`에서 `1.0` 범위의 단계 진행률
-
-각 모션 단계는 별도 Goal로 실행할 수 있다. 단계 순서, RRT 재계획 및 실패
-복구는 GPU PC 1의 수확 supervisor가 관리한다. GPU PC 1은 target과 scene 세대가
-현재 값과 다르거나 내부 RRT/trajectory 검증이 끝나지 않으면 Goal을 실행하지
-않는다. Goal 승인 후 scene 세대가 바뀌면 `SCENE_MISMATCH`, 실제 로봇-나무
-접촉이 발생하면 `UNEXPECTED_CONTACT`로 중단한다.
-
-### 모션 의미
-
-- `GRASP`: Goal을 보내는 시점의 현재 pose를 `target_pose`에 채우고, 해당 pose를 유지하며 그리퍼만 폐합한다.
-- `PULL`: 당김 동작과 stem joint 분리 확인을 포함한다. stem이 분리되지 않으면 성공으로 판정하지 않는다.
-- `PLACE`: 목표 pose까지 이동만 수행하고 그리퍼를 개방하지 않는다.
-- `RELEASE`: Goal을 보내는 시점의 현재 pose를 `target_pose`에 채우고, 해당 pose를 유지하며 그리퍼만 개방한다.
-
-### 실행 규칙
-
-- 각 단계에서 유의미한 TCP 위치 또는 자세 진전이 `/clock`
-  기준 simulation time 3초 동안 없으면 timeout으로 판정한다.
-  Timeline Pause 중에는 이 watchdog도 정지한다.
-- Action을 실행하는 동안에는 새 Goal을 거부하고 cancel만 허용한다.
-- cancel, timeout, 충돌 또는 모션 실패가 발생하면 GPU PC 1의 Action Server는 로봇 동작을 즉시 멈추고 실패 Result를 반환한다.
-- 실패 후 자동 후퇴는 수행하지 않는다.
-- 성공 Result의 `error_code`는 빈 문자열이다.
-
-### MotionStatus
-
-GPU PC 1이 target 수신, RRT 계획, trajectory 변환, RMPflow 실행 및 PhysX 안전
-감시 결과를 개인 PC 1과 개인 PC 2에 전달한다. 개인 PC 1의 인식 실패는 별도의
-target 상태 계약(`TBD`)으로 전달한다.
-
-```text
-토픽: /harvest/motion_status
-타입: appleproj_interfaces/msg/MotionStatus
-송신: GPU PC 1
-수신: 개인 PC 1·개인 PC 2
-```
-
-필드:
-
-- `header`: `/clock` 기준 상태 발생 시각
-- `current_state`: 수확 상태 머신의 현재 상태
-- `success`: 상태 또는 계획 성공 여부
-- `progress`: `0.0`에서 `1.0` 범위
-- `error_code`: 기존 300번대 오류 코드 문자열. 성공 시 빈 문자열
-- `message`: 사람이 읽을 수 있는 상세 설명
-
-GPU PC 1은 `IK_FAILED`, `APPROACH_UNREACHABLE`, `COLLISION_RISK`,
-`SINGULARITY_RISK`, `INVALID_TARGET_POSE`, `TF_UNAVAILABLE`,
-`JOINT_STATE_UNAVAILABLE`, `SCENE_MISMATCH`, `UNEXPECTED_CONTACT` 등의 실패가
-발생하면 `success=false`와 기존 오류 코드를 발행한다. 개인 PC 1은 이 메시지를
-RViz 또는 모니터링에 사용한다. Goal admission은 현재 `SimulationState`, target의
-`reset_id`, `scene_version`, timestamp, busy 상태 및 내부 계획 검증으로 판정한다.
-
-이 토픽은 상태·결과 전달용으로 Reliable QoS를 사용하며, 기본 history depth는 10으로
-한다. 상태 메시지의 timestamp는 simulation time을 사용한다.
-
-### 오류 코드
-
-| 코드 | `error_code` |
-|---:|---|
-| 300 | `IK_FAILED` |
-| 301 | `APPROACH_UNREACHABLE` |
-| 302 | `COLLISION_RISK` |
-| 303 | `SINGULARITY_RISK` |
-| 304 | `MOTION_TIMEOUT` |
-| 305 | `STEM_NOT_BROKEN` |
-| 306 | `GOAL_REJECTED` |
-| 307 | `CANCELLED` |
-| 308 | `SIMULATION_RESET` |
-| 309 | `INVALID_TARGET_POSE` |
-| 310 | `TF_UNAVAILABLE` |
-| 311 | `JOINT_STATE_UNAVAILABLE` |
-| 312 | `INTERNAL_ERROR` |
-
-`error_code`는 `"300:IK_FAILED"`처럼 숫자 코드와 심볼을 함께 포함하는 문자열로 전송한다.
-v2.0의 RRT 실패, trajectory 변환 실패, stale target, scene mismatch 및
-unexpected contact의 숫자 코드 배정은 기존 300번대 체계와 조정 후 `TBD`로 확정한다.
-
-## Motion planning 시각화
-
-GPU PC 1의 실제 planner는 실행과 독립된 시각화 publisher를 제공한다. 세 시각화
-토픽은 모두 `Reliable + Transient Local + Keep Last 1`을 사용한다. 최신 검증 계획
-한 개만 보존해 늦게 시작한 RViz도 현재 snapshot을 받을 수 있게 하며, publish
-실패나 구독자 부재는 Goal 승인·collision 검사·로봇 실행 결과에 영향을 주지 않는다.
-
-| 토픽 | 타입 | 의미 |
-|---|---|---|
-| `/harvest/planning_markers` | `visualization_msgs/msg/MarkerArray` | target, pre-grasp, raw/safety obstacle, 선택된 RRT 해, full-link 최소 clearance, 실패 지점 |
-| `/harvest/planned_path` | `nav_msgs/msg/Path` | 검증된 시간 궤적을 FK한 world 기준 물리 TCP 경로 |
-| `/harvest/planned_joint_trajectory` | `trajectory_msgs/msg/JointTrajectory` | 시간 매개화된 팔 6축 RRT 결과 미리보기 |
-| `/harvest/motion_status` | `appleproj_interfaces/msg/MotionStatus` | planning/execution 상태와 오류 |
-
-모든 시각화 header는 `/clock`과 `frame_id=world`를 사용한다. `planned_path`는
-trajectory 검증에 사용한 60Hz 표본의 `palm` 기반 물리 TCP pose를 담는다.
-`planned_joint_trajectory`의 `joint_names`는 `joint_1`부터 `joint_6`까지이며,
-각 point에는 position, velocity 및 상대 `time_from_start`를 넣는다. 그리퍼 관절은
-RRT c-space가 아니므로 이 토픽에 넣지 않고 실제 자세는 `/joint_states`와 TF로
-표시한다.
-
-`planning_markers`의 RRT 표시는 Lula가 반환한 선택 경로를 FK한 선이며, Lula
-내부 전체 탐색 tree를 의미하지 않는다. clearance는 TCP 점 거리 근사가 아니라
-trajectory 표본마다 robot description의 전체 collision sphere와 planning proxy를
-검사한 최소값이다. obstacle marker는 원본 proxy와 `safety_margin`이 적용된 영역을
-구분해 표시한다.
-
-GPU PC 1은 새 검증 계획을 발행할 때 이전 Marker를 `DELETEALL`로 교체한다.
-`STOPPED`, `INITIALIZING`, reset 또는 planning scene 무효화 시 Marker를 삭제하고
-빈 `Path`와 `JointTrajectory`를 발행한다. 실패 시 마지막 유효 경로는 유지하고
-실패 당시 TCP 위치에 진단 marker를 추가한다. 현재 Action Server는 한 번에 하나의
-Goal만 실행하므로 표준 시각화 메시지에 별도 target ID 필드를 추가하지 않는다.
-marker text에는 현재 `reset_id`, `scene_version`, segment와 최소 clearance를 넣는다.
-
-개인 PC 1은 위 토픽을 원격으로 구독해 RViz에서 표시한다. RViz가 종료되거나
-네트워크에서 시각화 토픽이 유실되어도 GPU PC 1의 planner와 safety monitor는
-계속 실행할 수 있어야 한다.
-
-## RetryInspection
-
-개인 PC 2가 GPU PC 1에 품질검사 재시도를 요청한다.
-
-```text
-서비스: /quality/retry_inspection
-타입: appleproj_interfaces/srv/RetryInspection
-```
-
-Request:
-
-- `inspection_id`
-- `apple_id`
-- `reason`
-
-Response:
-
-- `accepted`
-- `new_inspection_id`
-- `message`
-
-`accepted=false`이면 `new_inspection_id`는 빈 문자열로 반환한다.
-
-## SortCommand
-
-개인 PC 2에서 GPU PC 1로 전달한다. MVP에서는 사용하지 않으며, 2차 개발의 컨베이어 4 실제 푸셔 제어부터 사용한다.
-
-```text
-서비스: /conveyor/sort_command
-타입: appleproj_interfaces/srv/SortCommand
-서버: GPU PC 1
-클라이언트: 개인 PC 2
-```
-
-Request 필드:
-
-- `header`: `/clock` 기준 요청 생성 시각
-- `command_id`: 분류 명령 식별자
-- `apple_id`: 분류 대상 사과 식별자
-- `inspection_id`: 품질검사 식별자
-- `grade`: `HIGH=1`, `MEDIUM=2`, `LOW=3`
-- `pusher_id`: `PUSHER_1=1`, `PUSHER_2=2`, `PUSHER_3=3`
-- `trigger_checkpoint_id`: 푸셔 작동을 허용하는 checkpoint 식별자
-
-Response 필드:
-
-- `accepted`: 명령 접수 여부. `true`는 실제 푸셔 작동 완료가 아니라 접수 완료를 뜻한다.
-- `command_id`: 요청의 명령 식별자
-- `error_code`: 정상 접수 시 빈 문자열
-- `message`: 접수 또는 거절 상세 설명
-
-등급·푸셔·trigger 매핑은 다음과 같다.
-
-| 등급 | 푸셔 | `trigger_checkpoint_id` |
-|---|---|---|
-| `HIGH` | `PUSHER_1` | `CONVEYOR_PUSHER_1_TRIGGER` |
-| `MEDIUM` | `PUSHER_2` | `CONVEYOR_PUSHER_2_TRIGGER` |
-| `LOW` | `PUSHER_3` | `CONVEYOR_PUSHER_3_TRIGGER` |
-
-GPU PC 1은 `/conveyor/checkpoint_events`에도 위와 동일한 checkpoint 이름을 사용한다.
-요청의 세 식별자가 비어 있거나 grade, pusher, trigger 매핑이 유효하지 않으면
-거절한다. 동일 `command_id`와 동일 요청은 새 동작을 만들지 않고 기존 응답을
-반환하며, 동일 `command_id`의 내용이 다르면 거절한다. 이미 분류 완료된 사과도
-거절한다. 푸셔가 원점에 있지 않고 안전하게 대기할 수 없거나 다른 푸셔가 동작
-중이거나 Isaac Sim이 Stop/Reset 처리 중인 경우에는 접수하지 않는다.
-
-## SortStatus
-
-GPU PC 1이 분류 명령의 실제 실행 상태를 발행한다.
-
-```text
-토픽: /conveyor/sort_status
-타입: appleproj_interfaces/msg/SortStatus
-송신: GPU PC 1
-수신: 개인 PC 2
-QoS: Reliable, Transient Local, Keep Last 10
-```
-
-정상 상태 흐름은 `ARMED → APPLE_CONFIRMED → EXTENDING → PUSH_CONFIRMED →
-RETRACTING → HOME_CONFIRMED → COMPLETED`다. 실패 시 `FAILED`, 명시적 취소 시
-`CANCELLED`를 발행한다. 정상 상태의 `error_code`는 빈 문자열이다.
-
-GPU PC 1은 명령이 `ARMED`이고, 지정 trigger에 동일 `apple_id`의 사과가 도착했고,
-푸셔 원점 복귀가 확인되며, 다른 푸셔가 동작 중이지 않고, 동일 trigger 체류에서
-아직 작동하지 않았을 때만 푸셔를 구동한다. 동일 trigger 이벤트는 한 번만 소비한다.
-
-오류 코드는 `INVALID_COMMAND`, `INVALID_GRADE`, `INVALID_PUSHER`,
-`GRADE_PUSHER_MISMATCH`, `INVALID_TRIGGER`, `DUPLICATE_COMMAND_CONFLICT`,
-`APPLE_ALREADY_SORTED`, `PUSHER_BUSY`, `PUSHER_NOT_HOME`, `APPLE_ID_MISMATCH`,
-`TRIGGER_TIMEOUT`, `PUSH_TIMEOUT`, `JAM_DETECTED`, `HOME_TIMEOUT`,
-`SIMULATION_RESET`, `CANCELLED`, `INTERNAL_ERROR`를 사용한다.
-
-Timeline Stop 또는 Reset 시 GPU PC 1은 대기 명령을 폐기하고 실행 중인 푸셔를
-안전 정지한 뒤 가능한 경우 원점으로 복귀시킨다. 영향받은 각 명령에 대해
-`state=CANCELLED`, `error_code=SIMULATION_RESET` 상태를 발행하고 이전 command,
-완료 사과 및 소비한 trigger 이벤트 캐시를 초기화한다.
+`header.frame_id`, `robot_base_pose`, `robot_tcp_pose`, obstacle pose는 모두
+`world`다. `ObstacleProxy`는 몸통·굵은 가지의 sphere/box/capsule 형상과
+`safety_margin`을 전달한다. RRT와 RMPflow는 동일 snapshot을 사용한다.

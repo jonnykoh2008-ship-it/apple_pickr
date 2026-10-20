@@ -13,6 +13,23 @@ from quality_rules import FrameMeasurements
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 MIN_GEOMETRY_PIXELS = 10
 
+# 한 카메라는 사과의 앞쪽 반구만 본다. 가장 가까운 표면점에서 실루엣 가장자리
+# 까지의 depth 폭은 반지름(80mm 사과면 40mm)이다. 반면 사과가 놓인 벨트는
+# 최근접점보다 지름(80mm)만큼 뒤에 있다. 그 사이에 경계를 두면 마스크에 섞인
+# 그림자·반사 픽셀만 걸러진다.
+#
+# 중앙값 기준으로는 걸러지지 않는다. 벨트가 중앙값에서 반지름만큼밖에 떨어져
+# 있지 않기 때문이다. 반드시 최근접점을 기준으로 삼아야 한다.
+# 실측에서 이 오염이 직경을 20~40% 과대 측정하게 만들었다.
+APPLE_VISIBLE_DEPTH_SPAN_M = 0.06
+
+# 3D 범위를 재는 백분위. 원판 실루엣에서 극단값을 들고 있는 픽셀은 소수라
+# 0.5/99.5로 자르면 지름이 4~6% 깎인다. 실측에서도 -5.2% 과소로 나타났다.
+# 위 depth 필터가 오염 픽셀을 이미 제거하므로 절단을 완화한다. min/max까지
+# 열지 않는 것은 depth 잡음이 만든 몇 개의 이상점을 남겨두기 위함이다.
+EXTENT_PERCENTILE_LOW = 0.1
+EXTENT_PERCENTILE_HIGH = 99.9
+
 
 class GeometryMeasurementError(InspectionContractError):
     """Raised when synchronized RGB-D data cannot produce valid geometry."""
@@ -142,10 +159,24 @@ def measure_geometry(frame: InspectionFrame) -> GeometryMeasurements:
 
     ys, xs = np.nonzero(valid)
     z = depth_m[ys, xs]
+
+    # 사과에 속할 수 없는 깊이의 픽셀을 버린다. 그림자·반사로 마스크가 벨트까지
+    # 번지면 그 픽셀이 뒤쪽에 찍혀 지름을 크게 부풀린다. 기준은 중앙값이 아니라
+    # 최근접 표면이다.
+    nearest_m = float(np.percentile(z, 1.0))
+    near_surface = z <= nearest_m + APPLE_VISIBLE_DEPTH_SPAN_M
+    if int(near_surface.sum()) >= MIN_GEOMETRY_PIXELS:
+        ys, xs, z = ys[near_surface], xs[near_surface], z[near_surface]
+        valid_count = int(near_surface.sum())
+
     points_x = (xs.astype(np.float32) - cx) * z / fx
     points_y = (ys.astype(np.float32) - cy) * z / fy
-    extent_x = np.percentile(points_x, 99.5) - np.percentile(points_x, 0.5)
-    extent_y = np.percentile(points_y, 99.5) - np.percentile(points_y, 0.5)
+    extent_x = np.percentile(points_x, EXTENT_PERCENTILE_HIGH) - np.percentile(
+        points_x, EXTENT_PERCENTILE_LOW
+    )
+    extent_y = np.percentile(points_y, EXTENT_PERCENTILE_HIGH) - np.percentile(
+        points_y, EXTENT_PERCENTILE_LOW
+    )
     diameter_mm = float(max(extent_x, extent_y) * 1000.0)
     if not np.isfinite(diameter_mm) or diameter_mm <= 0.0:
         raise GeometryMeasurementError("computed diameter is invalid")
@@ -226,10 +257,12 @@ def combine_prediction_with_geometry(frame: InspectionFrame, prediction: Any) ->
     valid_surface = geometry.apple_mask & ~geometry.ignore_mask
     if not bool(valid_surface.any()):
         raise GeometryMeasurementError("ignore_mask excludes the entire apple surface")
+    measurable_pixels = int(valid_surface.sum())
+    color_pixels = (
+        int((color_mask & valid_surface).sum()) if color_mask is not None else None
+    )
     color_ratio = (
-        float((color_mask & valid_surface).sum() / valid_surface.sum())
-        if color_mask is not None
-        else None
+        float(color_pixels / measurable_pixels) if color_pixels is not None else None
     )
 
     damage_area = None
@@ -249,6 +282,8 @@ def combine_prediction_with_geometry(frame: InspectionFrame, prediction: Any) ->
     )
     return FrameMeasurements(
         color_ratio=color_ratio,
+        color_pixels=color_pixels,
+        measurable_pixels=measurable_pixels if color_pixels is not None else None,
         diameter_mm=geometry.diameter_mm,
         damage_area_cm2=damage_area,
         severe_defect=getattr(prediction, "severe_defect", None),

@@ -231,3 +231,7 @@ trial_and_error/
 /build_pc1/
 /install_pc1/
 /log_pc1/
+/dataset/
+
+# Isaac Python 3.11 용 인터페이스 빌드 산출물. build_interfaces_for_isaac.sh 로 재생성한다.
+install_isaac311/

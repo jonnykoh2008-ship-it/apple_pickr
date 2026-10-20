@@ -1,0 +1,4233 @@
+{
+  "source_usd": "",
+  "seed": 20260824,
+  "resolution": [
+    640,
+    640
+  ],
+  "frames": 180,
+  "cases_per_value": 2,
+  "views_per_case": 5,
+  "fixed_camera_position": [
+    0.08385111447087734,
+    333.13250349968877,
+    32.820626136813615
+  ],
+  "boundary_values": {
+    "diameter_mm": [
+      58.0,
+      60.0,
+      62.0,
+      73.0,
+      75.0,
+      77.0
+    ],
+    "color_percent": [
+      58.0,
+      60.0,
+      62.0,
+      78.0,
+      80.0,
+      82.0
+    ],
+    "damage_cm2": [
+      0.8,
+      1.0,
+      1.2,
+      2.3,
+      2.5,
+      2.7
+    ]
+  },
+  "aggregation": {
+    "diameter_mm": "median of 5 views",
+    "color_percent": "mean of 5 views",
+    "damage_cm2": "maximum of 5 views"
+  },
+  "semantic_classes": {
+    "apple_surface": "target red color",
+    "non_target_color": "green and yellow uncolored area",
+    "damage": "damage and color ignore area"
+  },
+  "note": "target_value is requested generation value; aggregate_measured_* is authoritative rendered measurement",
+  "scenarios": [
+    {
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 58.0,
+      "case_index": 0,
+      "diameter_mm": 58.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 54.560897901484054,
+      "aggregate_measured_color_percent": 99.91866983036667,
+      "aggregate_measured_damage_cm2": 0.0
+    },
+    {
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 58.0,
+      "case_index": 1,
+      "diameter_mm": 58.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 54.614475937523316,
+      "aggregate_measured_color_percent": 99.78071499383714,
+      "aggregate_measured_damage_cm2": 0.012265766082294452
+    },
+    {
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 60.0,
+      "case_index": 0,
+      "diameter_mm": 60.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 57.12282701324721,
+      "aggregate_measured_color_percent": 99.85836337494757,
+      "aggregate_measured_damage_cm2": 0.0
+    },
+    {
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 60.0,
+      "case_index": 1,
+      "diameter_mm": 60.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 56.6014548312563,
+      "aggregate_measured_color_percent": 99.93455299198322,
+      "aggregate_measured_damage_cm2": 0.01844125471120102
+    },
+    {
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 62.0,
+      "case_index": 0,
+      "diameter_mm": 62.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 58.902398480126664,
+      "aggregate_measured_color_percent": 99.65234346305473,
+      "aggregate_measured_damage_cm2": 0.024728991292611524
+    },
+    {
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 62.0,
+      "case_index": 1,
+      "diameter_mm": 62.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 58.0473469560709,
+      "aggregate_measured_color_percent": 99.91465579170877,
+      "aggregate_measured_damage_cm2": 0.014741529754986759
+    },
+    {
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 73.0,
+      "case_index": 0,
+      "diameter_mm": 73.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        30,
+        31,
+        32,
+        33,
+        34
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 69.31430402682449,
+      "aggregate_measured_color_percent": 99.83847694089215,
+      "aggregate_measured_damage_cm2": 0.0
+    },
+    {
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 73.0,
+      "case_index": 1,
+      "diameter_mm": 73.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        35,
+        36,
+        37,
+        38,
+        39
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 67.56844091366715,
+      "aggregate_measured_color_percent": 99.52987795180181,
+      "aggregate_measured_damage_cm2": 0.0
+    },
+    {
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 75.0,
+      "case_index": 0,
+      "diameter_mm": 75.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        40,
+        41,
+        42,
+        43,
+        44
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 70.71040521706323,
+      "aggregate_measured_color_percent": 99.94677470612184,
+      "aggregate_measured_damage_cm2": 0.04580726628945881
+    },
+    {
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 75.0,
+      "case_index": 1,
+      "diameter_mm": 75.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        45,
+        46,
+        47,
+        48,
+        49
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 71.15372245296358,
+      "aggregate_measured_color_percent": 99.96458624720601,
+      "aggregate_measured_damage_cm2": 0.01801608463043155
+    },
+    {
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 77.0,
+      "case_index": 0,
+      "diameter_mm": 77.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        50,
+        51,
+        52,
+        53,
+        54
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 71.2460458514837,
+      "aggregate_measured_color_percent": 99.91691170607852,
+      "aggregate_measured_damage_cm2": 0.004892621465508669
+    },
+    {
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 77.0,
+      "case_index": 1,
+      "diameter_mm": 77.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        55,
+        56,
+        57,
+        58,
+        59
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 70.76356085533759,
+      "aggregate_measured_color_percent": 99.88701613579515,
+      "aggregate_measured_damage_cm2": 0.014492047454601453
+    },
+    {
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 58.0,
+      "case_index": 0,
+      "diameter_mm": 70.0,
+      "color_percent": 58.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        60,
+        61,
+        62,
+        63,
+        64
+      ],
+      "active_color_patches": 23,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 65.40884069399107,
+      "aggregate_measured_color_percent": 99.67572162546722,
+      "aggregate_measured_damage_cm2": 0.025381424507970925
+    },
+    {
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 58.0,
+      "case_index": 1,
+      "diameter_mm": 70.0,
+      "color_percent": 58.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        65,
+        66,
+        67,
+        68,
+        69
+      ],
+      "active_color_patches": 23,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 63.89272037060997,
+      "aggregate_measured_color_percent": 99.16277441041856,
+      "aggregate_measured_damage_cm2": 0.012917866993364606
+    },
+    {
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 60.0,
+      "case_index": 0,
+      "diameter_mm": 70.0,
+      "color_percent": 60.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        70,
+        71,
+        72,
+        73,
+        74
+      ],
+      "active_color_patches": 22,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 65.14206132435925,
+      "aggregate_measured_color_percent": 99.70951760390702,
+      "aggregate_measured_damage_cm2": 0.01609645616779619
+    },
+    {
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 60.0,
+      "case_index": 1,
+      "diameter_mm": 70.0,
+      "color_percent": 60.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "active_color_patches": 22,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 65.21142939186514,
+      "aggregate_measured_color_percent": 99.62481520129322,
+      "aggregate_measured_damage_cm2": 0.013040313921146907
+    },
+    {
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 62.0,
+      "case_index": 0,
+      "diameter_mm": 70.0,
+      "color_percent": 62.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        80,
+        81,
+        82,
+        83,
+        84
+      ],
+      "active_color_patches": 21,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 65.3686308893948,
+      "aggregate_measured_color_percent": 99.23058450023731,
+      "aggregate_measured_damage_cm2": 0.027425075536092216
+    },
+    {
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 62.0,
+      "case_index": 1,
+      "diameter_mm": 70.0,
+      "color_percent": 62.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        85,
+        86,
+        87,
+        88,
+        89
+      ],
+      "active_color_patches": 21,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 65.297116927546,
+      "aggregate_measured_color_percent": 99.25780816471767,
+      "aggregate_measured_damage_cm2": 0.0
+    },
+    {
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 78.0,
+      "case_index": 0,
+      "diameter_mm": 70.0,
+      "color_percent": 78.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        90,
+        91,
+        92,
+        93,
+        94
+      ],
+      "active_color_patches": 12,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 65.32806726872589,
+      "aggregate_measured_color_percent": 99.55574283374457,
+      "aggregate_measured_damage_cm2": 0.0
+    },
+    {
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 78.0,
+      "case_index": 1,
+      "diameter_mm": 70.0,
+      "color_percent": 78.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        95,
+        96,
+        97,
+        98,
+        99
+      ],
+      "active_color_patches": 12,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 66.41142853821478,
+      "aggregate_measured_color_percent": 99.51774211574208,
+      "aggregate_measured_damage_cm2": 0.005032720749775199
+    },
+    {
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 80.0,
+      "case_index": 0,
+      "diameter_mm": 70.0,
+      "color_percent": 80.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        100,
+        101,
+        102,
+        103,
+        104
+      ],
+      "active_color_patches": 11,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 65.37598349718462,
+      "aggregate_measured_color_percent": 99.8970729632152,
+      "aggregate_measured_damage_cm2": 0.0
+    },
+    {
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 80.0,
+      "case_index": 1,
+      "diameter_mm": 70.0,
+      "color_percent": 80.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        105,
+        106,
+        107,
+        108,
+        109
+      ],
+      "active_color_patches": 11,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 65.8345910861153,
+      "aggregate_measured_color_percent": 99.61667058145986,
+      "aggregate_measured_damage_cm2": 0.02637619751726629
+    },
+    {
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 82.0,
+      "case_index": 0,
+      "diameter_mm": 70.0,
+      "color_percent": 82.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        110,
+        111,
+        112,
+        113,
+        114
+      ],
+      "active_color_patches": 10,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 65.82215350292655,
+      "aggregate_measured_color_percent": 99.88002554182906,
+      "aggregate_measured_damage_cm2": 0.0
+    },
+    {
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 82.0,
+      "case_index": 1,
+      "diameter_mm": 70.0,
+      "color_percent": 82.0,
+      "damage_cm2": 0.5,
+      "frame_indices": [
+        115,
+        116,
+        117,
+        118,
+        119
+      ],
+      "active_color_patches": 10,
+      "active_damage_patches": 2,
+      "aggregate_measured_diameter_mm": 63.8623563159199,
+      "aggregate_measured_color_percent": 99.73982506090617,
+      "aggregate_measured_damage_cm2": 0.003374573573447805
+    },
+    {
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 0.8,
+      "case_index": 0,
+      "diameter_mm": 70.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.8,
+      "frame_indices": [
+        120,
+        121,
+        122,
+        123,
+        124
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 4,
+      "aggregate_measured_diameter_mm": 67.491341260064,
+      "aggregate_measured_color_percent": 99.82354127728625,
+      "aggregate_measured_damage_cm2": 0.0016330293240211335
+    },
+    {
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 0.8,
+      "case_index": 1,
+      "diameter_mm": 70.0,
+      "color_percent": 90.0,
+      "damage_cm2": 0.8,
+      "frame_indices": [
+        125,
+        126,
+        127,
+        128,
+        129
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 4,
+      "aggregate_measured_diameter_mm": 64.93478586722368,
+      "aggregate_measured_color_percent": 99.94202139898844,
+      "aggregate_measured_damage_cm2": 0.0
+    },
+    {
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.0,
+      "case_index": 0,
+      "diameter_mm": 70.0,
+      "color_percent": 90.0,
+      "damage_cm2": 1.0,
+      "frame_indices": [
+        130,
+        131,
+        132,
+        133,
+        134
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 5,
+      "aggregate_measured_diameter_mm": 65.13852264611113,
+      "aggregate_measured_color_percent": 99.97457958402107,
+      "aggregate_measured_damage_cm2": 0.01814201458429913
+    },
+    {
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.0,
+      "case_index": 1,
+      "diameter_mm": 70.0,
+      "color_percent": 90.0,
+      "damage_cm2": 1.0,
+      "frame_indices": [
+        135,
+        136,
+        137,
+        138,
+        139
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 5,
+      "aggregate_measured_diameter_mm": 65.20641421760587,
+      "aggregate_measured_color_percent": 99.90078146985141,
+      "aggregate_measured_damage_cm2": 0.045475517351719785
+    },
+    {
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.2,
+      "case_index": 0,
+      "diameter_mm": 70.0,
+      "color_percent": 90.0,
+      "damage_cm2": 1.2,
+      "frame_indices": [
+        140,
+        141,
+        142,
+        143,
+        144
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 5,
+      "aggregate_measured_diameter_mm": 65.59436346628422,
+      "aggregate_measured_color_percent": 99.91586566896397,
+      "aggregate_measured_damage_cm2": 0.06995080460902303
+    },
+    {
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.2,
+      "case_index": 1,
+      "diameter_mm": 70.0,
+      "color_percent": 90.0,
+      "damage_cm2": 1.2,
+      "frame_indices": [
+        145,
+        146,
+        147,
+        148,
+        149
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 5,
+      "aggregate_measured_diameter_mm": 65.48079375179344,
+      "aggregate_measured_color_percent": 99.92579984914723,
+      "aggregate_measured_damage_cm2": 0.07819355057781159
+    },
+    {
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.3,
+      "case_index": 0,
+      "diameter_mm": 70.0,
+      "color_percent": 90.0,
+      "damage_cm2": 2.3,
+      "frame_indices": [
+        150,
+        151,
+        152,
+        153,
+        154
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 10,
+      "aggregate_measured_diameter_mm": 64.3413154204117,
+      "aggregate_measured_color_percent": 99.84400019004416,
+      "aggregate_measured_damage_cm2": 0.21345183952906477
+    },
+    {
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.3,
+      "case_index": 1,
+      "diameter_mm": 70.0,
+      "color_percent": 90.0,
+      "damage_cm2": 2.3,
+      "frame_indices": [
+        155,
+        156,
+        157,
+        158,
+        159
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 10,
+      "aggregate_measured_diameter_mm": 65.76486329760557,
+      "aggregate_measured_color_percent": 99.85145686507501,
+      "aggregate_measured_damage_cm2": 0.0188010434974073
+    },
+    {
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.5,
+      "case_index": 0,
+      "diameter_mm": 70.0,
+      "color_percent": 90.0,
+      "damage_cm2": 2.5,
+      "frame_indices": [
+        160,
+        161,
+        162,
+        163,
+        164
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 11,
+      "aggregate_measured_diameter_mm": 67.00587440809238,
+      "aggregate_measured_color_percent": 99.67046420073441,
+      "aggregate_measured_damage_cm2": 0.10070302833090151
+    },
+    {
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.5,
+      "case_index": 1,
+      "diameter_mm": 70.0,
+      "color_percent": 90.0,
+      "damage_cm2": 2.5,
+      "frame_indices": [
+        165,
+        166,
+        167,
+        168,
+        169
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 11,
+      "aggregate_measured_diameter_mm": 65.40477957624765,
+      "aggregate_measured_color_percent": 99.68536450820928,
+      "aggregate_measured_damage_cm2": 0.05969438219407534
+    },
+    {
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.7,
+      "case_index": 0,
+      "diameter_mm": 70.0,
+      "color_percent": 90.0,
+      "damage_cm2": 2.7,
+      "frame_indices": [
+        170,
+        171,
+        172,
+        173,
+        174
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 12,
+      "aggregate_measured_diameter_mm": 68.19470444123182,
+      "aggregate_measured_color_percent": 99.96698877661183,
+      "aggregate_measured_damage_cm2": 0.0698174081316592
+    },
+    {
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.7,
+      "case_index": 1,
+      "diameter_mm": 70.0,
+      "color_percent": 90.0,
+      "damage_cm2": 2.7,
+      "frame_indices": [
+        175,
+        176,
+        177,
+        178,
+        179
+      ],
+      "active_color_patches": 6,
+      "active_damage_patches": 12,
+      "aggregate_measured_diameter_mm": 67.59580868200717,
+      "aggregate_measured_color_percent": 99.81080258478237,
+      "aggregate_measured_damage_cm2": 0.08330259170797293
+    }
+  ],
+  "frames_detail": [
+    {
+      "frame_index": 0,
+      "scenario_index": 0,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 58.0,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -2.3429358924426547,
+        -9.401921323971283,
+        304.4066419919057
+      ],
+      "rgb_file": "rgb_0000.png",
+      "measured_diameter_mm": 53.39150878708054,
+      "measured_color_percent": 99.98248303043573,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 1,
+      "scenario_index": 0,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 58.0,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        55.342977391086734,
+        24.5018606859659,
+        29.46551153817049
+      ],
+      "rgb_file": "rgb_0001.png",
+      "measured_diameter_mm": 55.651451358828794,
+      "measured_color_percent": 99.80377621767758,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 2,
+      "scenario_index": 0,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 58.0,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        81.76215990595239,
+        -6.776818999717706,
+        300.22012110234067
+      ],
+      "rgb_file": "rgb_0002.png",
+      "measured_diameter_mm": 54.560897901484054,
+      "measured_color_percent": 99.95135541502675,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 3,
+      "scenario_index": 0,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 58.0,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        47.08600990595808,
+        9.409036803287883,
+        178.1269098458786
+      ],
+      "rgb_file": "rgb_0003.png",
+      "measured_diameter_mm": 56.91523238963075,
+      "measured_color_percent": 99.93365180467092,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 4,
+      "scenario_index": 0,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 58.0,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -2.4216509407378606,
+        7.204477991798935,
+        236.47612297445926
+      ],
+      "rgb_file": "rgb_0004.png",
+      "measured_diameter_mm": 52.58358047516246,
+      "measured_color_percent": 99.92208268402237,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 5,
+      "scenario_index": 1,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 58.0,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -1.9515595869940672,
+        -0.6813611420944738,
+        263.26061690074806
+      ],
+      "rgb_file": "rgb_0005.png",
+      "measured_diameter_mm": 53.42988519349602,
+      "measured_color_percent": 99.83815860456752,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 6,
+      "scenario_index": 1,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 58.0,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        53.9054530004894,
+        27.90590238954877,
+        170.43129617919269
+      ],
+      "rgb_file": "rgb_0006.png",
+      "measured_diameter_mm": 54.614475937523316,
+      "measured_color_percent": 99.72040586245772,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 7,
+      "scenario_index": 1,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 58.0,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        91.91747403816815,
+        0.8079915725787536,
+        97.96067017575244
+      ],
+      "rgb_file": "rgb_0007.png",
+      "measured_diameter_mm": 54.52615340008052,
+      "measured_color_percent": 99.84818911299068,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 8,
+      "scenario_index": 1,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 58.0,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        50.267791542670295,
+        -17.89754165006095,
+        68.66234846810859
+      ],
+      "rgb_file": "rgb_0008.png",
+      "measured_diameter_mm": 57.34831474252168,
+      "measured_color_percent": 99.82391413717927,
+      "measured_damage_cm2": 0.012265766082294452
+    },
+    {
+      "frame_index": 9,
+      "scenario_index": 1,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 58.0,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -8.13079335515354,
+        -6.182357653977859,
+        114.77014762767797
+      ],
+      "rgb_file": "rgb_0009.png",
+      "measured_diameter_mm": 55.41943901193708,
+      "measured_color_percent": 99.67290725199054,
+      "measured_damage_cm2": 0.004847395970448573
+    },
+    {
+      "frame_index": 10,
+      "scenario_index": 2,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 60.0,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        9.785377515242757,
+        -8.807727714515574,
+        112.26161701239992
+      ],
+      "rgb_file": "rgb_0010.png",
+      "measured_diameter_mm": 56.7799244209419,
+      "measured_color_percent": 99.88206108422466,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 11,
+      "scenario_index": 2,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 60.0,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        35.9184409580822,
+        23.142454119234174,
+        52.386088046676456
+      ],
+      "rgb_file": "rgb_0011.png",
+      "measured_diameter_mm": 58.25012221531533,
+      "measured_color_percent": 99.8370655080214,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 12,
+      "scenario_index": 2,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 60.0,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        87.62278013462176,
+        -5.516223199386779,
+        170.44686095984622
+      ],
+      "rgb_file": "rgb_0012.png",
+      "measured_diameter_mm": 55.45561366053865,
+      "measured_color_percent": 99.98644312892584,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 13,
+      "scenario_index": 2,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 60.0,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        41.93478424891086,
+        -28.717355376235474,
+        136.92689945077638
+      ],
+      "rgb_file": "rgb_0013.png",
+      "measured_diameter_mm": 59.17977310624303,
+      "measured_color_percent": 99.85334785887873,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 14,
+      "scenario_index": 2,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 60.0,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -8.54844684186983,
+        -4.696111723108949,
+        159.23247572877773
+      ],
+      "rgb_file": "rgb_0014.png",
+      "measured_diameter_mm": 57.12282701324721,
+      "measured_color_percent": 99.7328992946872,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 15,
+      "scenario_index": 3,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 60.0,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        9.204425770033641,
+        -4.987677263891381,
+        350.32631562658634
+      ],
+      "rgb_file": "rgb_0015.png",
+      "measured_diameter_mm": 56.6014548312563,
+      "measured_color_percent": 99.87576043183961,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 16,
+      "scenario_index": 3,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 60.0,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        46.73642800933858,
+        -6.420468250627625,
+        39.17677801989153
+      ],
+      "rgb_file": "rgb_0016.png",
+      "measured_diameter_mm": 59.386704998493805,
+      "measured_color_percent": 99.97586581392542,
+      "measured_damage_cm2": 0.01844125471120102
+    },
+    {
+      "frame_index": 17,
+      "scenario_index": 3,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 60.0,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        97.95365534487274,
+        -17.681847661376654,
+        272.44120625450535
+      ],
+      "rgb_file": "rgb_0017.png",
+      "measured_diameter_mm": 55.398493574091724,
+      "measured_color_percent": 99.92074747643281,
+      "measured_damage_cm2": 0.016368751416739824
+    },
+    {
+      "frame_index": 18,
+      "scenario_index": 3,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 60.0,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        47.0679012844527,
+        -27.796048881365067,
+        41.495046321978634
+      ],
+      "rgb_file": "rgb_0018.png",
+      "measured_diameter_mm": 58.88430645657156,
+      "measured_color_percent": 99.97583762886597,
+      "measured_damage_cm2": 0.012835485246796697
+    },
+    {
+      "frame_index": 19,
+      "scenario_index": 3,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 60.0,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -8.140965697377494,
+        8.967172495500016,
+        261.93171796981983
+      ],
+      "rgb_file": "rgb_0019.png",
+      "measured_diameter_mm": 55.30491742764928,
+      "measured_color_percent": 99.92455360885238,
+      "measured_damage_cm2": 0.01481189456337051
+    },
+    {
+      "frame_index": 20,
+      "scenario_index": 4,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 62.0,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        8.057888358011422,
+        -7.0701241126117464,
+        264.75374691312334
+      ],
+      "rgb_file": "rgb_0020.png",
+      "measured_diameter_mm": 57.061774848820555,
+      "measured_color_percent": 99.52664066346044,
+      "measured_damage_cm2": 0.024728991292611524
+    },
+    {
+      "frame_index": 21,
+      "scenario_index": 4,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 62.0,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        39.66679314066886,
+        8.928902779602403,
+        224.09976820906476
+      ],
+      "rgb_file": "rgb_0021.png",
+      "measured_diameter_mm": 59.82724199974938,
+      "measured_color_percent": 99.64887110171411,
+      "measured_damage_cm2": 0.0243342423075772
+    },
+    {
+      "frame_index": 22,
+      "scenario_index": 4,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 62.0,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        82.89618697626658,
+        -15.91325369965157,
+        99.99989903415089
+      ],
+      "rgb_file": "rgb_0022.png",
+      "measured_diameter_mm": 58.73745025985977,
+      "measured_color_percent": 99.8326359832636,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 23,
+      "scenario_index": 4,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 62.0,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        28.959388902318217,
+        6.361845428760205,
+        334.3862706446863
+      ],
+      "rgb_file": "rgb_0023.png",
+      "measured_diameter_mm": 60.6387814739828,
+      "measured_color_percent": 99.7147592799599,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 24,
+      "scenario_index": 4,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 62.0,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -8.281510400593078,
+        3.9392777927214446,
+        276.01563227233663
+      ],
+      "rgb_file": "rgb_0024.png",
+      "measured_diameter_mm": 58.902398480126664,
+      "measured_color_percent": 99.53881028687563,
+      "measured_damage_cm2": 0.023896706079442574
+    },
+    {
+      "frame_index": 25,
+      "scenario_index": 5,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 62.0,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -6.744174470802586,
+        7.198349925037988,
+        140.41379681397837
+      ],
+      "rgb_file": "rgb_0025.png",
+      "measured_diameter_mm": 57.41348968556614,
+      "measured_color_percent": 99.93358596710551,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 26,
+      "scenario_index": 5,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 62.0,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        32.59771888366878,
+        -16.405674213459108,
+        358.7030130093097
+      ],
+      "rgb_file": "rgb_0026.png",
+      "measured_diameter_mm": 62.12723170478064,
+      "measured_color_percent": 99.79342869392369,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 27,
+      "scenario_index": 5,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 62.0,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        84.13426555055356,
+        -4.678602921357635,
+        143.79585308926605
+      ],
+      "rgb_file": "rgb_0027.png",
+      "measured_diameter_mm": 57.93864750589936,
+      "measured_color_percent": 99.97994303822857,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 28,
+      "scenario_index": 5,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 62.0,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        56.538662389861685,
+        -4.185086343907642,
+        259.3412974836912
+      ],
+      "rgb_file": "rgb_0028.png",
+      "measured_diameter_mm": 60.442796331065004,
+      "measured_color_percent": 99.95174819983669,
+      "measured_damage_cm2": 0.014741529754986759
+    },
+    {
+      "frame_index": 29,
+      "scenario_index": 5,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 62.0,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -6.523148679613677,
+        -1.9333188579134912,
+        135.55522874663495
+      ],
+      "rgb_file": "rgb_0029.png",
+      "measured_diameter_mm": 58.0473469560709,
+      "measured_color_percent": 99.91457305944938,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 30,
+      "scenario_index": 6,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 73.0,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -2.3439606461342066,
+        6.563241062472137,
+        129.5342137336233
+      ],
+      "rgb_file": "rgb_0030.png",
+      "measured_diameter_mm": 67.15881083185882,
+      "measured_color_percent": 99.89785777385158,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 31,
+      "scenario_index": 6,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 73.0,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        53.03728369781939,
+        7.032128749311752,
+        310.3469936928351
+      ],
+      "rgb_file": "rgb_0031.png",
+      "measured_diameter_mm": 69.31430402682449,
+      "measured_color_percent": 99.9557350744204,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 32,
+      "scenario_index": 6,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 73.0,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        100.16929208566474,
+        2.6754770375580215,
+        40.97534083920986
+      ],
+      "rgb_file": "rgb_0032.png",
+      "measured_diameter_mm": 70.56034018605159,
+      "measured_color_percent": 99.96005432611648,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 33,
+      "scenario_index": 6,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 73.0,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        56.445975767976904,
+        18.998396260598298,
+        38.60280565420704
+      ],
+      "rgb_file": "rgb_0033.png",
+      "measured_diameter_mm": 70.08746186840584,
+      "measured_color_percent": 99.69960217585451,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 34,
+      "scenario_index": 6,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 73.0,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        0.30973309976770125,
+        1.456797798410637,
+        315.7182023987469
+      ],
+      "rgb_file": "rgb_0034.png",
+      "measured_diameter_mm": 66.36338846797005,
+      "measured_color_percent": 99.67913535421768,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 35,
+      "scenario_index": 7,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 73.0,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        3.9266095889677732,
+        9.524313722641335,
+        142.8482819800949
+      ],
+      "rgb_file": "rgb_0035.png",
+      "measured_diameter_mm": 66.49168293841295,
+      "measured_color_percent": 99.25383484508058,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 36,
+      "scenario_index": 7,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 73.0,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        50.620620083944345,
+        -3.0623782846620458,
+        67.78046602504591
+      ],
+      "rgb_file": "rgb_0036.png",
+      "measured_diameter_mm": 71.30360412456746,
+      "measured_color_percent": 99.59492591408166,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 37,
+      "scenario_index": 7,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 73.0,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        88.95723304546883,
+        8.110107407536674,
+        137.98132948404702
+      ],
+      "rgb_file": "rgb_0037.png",
+      "measured_diameter_mm": 67.56844091366715,
+      "measured_color_percent": 99.8164821930378,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 38,
+      "scenario_index": 7,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 73.0,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        38.34505824770456,
+        16.733672319084548,
+        250.76210922156167
+      ],
+      "rgb_file": "rgb_0038.png",
+      "measured_diameter_mm": 70.22341958716694,
+      "measured_color_percent": 99.51925812140865,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 39,
+      "scenario_index": 7,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 73.0,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        0.3434397027413887,
+        9.925222413721112,
+        236.54197662007834
+      ],
+      "rgb_file": "rgb_0039.png",
+      "measured_diameter_mm": 65.76782404121226,
+      "measured_color_percent": 99.46488868540033,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 40,
+      "scenario_index": 8,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 75.0,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        4.897502404826904,
+        6.6450881746595805,
+        157.85812250504938
+      ],
+      "rgb_file": "rgb_0040.png",
+      "measured_diameter_mm": 67.52769873486456,
+      "measured_color_percent": 99.98939104604285,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 41,
+      "scenario_index": 8,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 75.0,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        47.542634507216306,
+        20.673900118848444,
+        234.9900557111179
+      ],
+      "rgb_file": "rgb_0041.png",
+      "measured_diameter_mm": 72.09598891931557,
+      "measured_color_percent": 99.8987460082561,
+      "measured_damage_cm2": 0.04580726628945881
+    },
+    {
+      "frame_index": 42,
+      "scenario_index": 8,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 75.0,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        89.74996924515811,
+        18.506349855314262,
+        28.242437750448058
+      ],
+      "rgb_file": "rgb_0042.png",
+      "measured_diameter_mm": 70.71040521706323,
+      "measured_color_percent": 99.92846375922946,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 43,
+      "scenario_index": 8,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 75.0,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        51.390926827492265,
+        -4.413025565403309,
+        201.51496551132286
+      ],
+      "rgb_file": "rgb_0043.png",
+      "measured_diameter_mm": 73.77086052544627,
+      "measured_color_percent": 99.96640740070802,
+      "measured_damage_cm2": 0.01247182712993994
+    },
+    {
+      "frame_index": 44,
+      "scenario_index": 8,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 75.0,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        6.814239998191013,
+        9.37695911516795,
+        192.1624651215164
+      ],
+      "rgb_file": "rgb_0044.png",
+      "measured_diameter_mm": 66.23544801536401,
+      "measured_color_percent": 99.95086531637277,
+      "measured_damage_cm2": 0.0377645941889393
+    },
+    {
+      "frame_index": 45,
+      "scenario_index": 9,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 75.0,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -7.066866843082053,
+        7.377960275212661,
+        208.08781110669375
+      ],
+      "rgb_file": "rgb_0045.png",
+      "measured_diameter_mm": 67.27238180602997,
+      "measured_color_percent": 99.86910994764398,
+      "measured_damage_cm2": 0.005274096445952641
+    },
+    {
+      "frame_index": 46,
+      "scenario_index": 9,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 75.0,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        42.488146277963025,
+        5.3971492723792025,
+        358.57307702342314
+      ],
+      "rgb_file": "rgb_0046.png",
+      "measured_diameter_mm": 72.75619309871173,
+      "measured_color_percent": 100.0,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 47,
+      "scenario_index": 9,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 75.0,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        90.53344114797295,
+        18.42768734075542,
+        61.960224173295245
+      ],
+      "rgb_file": "rgb_0047.png",
+      "measured_diameter_mm": 74.1166779546307,
+      "measured_color_percent": 100.0,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 48,
+      "scenario_index": 9,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 75.0,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        32.677662568001246,
+        20.157464056729005,
+        305.05214063596566
+      ],
+      "rgb_file": "rgb_0048.png",
+      "measured_diameter_mm": 71.15372245296358,
+      "measured_color_percent": 100.0,
+      "measured_damage_cm2": 0.01801608463043155
+    },
+    {
+      "frame_index": 49,
+      "scenario_index": 9,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 75.0,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -8.765543777056715,
+        -1.8144854916848008,
+        105.36340373590167
+      ],
+      "rgb_file": "rgb_0049.png",
+      "measured_diameter_mm": 70.2814617269445,
+      "measured_color_percent": 99.95382128838605,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 50,
+      "scenario_index": 10,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 77.0,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -2.110452340109865,
+        -5.25449791069301,
+        296.10052830062165
+      ],
+      "rgb_file": "rgb_0050.png",
+      "measured_diameter_mm": 71.2460458514837,
+      "measured_color_percent": 99.95847176079734,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 51,
+      "scenario_index": 10,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 77.0,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        55.693620251511646,
+        -24.996329618336684,
+        288.6200029301778
+      ],
+      "rgb_file": "rgb_0051.png",
+      "measured_diameter_mm": 75.04396318524935,
+      "measured_color_percent": 99.9577576781632,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 52,
+      "scenario_index": 10,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 77.0,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        91.73455707311258,
+        4.770958609245895,
+        141.55056962754725
+      ],
+      "rgb_file": "rgb_0052.png",
+      "measured_diameter_mm": 70.66718354607417,
+      "measured_color_percent": 99.83148397801514,
+      "measured_damage_cm2": 0.004684131886790391
+    },
+    {
+      "frame_index": 53,
+      "scenario_index": 10,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 77.0,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        55.11308752739082,
+        10.397420553613628,
+        9.59908333208173
+      ],
+      "rgb_file": "rgb_0053.png",
+      "measured_diameter_mm": 72.1353130130779,
+      "measured_color_percent": 99.98508686898815,
+      "measured_damage_cm2": 0.004892621465508669
+    },
+    {
+      "frame_index": 54,
+      "scenario_index": 10,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 77.0,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        3.239135202982668,
+        9.365182194657027,
+        85.41232604986091
+      ],
+      "rgb_file": "rgb_0054.png",
+      "measured_diameter_mm": 69.51995765472276,
+      "measured_color_percent": 99.85175824442878,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 55,
+      "scenario_index": 11,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 77.0,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -9.497108021382598,
+        -6.828757941592107,
+        330.50325566830946
+      ],
+      "rgb_file": "rgb_0055.png",
+      "measured_diameter_mm": 69.3817786649566,
+      "measured_color_percent": 99.98478933225168,
+      "measured_damage_cm2": 0.012841231445831146
+    },
+    {
+      "frame_index": 56,
+      "scenario_index": 11,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 77.0,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        52.71141968429974,
+        -23.84415040322462,
+        13.476834310285453
+      ],
+      "rgb_file": "rgb_0056.png",
+      "measured_diameter_mm": 74.2820075591705,
+      "measured_color_percent": 99.90328580285183,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 57,
+      "scenario_index": 11,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 77.0,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        97.5085347120342,
+        -13.718026170498163,
+        24.03271030385458
+      ],
+      "rgb_file": "rgb_0057.png",
+      "measured_diameter_mm": 70.76356085533759,
+      "measured_color_percent": 99.76255752472339,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 58,
+      "scenario_index": 11,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 77.0,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        30.37103221452276,
+        -6.164617121747206,
+        218.68113115179023
+      ],
+      "rgb_file": "rgb_0058.png",
+      "measured_diameter_mm": 75.39628798580554,
+      "measured_color_percent": 99.81225177518354,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 59,
+      "scenario_index": 11,
+      "study": "size",
+      "target_name": "diameter_mm",
+      "target_value": 77.0,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        1.5387031581528667,
+        -6.74731727245571,
+        322.76112125120875
+      ],
+      "rgb_file": "rgb_0059.png",
+      "measured_diameter_mm": 68.69939971883116,
+      "measured_color_percent": 99.97219624396533,
+      "measured_damage_cm2": 0.014492047454601453
+    },
+    {
+      "frame_index": 60,
+      "scenario_index": 12,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 58.0,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -2.314045277663011,
+        -7.486236131527118,
+        58.68518445786611
+      ],
+      "rgb_file": "rgb_0060.png",
+      "measured_diameter_mm": 64.73285249534786,
+      "measured_color_percent": 99.62239071987433,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 61,
+      "scenario_index": 12,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 58.0,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        33.62818540571093,
+        -6.752940100140204,
+        317.16382858430995
+      ],
+      "rgb_file": "rgb_0061.png",
+      "measured_diameter_mm": 68.53838704437692,
+      "measured_color_percent": 99.8522137772952,
+      "measured_damage_cm2": 0.025381424507970925
+    },
+    {
+      "frame_index": 62,
+      "scenario_index": 12,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 58.0,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        97.65210490103755,
+        -8.197300643280826,
+        281.7891774068962
+      ],
+      "rgb_file": "rgb_0062.png",
+      "measured_diameter_mm": 65.40884069399107,
+      "measured_color_percent": 99.73246587419816,
+      "measured_damage_cm2": 0.02293955671854626
+    },
+    {
+      "frame_index": 63,
+      "scenario_index": 12,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 58.0,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        26.50277195150696,
+        -24.791557331036607,
+        264.2062905757379
+      ],
+      "rgb_file": "rgb_0063.png",
+      "measured_diameter_mm": 69.71762110821483,
+      "measured_color_percent": 99.84615384615384,
+      "measured_damage_cm2": 0.023694899739277474
+    },
+    {
+      "frame_index": 64,
+      "scenario_index": 12,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 58.0,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        7.409589365539546,
+        -2.126457985976817,
+        105.52641926500247
+      ],
+      "rgb_file": "rgb_0064.png",
+      "measured_diameter_mm": 64.62608401973016,
+      "measured_color_percent": 99.32538390981448,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 65,
+      "scenario_index": 13,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 58.0,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        6.618582736690623,
+        -1.0853990742639503,
+        260.08997704292045
+      ],
+      "rgb_file": "rgb_0065.png",
+      "measured_diameter_mm": 63.89272037060997,
+      "measured_color_percent": 99.0528233151184,
+      "measured_damage_cm2": 0.012917866993364606
+    },
+    {
+      "frame_index": 66,
+      "scenario_index": 13,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 58.0,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        41.05261131386293,
+        28.630248216051605,
+        98.85621366741243
+      ],
+      "rgb_file": "rgb_0066.png",
+      "measured_diameter_mm": 65.71262222546673,
+      "measured_color_percent": 99.33699622456183,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 67,
+      "scenario_index": 13,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 58.0,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        97.05047473834837,
+        18.19369390690894,
+        177.94467422361984
+      ],
+      "rgb_file": "rgb_0067.png",
+      "measured_diameter_mm": 62.29299028376636,
+      "measured_color_percent": 99.69290339809066,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 68,
+      "scenario_index": 13,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 58.0,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        30.376365873241298,
+        -9.962103061263672,
+        326.4821472383193
+      ],
+      "rgb_file": "rgb_0068.png",
+      "measured_diameter_mm": 68.82932063933501,
+      "measured_color_percent": 99.22011970255728,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 69,
+      "scenario_index": 13,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 58.0,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        3.489807923825838,
+        -3.2215837553869298,
+        152.52893961754944
+      ],
+      "rgb_file": "rgb_0069.png",
+      "measured_diameter_mm": 62.07155387223343,
+      "measured_color_percent": 98.51102941176471,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 70,
+      "scenario_index": 14,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 60.0,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        8.928475527885212,
+        -1.6886795143070277,
+        181.4899419522632
+      ],
+      "rgb_file": "rgb_0070.png",
+      "measured_diameter_mm": 61.088400318934994,
+      "measured_color_percent": 99.67518270972577,
+      "measured_damage_cm2": 0.00408967847300788
+    },
+    {
+      "frame_index": 71,
+      "scenario_index": 14,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 60.0,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        35.61302725941209,
+        -20.12969194592342,
+        307.2230995998034
+      ],
+      "rgb_file": "rgb_0071.png",
+      "measured_diameter_mm": 69.09961595249908,
+      "measured_color_percent": 99.66288691388293,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 72,
+      "scenario_index": 14,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 60.0,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        88.77632884619848,
+        -19.131287329612327,
+        199.25247225927006
+      ],
+      "rgb_file": "rgb_0072.png",
+      "measured_diameter_mm": 65.14206132435925,
+      "measured_color_percent": 99.88379032004774,
+      "measured_damage_cm2": 0.01609645616779619
+    },
+    {
+      "frame_index": 73,
+      "scenario_index": 14,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 60.0,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        43.687708405416664,
+        13.550565145715595,
+        167.56809425602015
+      ],
+      "rgb_file": "rgb_0073.png",
+      "measured_diameter_mm": 68.01741170875633,
+      "measured_color_percent": 99.7657305901787,
+      "measured_damage_cm2": 0.01091453333014656
+    },
+    {
+      "frame_index": 74,
+      "scenario_index": 14,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 60.0,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        1.7932908253588327,
+        -0.8553183655530923,
+        349.0438762813672
+      ],
+      "rgb_file": "rgb_0074.png",
+      "measured_diameter_mm": 62.15013022947942,
+      "measured_color_percent": 99.55999748569992,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 75,
+      "scenario_index": 15,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 60.0,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        5.022030205818167,
+        2.2863893163131426,
+        293.14571885849824
+      ],
+      "rgb_file": "rgb_0075.png",
+      "measured_diameter_mm": 65.21142939186514,
+      "measured_color_percent": 99.47637603507063,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 76,
+      "scenario_index": 15,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 60.0,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        38.11444084321208,
+        26.927614178015723,
+        204.64609242718586
+      ],
+      "rgb_file": "rgb_0076.png",
+      "measured_diameter_mm": 66.63657832626305,
+      "measured_color_percent": 99.64441522739497,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 77,
+      "scenario_index": 15,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 60.0,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        97.97128712244,
+        -5.450236516711637,
+        99.94006547962745
+      ],
+      "rgb_file": "rgb_0077.png",
+      "measured_diameter_mm": 64.59931797602913,
+      "measured_color_percent": 99.71856855077615,
+      "measured_damage_cm2": 0.008226249665515491
+    },
+    {
+      "frame_index": 78,
+      "scenario_index": 15,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 60.0,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        40.09622012632371,
+        -15.531446823417973,
+        113.29371175202611
+      ],
+      "rgb_file": "rgb_0078.png",
+      "measured_diameter_mm": 68.1983277289285,
+      "measured_color_percent": 99.69220655032274,
+      "measured_damage_cm2": 0.013040313921146907
+    },
+    {
+      "frame_index": 79,
+      "scenario_index": 15,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 60.0,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        1.95786266252426,
+        -0.04116172273070262,
+        236.60052008801316
+      ],
+      "rgb_file": "rgb_0079.png",
+      "measured_diameter_mm": 63.04229490387534,
+      "measured_color_percent": 99.59250964290158,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 80,
+      "scenario_index": 16,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 62.0,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -4.964260526052746,
+        5.2811575767676295,
+        282.78533646501546
+      ],
+      "rgb_file": "rgb_0080.png",
+      "measured_diameter_mm": 65.3686308893948,
+      "measured_color_percent": 99.06104722290189,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 81,
+      "scenario_index": 16,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 62.0,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        31.993101446789147,
+        -21.564964139112444,
+        184.2712430203143
+      ],
+      "rgb_file": "rgb_0081.png",
+      "measured_diameter_mm": 70.06084440100905,
+      "measured_color_percent": 99.36947167104948,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 82,
+      "scenario_index": 16,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 62.0,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        86.7222345790502,
+        9.777242511031762,
+        306.9790892371024
+      ],
+      "rgb_file": "rgb_0082.png",
+      "measured_diameter_mm": 65.31918352904356,
+      "measured_color_percent": 99.25728956537685,
+      "measured_damage_cm2": 0.01072885976785373
+    },
+    {
+      "frame_index": 83,
+      "scenario_index": 16,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 62.0,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        49.124283564617514,
+        -5.685207410830323,
+        163.9899896983278
+      ],
+      "rgb_file": "rgb_0083.png",
+      "measured_diameter_mm": 69.34174875229438,
+      "measured_color_percent": 99.5069745069745,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 84,
+      "scenario_index": 16,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 62.0,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -3.717038184016552,
+        7.8112182343396555,
+        325.28430690066585
+      ],
+      "rgb_file": "rgb_0084.png",
+      "measured_diameter_mm": 64.61540481081855,
+      "measured_color_percent": 98.95813953488373,
+      "measured_damage_cm2": 0.027425075536092216
+    },
+    {
+      "frame_index": 85,
+      "scenario_index": 17,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 62.0,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -2.7119250606022582,
+        4.115907025202114,
+        49.83749604522213
+      ],
+      "rgb_file": "rgb_0085.png",
+      "measured_diameter_mm": 62.74957582492992,
+      "measured_color_percent": 99.49199975664659,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 86,
+      "scenario_index": 17,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 62.0,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        41.03407980447561,
+        12.475979002177183,
+        219.0127501314388
+      ],
+      "rgb_file": "rgb_0086.png",
+      "measured_diameter_mm": 66.92632375802062,
+      "measured_color_percent": 98.58797865754798,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 87,
+      "scenario_index": 17,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 62.0,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        100.43972003131259,
+        1.8726538125476964,
+        317.98411263684983
+      ],
+      "rgb_file": "rgb_0087.png",
+      "measured_diameter_mm": 64.49211517902945,
+      "measured_color_percent": 99.25333829042353,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 88,
+      "scenario_index": 17,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 62.0,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        27.503434387810337,
+        21.804557728512528,
+        41.1535148883642
+      ],
+      "rgb_file": "rgb_0088.png",
+      "measured_diameter_mm": 66.45891411297309,
+      "measured_color_percent": 99.57816225469217,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 89,
+      "scenario_index": 17,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 62.0,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        1.7620488878814093,
+        2.0252792373306185,
+        289.04626890673865
+      ],
+      "rgb_file": "rgb_0089.png",
+      "measured_diameter_mm": 65.297116927546,
+      "measured_color_percent": 99.37756186427812,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 90,
+      "scenario_index": 18,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 78.0,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        2.4743765874246364,
+        7.044083258710224,
+        183.2163055577151
+      ],
+      "rgb_file": "rgb_0090.png",
+      "measured_diameter_mm": 61.49984019344826,
+      "measured_color_percent": 99.8152381548868,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 91,
+      "scenario_index": 18,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 78.0,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        55.03452658972223,
+        15.085726346603039,
+        152.79669422417507
+      ],
+      "rgb_file": "rgb_0091.png",
+      "measured_diameter_mm": 66.85904095316118,
+      "measured_color_percent": 99.97845888724765,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 92,
+      "scenario_index": 18,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 78.0,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        85.42945364120835,
+        -5.403633822793651,
+        303.1660697033098
+      ],
+      "rgb_file": "rgb_0092.png",
+      "measured_diameter_mm": 65.32806726872589,
+      "measured_color_percent": 99.148396448632,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 93,
+      "scenario_index": 18,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 78.0,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        54.50041449275525,
+        19.486873193185573,
+        210.05523349071294
+      ],
+      "rgb_file": "rgb_0093.png",
+      "measured_diameter_mm": 66.66086541374047,
+      "measured_color_percent": 99.71794570454813,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 94,
+      "scenario_index": 18,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 78.0,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        2.4656460471972608,
+        8.625214023037152,
+        288.19025923525356
+      ],
+      "rgb_file": "rgb_0094.png",
+      "measured_diameter_mm": 65.04655437459327,
+      "measured_color_percent": 99.1186749734083,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 95,
+      "scenario_index": 19,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 78.0,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        6.8850472527442435,
+        5.9566081350780955,
+        274.08032429149085
+      ],
+      "rgb_file": "rgb_0095.png",
+      "measured_diameter_mm": 65.5406065783854,
+      "measured_color_percent": 99.65025394604787,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 96,
+      "scenario_index": 19,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 78.0,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        39.03700032565371,
+        -29.446964625682345,
+        165.81802959517077
+      ],
+      "rgb_file": "rgb_0096.png",
+      "measured_diameter_mm": 69.37824886949059,
+      "measured_color_percent": 99.35535858178888,
+      "measured_damage_cm2": 0.005032720749775199
+    },
+    {
+      "frame_index": 97,
+      "scenario_index": 19,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 78.0,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        94.5793997513272,
+        -17.85455600060232,
+        210.9006401786007
+      ],
+      "rgb_file": "rgb_0097.png",
+      "measured_diameter_mm": 66.41142853821478,
+      "measured_color_percent": 99.65123557993263,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 98,
+      "scenario_index": 19,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 78.0,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        47.37155126240506,
+        5.76218610210654,
+        223.8999958746527
+      ],
+      "rgb_file": "rgb_0098.png",
+      "measured_diameter_mm": 67.62727346095808,
+      "measured_color_percent": 99.40932912528592,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 99,
+      "scenario_index": 19,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 78.0,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -1.8747668036311005,
+        -7.005999954905802,
+        233.78436053995688
+      ],
+      "rgb_file": "rgb_0099.png",
+      "measured_diameter_mm": 62.88027822897401,
+      "measured_color_percent": 99.52253334565505,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 100,
+      "scenario_index": 20,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 80.0,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        4.208415027970307,
+        9.765695143847488,
+        286.1519908931766
+      ],
+      "rgb_file": "rgb_0100.png",
+      "measured_diameter_mm": 64.73965777813015,
+      "measured_color_percent": 99.81168180299487,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 101,
+      "scenario_index": 20,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 80.0,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        59.42312507652363,
+        -25.581471657770233,
+        64.67030226450599
+      ],
+      "rgb_file": "rgb_0101.png",
+      "measured_diameter_mm": 68.03385765183246,
+      "measured_color_percent": 99.97703656926345,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 102,
+      "scenario_index": 20,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 80.0,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        84.0346213709042,
+        -10.968660044713152,
+        293.2255191446083
+      ],
+      "rgb_file": "rgb_0102.png",
+      "measured_diameter_mm": 65.37598349718462,
+      "measured_color_percent": 99.84303308379619,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 103,
+      "scenario_index": 20,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 80.0,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        32.29341087180363,
+        5.0635007132319245,
+        38.82330429694934
+      ],
+      "rgb_file": "rgb_0103.png",
+      "measured_diameter_mm": 67.99881590969045,
+      "measured_color_percent": 99.85361336002151,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 104,
+      "scenario_index": 20,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 80.0,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        6.366517861763473,
+        -3.4818552553447564,
+        92.58620218297196
+      ],
+      "rgb_file": "rgb_0104.png",
+      "measured_diameter_mm": 65.15964773640756,
+      "measured_color_percent": 100.0,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 105,
+      "scenario_index": 21,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 80.0,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        0.6034398041408302,
+        -6.372713954486596,
+        335.4736709770091
+      ],
+      "rgb_file": "rgb_0105.png",
+      "measured_diameter_mm": 62.690911784193986,
+      "measured_color_percent": 99.51061375892273,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 106,
+      "scenario_index": 21,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 80.0,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        45.46452048027271,
+        6.300201805782379,
+        326.4742619713374
+      ],
+      "rgb_file": "rgb_0106.png",
+      "measured_diameter_mm": 67.60296802525437,
+      "measured_color_percent": 99.6170199933657,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 107,
+      "scenario_index": 21,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 80.0,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        81.61556911217824,
+        -15.202577454757833,
+        266.6391863509411
+      ],
+      "rgb_file": "rgb_0107.png",
+      "measured_diameter_mm": 65.6546338186,
+      "measured_color_percent": 99.53990856410704,
+      "measured_damage_cm2": 0.023843560953094322
+    },
+    {
+      "frame_index": 108,
+      "scenario_index": 21,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 80.0,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        44.284866075080046,
+        -13.31476984073392,
+        232.7252741198591
+      ],
+      "rgb_file": "rgb_0108.png",
+      "measured_diameter_mm": 69.86170354673921,
+      "measured_color_percent": 99.64610288496928,
+      "measured_damage_cm2": 0.02637619751726629
+    },
+    {
+      "frame_index": 109,
+      "scenario_index": 21,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 80.0,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -3.900261673929448,
+        9.591675552716474,
+        109.6351262350444
+      ],
+      "rgb_file": "rgb_0109.png",
+      "measured_diameter_mm": 65.8345910861153,
+      "measured_color_percent": 99.76970770593445,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 110,
+      "scenario_index": 22,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 82.0,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        4.570543612952118,
+        -1.3420477473416703,
+        303.3901910007975
+      ],
+      "rgb_file": "rgb_0110.png",
+      "measured_diameter_mm": 63.78116886042437,
+      "measured_color_percent": 99.82633070290363,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 111,
+      "scenario_index": 22,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 82.0,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        47.95273376306965,
+        -1.8397025948098147,
+        327.67241632249966
+      ],
+      "rgb_file": "rgb_0111.png",
+      "measured_diameter_mm": 68.03807322410916,
+      "measured_color_percent": 99.8826220429784,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 112,
+      "scenario_index": 22,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 82.0,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        82.26203579132817,
+        -4.275581769802539,
+        27.48873348266599
+      ],
+      "rgb_file": "rgb_0112.png",
+      "measured_diameter_mm": 64.9631700183574,
+      "measured_color_percent": 99.9527340403533,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 113,
+      "scenario_index": 22,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 82.0,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        41.94971897935292,
+        -27.65515205915162,
+        0.4492417134873694
+      ],
+      "rgb_file": "rgb_0113.png",
+      "measured_diameter_mm": 68.83299319633943,
+      "measured_color_percent": 99.86598032347476,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 114,
+      "scenario_index": 22,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 82.0,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -5.218997800384127,
+        8.516299303395073,
+        271.85289697982654
+      ],
+      "rgb_file": "rgb_0114.png",
+      "measured_diameter_mm": 65.82215350292655,
+      "measured_color_percent": 99.87246059943519,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 115,
+      "scenario_index": 23,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 82.0,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        1.258893648096187,
+        8.937618343199375,
+        203.82294666050203
+      ],
+      "rgb_file": "rgb_0115.png",
+      "measured_diameter_mm": 62.26161266882871,
+      "measured_color_percent": 99.97444171112744,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 116,
+      "scenario_index": 23,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 82.0,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        37.047754650595664,
+        -7.957382828541917,
+        35.02911474079201
+      ],
+      "rgb_file": "rgb_0116.png",
+      "measured_diameter_mm": 69.9318990648626,
+      "measured_color_percent": 99.68354430379746,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 117,
+      "scenario_index": 23,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 82.0,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        78.50950117741554,
+        8.208200292197368,
+        346.8261527856126
+      ],
+      "rgb_file": "rgb_0117.png",
+      "measured_diameter_mm": 63.8623563159199,
+      "measured_color_percent": 99.87667204250072,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 118,
+      "scenario_index": 23,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 82.0,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        29.05580438287171,
+        13.73469171916016,
+        286.54476407958606
+      ],
+      "rgb_file": "rgb_0118.png",
+      "measured_diameter_mm": 66.42764005633344,
+      "measured_color_percent": 99.79793714940587,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 119,
+      "scenario_index": 23,
+      "study": "color",
+      "target_name": "color_percent",
+      "target_value": 82.0,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        2.4405712706704783,
+        -8.805573208028585,
+        5.670377232744017
+      ],
+      "rgb_file": "rgb_0119.png",
+      "measured_diameter_mm": 63.74462166830278,
+      "measured_color_percent": 99.36653009769934,
+      "measured_damage_cm2": 0.003374573573447805
+    },
+    {
+      "frame_index": 120,
+      "scenario_index": 24,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 0.8,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -2.7079871786325116,
+        8.123707496532667,
+        323.35098280829465
+      ],
+      "rgb_file": "rgb_0120.png",
+      "measured_diameter_mm": 64.50339941433158,
+      "measured_color_percent": 99.96282182358955,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 121,
+      "scenario_index": 24,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 0.8,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        49.40699891328887,
+        18.72667801508353,
+        226.76012844939876
+      ],
+      "rgb_file": "rgb_0121.png",
+      "measured_diameter_mm": 67.491341260064,
+      "measured_color_percent": 99.68214727176408,
+      "measured_damage_cm2": 0.0016330293240211335
+    },
+    {
+      "frame_index": 122,
+      "scenario_index": 24,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 0.8,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        85.07482765607438,
+        19.347510572171643,
+        55.08284179830057
+      ],
+      "rgb_file": "rgb_0122.png",
+      "measured_diameter_mm": 69.90905093971139,
+      "measured_color_percent": 99.8349739432542,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 123,
+      "scenario_index": 24,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 0.8,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        39.7433799944362,
+        -0.6157324924582888,
+        72.48856588030928
+      ],
+      "rgb_file": "rgb_0123.png",
+      "measured_diameter_mm": 68.33547187966782,
+      "measured_color_percent": 99.82966226138032,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 124,
+      "scenario_index": 24,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 0.8,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        5.556582561663339,
+        5.715065595074542,
+        105.47561870321164
+      ],
+      "rgb_file": "rgb_0124.png",
+      "measured_diameter_mm": 64.93770790990544,
+      "measured_color_percent": 99.80810108644307,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 125,
+      "scenario_index": 25,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 0.8,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -6.6802259102096055,
+        -1.361432905258841,
+        266.55094193639695
+      ],
+      "rgb_file": "rgb_0125.png",
+      "measured_diameter_mm": 64.93478586722368,
+      "measured_color_percent": 100.0,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 126,
+      "scenario_index": 25,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 0.8,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        39.7538469663328,
+        13.255576991332752,
+        202.9779853332736
+      ],
+      "rgb_file": "rgb_0126.png",
+      "measured_diameter_mm": 67.33070811209369,
+      "measured_color_percent": 100.0,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 127,
+      "scenario_index": 25,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 0.8,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        91.23891868065385,
+        10.72445624940212,
+        280.1591643946564
+      ],
+      "rgb_file": "rgb_0127.png",
+      "measured_diameter_mm": 64.04851525660816,
+      "measured_color_percent": 100.0,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 128,
+      "scenario_index": 25,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 0.8,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        50.15421312683929,
+        -2.6586858973230925,
+        187.20194828959762
+      ],
+      "rgb_file": "rgb_0128.png",
+      "measured_diameter_mm": 69.01995609939623,
+      "measured_color_percent": 99.90338455964493,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 129,
+      "scenario_index": 25,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 0.8,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        1.3131236455333664,
+        -4.407138316394925,
+        125.74209922942838
+      ],
+      "rgb_file": "rgb_0129.png",
+      "measured_diameter_mm": 63.09833965532614,
+      "measured_color_percent": 99.80672243529732,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 130,
+      "scenario_index": 26,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.0,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        4.670314359718372,
+        8.394622314020314,
+        108.6384125567301
+      ],
+      "rgb_file": "rgb_0130.png",
+      "measured_diameter_mm": 65.13852264611113,
+      "measured_color_percent": 99.97336568908881,
+      "measured_damage_cm2": 0.01814201458429913
+    },
+    {
+      "frame_index": 131,
+      "scenario_index": 26,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.0,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        52.7666872449019,
+        -12.616116460388124,
+        276.7382289599549
+      ],
+      "rgb_file": "rgb_0131.png",
+      "measured_diameter_mm": 68.31223420614995,
+      "measured_color_percent": 99.95532257103712,
+      "measured_damage_cm2": 0.014780156499522414
+    },
+    {
+      "frame_index": 132,
+      "scenario_index": 26,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.0,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        90.84610123202592,
+        17.77683171963217,
+        342.7970725881149
+      ],
+      "rgb_file": "rgb_0132.png",
+      "measured_diameter_mm": 62.53088955401462,
+      "measured_color_percent": 100.0,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 133,
+      "scenario_index": 26,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.0,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        42.537233511795264,
+        -14.438724346240104,
+        324.6978866424097
+      ],
+      "rgb_file": "rgb_0133.png",
+      "measured_diameter_mm": 69.16476641978664,
+      "measured_color_percent": 99.98797607238404,
+      "measured_damage_cm2": 0.01062827517843934
+    },
+    {
+      "frame_index": 134,
+      "scenario_index": 26,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.0,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        6.376898118529397,
+        7.272032673610859,
+        249.84707842074863
+      ],
+      "rgb_file": "rgb_0134.png",
+      "measured_diameter_mm": 63.359122550481814,
+      "measured_color_percent": 99.95623358759535,
+      "measured_damage_cm2": 0.012519742912196137
+    },
+    {
+      "frame_index": 135,
+      "scenario_index": 27,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.0,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        2.8676430863065043,
+        0.799749081161556,
+        293.75615856249533
+      ],
+      "rgb_file": "rgb_0135.png",
+      "measured_diameter_mm": 65.20641421760587,
+      "measured_color_percent": 99.88166398640654,
+      "measured_damage_cm2": 0.005407841279014392
+    },
+    {
+      "frame_index": 136,
+      "scenario_index": 27,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.0,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        48.69482609862428,
+        -28.62934894356026,
+        198.2221152855342
+      ],
+      "rgb_file": "rgb_0136.png",
+      "measured_diameter_mm": 69.7923337178361,
+      "measured_color_percent": 99.95471971503608,
+      "measured_damage_cm2": 0.027277057419769726
+    },
+    {
+      "frame_index": 137,
+      "scenario_index": 27,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.0,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        89.87831390923448,
+        -16.116627016419088,
+        342.6184946362665
+      ],
+      "rgb_file": "rgb_0137.png",
+      "measured_diameter_mm": 63.956368468985836,
+      "measured_color_percent": 99.9936368553339,
+      "measured_damage_cm2": 0.0020872044171012156
+    },
+    {
+      "frame_index": 138,
+      "scenario_index": 27,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.0,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        37.53733818961841,
+        7.032692676736197,
+        80.15528578753472
+      ],
+      "rgb_file": "rgb_0138.png",
+      "measured_diameter_mm": 67.80015885362222,
+      "measured_color_percent": 99.83450069450602,
+      "measured_damage_cm2": 0.04163495540335916
+    },
+    {
+      "frame_index": 139,
+      "scenario_index": 27,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.0,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        3.894848700117091,
+        -4.089948198070596,
+        72.14245974874974
+      ],
+      "rgb_file": "rgb_0139.png",
+      "measured_diameter_mm": 64.17143938208385,
+      "measured_color_percent": 99.83938609797448,
+      "measured_damage_cm2": 0.045475517351719785
+    },
+    {
+      "frame_index": 140,
+      "scenario_index": 28,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.2,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        6.751609519232918,
+        -9.268706016892613,
+        205.61268867337262
+      ],
+      "rgb_file": "rgb_0140.png",
+      "measured_diameter_mm": 64.28055605718848,
+      "measured_color_percent": 99.97826086956522,
+      "measured_damage_cm2": 0.033362517829560887
+    },
+    {
+      "frame_index": 141,
+      "scenario_index": 28,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.2,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        58.170516290477536,
+        13.20593167443888,
+        172.14559787534472
+      ],
+      "rgb_file": "rgb_0141.png",
+      "measured_diameter_mm": 66.680541550362,
+      "measured_color_percent": 99.95056846267919,
+      "measured_damage_cm2": 0.06995080460902303
+    },
+    {
+      "frame_index": 142,
+      "scenario_index": 28,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.2,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        81.10068311025385,
+        -17.64935453756729,
+        211.7455621525136
+      ],
+      "rgb_file": "rgb_0142.png",
+      "measured_diameter_mm": 65.59436346628422,
+      "measured_color_percent": 99.72264471682921,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 143,
+      "scenario_index": 28,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.2,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        25.062152818178365,
+        -24.776800565339435,
+        23.38696384685038
+      ],
+      "rgb_file": "rgb_0143.png",
+      "measured_diameter_mm": 70.0600980722498,
+      "measured_color_percent": 99.96095392563224,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 144,
+      "scenario_index": 28,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.2,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        1.8710076917794218,
+        2.503760322126393,
+        65.65797159371887
+      ],
+      "rgb_file": "rgb_0144.png",
+      "measured_diameter_mm": 63.05473054354019,
+      "measured_color_percent": 99.96690037011405,
+      "measured_damage_cm2": 0.029325799148808306
+    },
+    {
+      "frame_index": 145,
+      "scenario_index": 29,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.2,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -6.365024356069073,
+        -8.05117329645192,
+        284.42379553887093
+      ],
+      "rgb_file": "rgb_0145.png",
+      "measured_diameter_mm": 65.19411462725114,
+      "measured_color_percent": 100.0,
+      "measured_damage_cm2": 0.07731953493464815
+    },
+    {
+      "frame_index": 146,
+      "scenario_index": 29,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.2,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        55.26623334724385,
+        -5.818928234060049,
+        125.96045772411094
+      ],
+      "rgb_file": "rgb_0146.png",
+      "measured_diameter_mm": 68.47017278492416,
+      "measured_color_percent": 99.8635991634082,
+      "measured_damage_cm2": 0.007329157086235077
+    },
+    {
+      "frame_index": 147,
+      "scenario_index": 29,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.2,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        89.55786336530167,
+        -9.430148325920582,
+        300.3009149497893
+      ],
+      "rgb_file": "rgb_0147.png",
+      "measured_diameter_mm": 65.4389640026907,
+      "measured_color_percent": 100.0,
+      "measured_damage_cm2": 0.0518203052362471
+    },
+    {
+      "frame_index": 148,
+      "scenario_index": 29,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.2,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        29.35343983067053,
+        2.5661703724696423,
+        215.7461653621268
+      ],
+      "rgb_file": "rgb_0148.png",
+      "measured_diameter_mm": 67.489267892536,
+      "measured_color_percent": 99.97913872746237,
+      "measured_damage_cm2": 0.07819355057781159
+    },
+    {
+      "frame_index": 149,
+      "scenario_index": 29,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 1.2,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -1.5233870618034135,
+        -1.68418382092616,
+        112.3500013462718
+      ],
+      "rgb_file": "rgb_0149.png",
+      "measured_diameter_mm": 65.48079375179344,
+      "measured_color_percent": 99.78626135486552,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 150,
+      "scenario_index": 30,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.3,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        3.809435050068382,
+        5.7391680659183955,
+        189.5963667063317
+      ],
+      "rgb_file": "rgb_0150.png",
+      "measured_diameter_mm": 61.392046234085754,
+      "measured_color_percent": 99.95242776949668,
+      "measured_damage_cm2": 0.21345183952906477
+    },
+    {
+      "frame_index": 151,
+      "scenario_index": 30,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.3,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        28.547946833640506,
+        -4.588275112217694,
+        117.78752275223596
+      ],
+      "rgb_file": "rgb_0151.png",
+      "measured_diameter_mm": 67.1142596651255,
+      "measured_color_percent": 99.778549197989,
+      "measured_damage_cm2": 0.14082502553922804
+    },
+    {
+      "frame_index": 152,
+      "scenario_index": 30,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.3,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        91.04703443878009,
+        7.783161470566675,
+        265.62247710140673
+      ],
+      "rgb_file": "rgb_0152.png",
+      "measured_diameter_mm": 64.02213021783895,
+      "measured_color_percent": 100.0,
+      "measured_damage_cm2": 0.12141039483308767
+    },
+    {
+      "frame_index": 153,
+      "scenario_index": 30,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.3,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        35.6107245120105,
+        23.26988516922617,
+        141.40724892720777
+      ],
+      "rgb_file": "rgb_0153.png",
+      "measured_diameter_mm": 67.22793039316858,
+      "measured_color_percent": 99.80279126213593,
+      "measured_damage_cm2": 0.13388770956062443
+    },
+    {
+      "frame_index": 154,
+      "scenario_index": 30,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.3,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -9.701209829773482,
+        5.950777685893998,
+        84.49301294528534
+      ],
+      "rgb_file": "rgb_0154.png",
+      "measured_diameter_mm": 64.3413154204117,
+      "measured_color_percent": 99.68623272059912,
+      "measured_damage_cm2": 0.04154526313944788
+    },
+    {
+      "frame_index": 155,
+      "scenario_index": 31,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.3,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        4.631501512218875,
+        -1.0544063898263616,
+        54.35612058238474
+      ],
+      "rgb_file": "rgb_0155.png",
+      "measured_diameter_mm": 63.329317665985585,
+      "measured_color_percent": 99.98480012159902,
+      "measured_damage_cm2": 0.0188010434974073
+    },
+    {
+      "frame_index": 156,
+      "scenario_index": 31,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.3,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        28.7791746109168,
+        -24.566394574602317,
+        155.74179851454488
+      ],
+      "rgb_file": "rgb_0156.png",
+      "measured_diameter_mm": 68.86809079213364,
+      "measured_color_percent": 99.48246468582562,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 157,
+      "scenario_index": 31,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.3,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        89.74335831457583,
+        15.152172552701174,
+        355.75362969489646
+      ],
+      "rgb_file": "rgb_0157.png",
+      "measured_diameter_mm": 62.849102177860885,
+      "measured_color_percent": 99.98426237764,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 158,
+      "scenario_index": 31,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.3,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        52.229712306626254,
+        -16.59469746353344,
+        72.44344394816612
+      ],
+      "rgb_file": "rgb_0158.png",
+      "measured_diameter_mm": 68.58814689909404,
+      "measured_color_percent": 99.8361079962046,
+      "measured_damage_cm2": 0.0
+    },
+    {
+      "frame_index": 159,
+      "scenario_index": 31,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.3,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -8.166954507238703,
+        2.744614697856054,
+        300.715258729447
+      ],
+      "rgb_file": "rgb_0159.png",
+      "measured_diameter_mm": 65.76486329760557,
+      "measured_color_percent": 99.96964914410586,
+      "measured_damage_cm2": 0.01637691543373318
+    },
+    {
+      "frame_index": 160,
+      "scenario_index": 32,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.5,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        7.795862865472451,
+        -1.3995155083091575,
+        229.69191385194367
+      ],
+      "rgb_file": "rgb_0160.png",
+      "measured_diameter_mm": 62.5818373805854,
+      "measured_color_percent": 99.91647848547653,
+      "measured_damage_cm2": 0.08591422734381565
+    },
+    {
+      "frame_index": 161,
+      "scenario_index": 32,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.5,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        59.602882122491785,
+        -26.085826816012233,
+        18.915907603083262
+      ],
+      "rgb_file": "rgb_0161.png",
+      "measured_diameter_mm": 67.00587440809238,
+      "measured_color_percent": 99.82815797407295,
+      "measured_damage_cm2": 0.07549833292367497
+    },
+    {
+      "frame_index": 162,
+      "scenario_index": 32,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.5,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        101.69909719762745,
+        10.674685614699541,
+        56.88432674160441
+      ],
+      "rgb_file": "rgb_0162.png",
+      "measured_diameter_mm": 69.9487023112424,
+      "measured_color_percent": 99.61187936635713,
+      "measured_damage_cm2": 0.09786067036024002
+    },
+    {
+      "frame_index": 163,
+      "scenario_index": 32,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.5,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        50.365889234603245,
+        -25.324830042610547,
+        133.96808047903616
+      ],
+      "rgb_file": "rgb_0163.png",
+      "measured_diameter_mm": 68.2195078577969,
+      "measured_color_percent": 99.52100558318332,
+      "measured_damage_cm2": 0.10070302833090151
+    },
+    {
+      "frame_index": 164,
+      "scenario_index": 32,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.5,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        1.825611571589718,
+        8.603664451916668,
+        160.45092498167224
+      ],
+      "rgb_file": "rgb_0164.png",
+      "measured_diameter_mm": 63.72535932793677,
+      "measured_color_percent": 99.47479959458214,
+      "measured_damage_cm2": 0.08105376582963168
+    },
+    {
+      "frame_index": 165,
+      "scenario_index": 33,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.5,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -0.8250829178603407,
+        -5.823856700128887,
+        111.4199957509365
+      ],
+      "rgb_file": "rgb_0165.png",
+      "measured_diameter_mm": 65.40477957624765,
+      "measured_color_percent": 99.77783044019195,
+      "measured_damage_cm2": 0.05969438219407534
+    },
+    {
+      "frame_index": 166,
+      "scenario_index": 33,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.5,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        33.24603039647802,
+        19.83737296341048,
+        93.99532884330246
+      ],
+      "rgb_file": "rgb_0166.png",
+      "measured_diameter_mm": 66.27396960437096,
+      "measured_color_percent": 99.66570292735815,
+      "measured_damage_cm2": 0.04299751320435996
+    },
+    {
+      "frame_index": 167,
+      "scenario_index": 33,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.5,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        92.1184620411642,
+        8.858471788614175,
+        95.84943538743333
+      ],
+      "rgb_file": "rgb_0167.png",
+      "measured_diameter_mm": 63.501936985899704,
+      "measured_color_percent": 99.71783295711062,
+      "measured_damage_cm2": 0.058618606165387596
+    },
+    {
+      "frame_index": 168,
+      "scenario_index": 33,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.5,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        52.325946713902255,
+        22.184314235506434,
+        53.843815480899345
+      ],
+      "rgb_file": "rgb_0168.png",
+      "measured_diameter_mm": 67.89901767271603,
+      "measured_color_percent": 99.66089487741199,
+      "measured_damage_cm2": 0.05323592056897306
+    },
+    {
+      "frame_index": 169,
+      "scenario_index": 33,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.5,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -9.356288201953122,
+        6.91564222866965,
+        312.555459103152
+      ],
+      "rgb_file": "rgb_0169.png",
+      "measured_diameter_mm": 65.29489971649556,
+      "measured_color_percent": 99.6045613389737,
+      "measured_damage_cm2": 0.02061156966310579
+    },
+    {
+      "frame_index": 170,
+      "scenario_index": 34,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.7,
+      "case_index": 0,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -8.348100999279595,
+        8.413254678258028,
+        217.24394536843715
+      ],
+      "rgb_file": "rgb_0170.png",
+      "measured_diameter_mm": 63.20026758190943,
+      "measured_color_percent": 99.96867952894011,
+      "measured_damage_cm2": 0.057821896185316475
+    },
+    {
+      "frame_index": 171,
+      "scenario_index": 34,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.7,
+      "case_index": 0,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        57.00955420635147,
+        -17.114643026166853,
+        234.1428929654224
+      ],
+      "rgb_file": "rgb_0171.png",
+      "measured_diameter_mm": 68.85393304776584,
+      "measured_color_percent": 100.0,
+      "measured_damage_cm2": 0.042853502465396015
+    },
+    {
+      "frame_index": 172,
+      "scenario_index": 34,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.7,
+      "case_index": 0,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        84.9685002773293,
+        13.480588639166939,
+        248.9884780342107
+      ],
+      "rgb_file": "rgb_0172.png",
+      "measured_diameter_mm": 68.19470444123182,
+      "measured_color_percent": 100.0,
+      "measured_damage_cm2": 0.047479755776654205
+    },
+    {
+      "frame_index": 173,
+      "scenario_index": 34,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.7,
+      "case_index": 0,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        57.64448902731627,
+        -6.3586890945760395,
+        177.01806878505542
+      ],
+      "rgb_file": "rgb_0173.png",
+      "measured_diameter_mm": 68.58228577523649,
+      "measured_color_percent": 99.98772064466615,
+      "measured_damage_cm2": 0.02614873235435267
+    },
+    {
+      "frame_index": 174,
+      "scenario_index": 34,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.7,
+      "case_index": 0,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        4.339192469953733,
+        -5.6470946610363875,
+        103.40236519169463
+      ],
+      "rgb_file": "rgb_0174.png",
+      "measured_diameter_mm": 64.709402752846,
+      "measured_color_percent": 99.87854370945286,
+      "measured_damage_cm2": 0.0698174081316592
+    },
+    {
+      "frame_index": 175,
+      "scenario_index": 35,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.7,
+      "case_index": 1,
+      "view_index": 0,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        9.282206516922827,
+        4.069634826864215,
+        179.0637312583723
+      ],
+      "rgb_file": "rgb_0175.png",
+      "measured_diameter_mm": 60.55802475672517,
+      "measured_color_percent": 99.72081934816023,
+      "measured_damage_cm2": 0.07424947135479433
+    },
+    {
+      "frame_index": 176,
+      "scenario_index": 35,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.7,
+      "case_index": 1,
+      "view_index": 1,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        32.98640056004504,
+        -15.273183150922305,
+        86.9165537475838
+      ],
+      "rgb_file": "rgb_0176.png",
+      "measured_diameter_mm": 69.28072150559049,
+      "measured_color_percent": 99.98252868208026,
+      "measured_damage_cm2": 0.08330259170797293
+    },
+    {
+      "frame_index": 177,
+      "scenario_index": 35,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.7,
+      "case_index": 1,
+      "view_index": 2,
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        90.09908450302937,
+        11.595557048659156,
+        229.2372612268882
+      ],
+      "rgb_file": "rgb_0177.png",
+      "measured_diameter_mm": 69.58242795495994,
+      "measured_color_percent": 99.76093576571705,
+      "measured_damage_cm2": 0.05523033865125915
+    },
+    {
+      "frame_index": 178,
+      "scenario_index": 35,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.7,
+      "case_index": 1,
+      "view_index": 3,
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        58.16895581437649,
+        -24.189145990724644,
+        61.35892190738592
+      ],
+      "rgb_file": "rgb_0178.png",
+      "measured_diameter_mm": 67.59580868200717,
+      "measured_color_percent": 99.95392368610511,
+      "measured_damage_cm2": 0.06835141144054027
+    },
+    {
+      "frame_index": 179,
+      "scenario_index": 35,
+      "study": "damage",
+      "target_name": "damage_cm2",
+      "target_value": 2.7,
+      "case_index": 1,
+      "view_index": 4,
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        0.11665203129064317,
+        -9.774796051549421,
+        240.60610279720908
+      ],
+      "rgb_file": "rgb_0179.png",
+      "measured_diameter_mm": 64.26862197194968,
+      "measured_color_percent": 99.63580544184927,
+      "measured_damage_cm2": 0.05393743509730042
+    }
+  ]
+}

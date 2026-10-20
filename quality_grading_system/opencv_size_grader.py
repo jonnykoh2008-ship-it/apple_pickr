@@ -31,8 +31,26 @@ class DetectionConfig:
     min_saturation: int = 35
     min_value: int = 30
     max_value: int = 250
-    min_area_ratio: float = 0.002
+    # 컨베이어 카메라 3대는 검사 지점까지 거리가 다르다. 가장 먼 view에서
+    # 사과는 지름 40px대까지 작아지므로, 0.002(지름 48px 요구)는 그 view를
+    # 구조적으로 배제해 3면 검사를 무력화한다. 색상·원형도 필터가 잡음을
+    # 걸러주므로 면적 하한은 낮게 둔다.
+    min_area_ratio: float = 0.0005
     morphology_kernel: int = 7
+    # 사과 과피의 hue 대역. OpenCV hue는 0~179이고 빨강은 0에서 감기므로
+    # [0, low_max]와 [high_min, 179] 두 구간을 함께 사용한다. 채도만 보면
+    # 잔디·컨베이어 구조물처럼 화면에서 더 큰 물체가 사과를 이긴다.
+    #
+    # 상한을 주황(hue 25)까지 넓힌다. 사과는 순수 빨강이 아니라 노랑기를
+    # 띠는 면이 있고, 위에서 내려다보는 view는 조명 반사로 더 주황에
+    # 가까워진다. 빨강만 허용하면 그 view가 통째로 검출되지 않는다.
+    # 초록(35~85)과 파랑(100~130)은 여전히 배제된다.
+    hue_low_max: int = 25
+    hue_high_min: int = 165
+    # 사과는 최소 외접원을 어느 정도 채운다. 가늘고 긴 구조물을 배제한다.
+    min_fill_ratio: float = 0.55
+    # 화면을 뒤덮는 배경 구조물을 사과로 잡지 않도록 상한을 둔다.
+    max_area_ratio: float = 0.60
 
     def __post_init__(self) -> None:
         for name, value in (
@@ -48,6 +66,18 @@ class DetectionConfig:
             raise ValueError("min_area_ratio must be between 0 and 1")
         if self.morphology_kernel < 1 or self.morphology_kernel % 2 == 0:
             raise ValueError("morphology_kernel must be a positive odd integer")
+        for name, value in (
+            ("hue_low_max", self.hue_low_max),
+            ("hue_high_min", self.hue_high_min),
+        ):
+            if not 0 <= value <= 179:
+                raise ValueError(f"{name} must be between 0 and 179")
+        if self.hue_low_max >= self.hue_high_min:
+            raise ValueError("hue_low_max must be below hue_high_min")
+        if not 0.0 <= self.min_fill_ratio <= 1.0:
+            raise ValueError("min_fill_ratio must be between 0 and 1")
+        if not self.min_area_ratio < self.max_area_ratio <= 1.0:
+            raise ValueError("max_area_ratio must exceed min_area_ratio")
 
 
 @dataclass(frozen=True)
@@ -59,6 +89,10 @@ class AppleDetection:
     contour_area_px2: float
     confidence: float
     mask: object
+    # 한 화면에 사과가 여러 개면 검사 대상이 모호하다. 붙어 있는 두 사과는
+    # 하나의 윤곽으로 합쳐져 직경이 두 배로 측정되므로 호출부가 이 값을 보고
+    # RECHECK 정책을 적용할 수 있어야 한다.
+    candidate_count: int = 1
 
 
 @dataclass(frozen=True)
@@ -113,9 +147,24 @@ def detect_single_apple(
 
     blurred = cv2.GaussianBlur(image, (5, 5), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-    lower = np.array((0, config.min_saturation, config.min_value), dtype=np.uint8)
-    upper = np.array((179, 255, config.max_value), dtype=np.uint8)
-    mask = cv2.inRange(hsv, lower, upper)
+    # 빨강은 hue 0에서 감기므로 두 구간을 합친다.
+    mask = cv2.bitwise_or(
+        cv2.inRange(
+            hsv,
+            np.array((0, config.min_saturation, config.min_value), dtype=np.uint8),
+            np.array(
+                (config.hue_low_max, 255, config.max_value), dtype=np.uint8
+            ),
+        ),
+        cv2.inRange(
+            hsv,
+            np.array(
+                (config.hue_high_min, config.min_saturation, config.min_value),
+                dtype=np.uint8,
+            ),
+            np.array((179, 255, config.max_value), dtype=np.uint8),
+        ),
+    )
     kernel = cv2.getStructuringElement(
         cv2.MORPH_ELLIPSE,
         (config.morphology_kernel, config.morphology_kernel),
@@ -128,15 +177,32 @@ def detect_single_apple(
         cv2.RETR_EXTERNAL,
         cv2.CHAIN_APPROX_SIMPLE,
     )
-    minimum_area = image.shape[0] * image.shape[1] * config.min_area_ratio
-    candidates = [
+    image_area = image.shape[0] * image.shape[1]
+    minimum_area = image_area * config.min_area_ratio
+    maximum_area = image_area * config.max_area_ratio
+
+    def is_round_enough(candidate) -> bool:
+        """Reject elongated structures such as conveyor frames and rails."""
+        _centre, candidate_radius = cv2.minEnclosingCircle(
+            cv2.convexHull(candidate)
+        )
+        enclosing_area = max(float(np.pi * candidate_radius * candidate_radius), 1.0)
+        return float(cv2.contourArea(candidate)) / enclosing_area >= config.min_fill_ratio
+
+    sized = [
         contour
         for contour in contours
-        if cv2.contourArea(contour) >= minimum_area
+        if minimum_area <= cv2.contourArea(contour) <= maximum_area
     ]
+    candidates = [contour for contour in sized if is_round_enough(contour)]
     if not candidates:
+        if sized:
+            raise AppleNotDetected(
+                f"{len(sized)} red contours matched the size range but none "
+                f"filled {config.min_fill_ratio:.0%} of their enclosing circle"
+            )
         raise AppleNotDetected(
-            "no saturated foreground contour met the configured minimum area"
+            "no red foreground contour met the configured size range"
         )
 
     contour = max(candidates, key=cv2.contourArea)
@@ -156,6 +222,7 @@ def detect_single_apple(
         contour_area_px2=contour_area,
         confidence=confidence,
         mask=mask,
+        candidate_count=len(candidates),
     )
 
 

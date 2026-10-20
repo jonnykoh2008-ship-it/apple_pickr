@@ -6,9 +6,46 @@ from dataclasses import dataclass, field
 
 
 UINT16_MAX = 65_535
-MAX_REPRESENTATIVE_FRAMES = 6
 RESULT_DEADLINE_NS = 500_000_000
-QUALITY_CAMERA_OPTICAL_FRAME = "quality_camera_optical_frame"
+
+# 컨베이어 2는 고정 카메라 3대로 사과의 서로 다른 면을 동시에 본다. 한 순간의
+# 세 면만으로는 표면의 일부밖에 덮지 못하므로, 롤러가 사과를 굴리는 동안 여러
+# 순간을 모아 한 검사로 묶는다.
+QUALITY_CAMERA_OPTICAL_FRAMES = (
+    "quality_camera_top_optical_frame",
+    "quality_camera_left_optical_frame",
+    "quality_camera_right_optical_frame",
+)
+
+# ROI 이탈은 카메라 사건이 아니라 컨베이어의 물리 사건이므로 카메라 frame을
+# 쓰지 않는다.
+INSPECTION_ROI_FRAME = "conveyor_inspection_roi"
+
+# 한 검사에서 모을 순간의 수. 롤러 위에서 사과는 이동 거리 1m 당 약 13회전
+# 하므로, 통과 구간에 순간을 벌려 놓으면 각 순간의 자세가 서로 무관해진다.
+# 그렇게 모은 표본은 표면 전체를 덮는다. 실측 커버리지(60도 이내):
+#
+#   순간 1개 ->  36.2% (사각 155.8도)   순간 4개 -> 87.0%
+#   순간 8개 ->  99.6% (사각  63.3도)
+#
+# 착색률 재현성도 같은 방향이다. 한 순간만 쓰면 통과 중 0.68~0.99로 흔들려
+# (표준편차 0.079) 등급 경계를 넘나들지만, 8개를 합치면 오차가 2.8%p 로 준다.
+REPRESENTATIVE_INSTANTS = 8
+
+# 순간 사이의 최소 simulation time 간격. 이것이 없으면 연속 프레임 8장이 그대로
+# 채택되어 자세가 거의 같아진다. 실측에서 한 검사의 8개 순간이 0.417초 안에
+# 뭉쳐 이웃 간 0.019회전밖에 차이나지 않았고, 착색률은 단일 스냅샷과 같은
+# 0.99 가 나왔다. 사과는 초당 약 0.7 회전하므로 0.35초면 약 0.25회전 벌어진다.
+#
+# 간격을 두면 계산량도 준다. 간격 안에 들어온 후보는 크롭과 ignore_mask 계산을
+# 하기 전에 버려지므로, 20Hz 로 들어오는 모든 그룹을 처리하지 않아도 된다.
+MIN_INSTANT_GAP_NS = 350_000_000
+
+# 카메라 3대 × 순간 8개. 한 검사에서 전송할 수 있는 프레임 상한이다.
+# 프레임당 실측 84KB 이므로 한 검사가 약 2MB 인데, 이 경로는 어댑터와 검사
+# 노드가 같은 PC 에 있어 네트워크를 건너지 않는다. 실측 495~874 MB/s 로
+# 24 프레임이 3~4ms 에 도착하며, 이는 500ms deadline 의 1% 미만이다.
+MAX_REPRESENTATIVE_FRAMES = 24
 
 
 class InspectionContractError(ValueError):
@@ -46,9 +83,9 @@ class InspectionCompletion:
             )
         if self.roi_exit_time_ns < 0:
             raise InspectionContractError("roi_exit_time_ns must be non-negative")
-        if self.frame_id != QUALITY_CAMERA_OPTICAL_FRAME:
+        if self.frame_id != INSPECTION_ROI_FRAME:
             raise InspectionContractError(
-                f"completion frame_id must be {QUALITY_CAMERA_OPTICAL_FRAME!r}")
+                f"completion frame_id must be {INSPECTION_ROI_FRAME!r}")
 
     @property
     def deadline_time_ns(self) -> int:
@@ -112,9 +149,9 @@ class InspectionFrame:
         ):
             if not isinstance(value, str) or not value.strip():
                 raise InspectionContractError(f"{name} must be a non-empty string")
-        if self.frame_id != QUALITY_CAMERA_OPTICAL_FRAME:
+        if self.frame_id not in QUALITY_CAMERA_OPTICAL_FRAMES:
             raise InspectionContractError(
-                f"frame_id must be {QUALITY_CAMERA_OPTICAL_FRAME!r}")
+                f"frame_id must be one of {QUALITY_CAMERA_OPTICAL_FRAMES!r}")
         if self.camera_width <= 0 or self.camera_height <= 0:
             raise InspectionContractError("CameraInfo width and height must be positive")
         if len(self.camera_k) != 9 or len(self.camera_p) != 12:

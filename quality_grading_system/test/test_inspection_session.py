@@ -4,6 +4,7 @@ import unittest
 
 from inspection_session import (
     DuplicateFrameConflict,
+    INSPECTION_ROI_FRAME,
     InspectionCompletion,
     InspectionContractError,
     InspectionFrame,
@@ -50,7 +51,7 @@ def make_frame(
         camera_k=CAMERA_K,
         camera_p=CAMERA_P,
         stamp_ns=1_000_000_000 + frame_index,
-        frame_id="quality_camera_optical_frame",
+        frame_id="quality_camera_top_optical_frame",
     )
 
 
@@ -66,7 +67,7 @@ def make_completion(
         apple_id,
         total_frames,
         roi_exit_time_ns,
-        "quality_camera_optical_frame",
+        INSPECTION_ROI_FRAME,
     )
 
 

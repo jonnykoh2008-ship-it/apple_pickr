@@ -4,12 +4,15 @@
 ``rclpy``를 직접 import하지 않고 ROS 2 Bridge OmniGraph 노드를 사용하므로,
 Ubuntu 24.04 / ROS 2 Jazzy의 Python 3.12와 충돌하지 않는다.
 
-발행 토픽:
-    /clock                         rosgraph_msgs/msg/Clock
-    /base_camera/color/image_raw   sensor_msgs/msg/Image (rgb8)
-    /base_camera/depth/image_raw   sensor_msgs/msg/Image (32FC1, meter)
-    /base_camera/camera_info       sensor_msgs/msg/CameraInfo
-    /tf_static                     world -> base_camera
+발행 토픽 (<robot>은 --robot-id, 예: robot_01):
+    /clock                                 rosgraph_msgs/msg/Clock
+    /<robot>/base_camera/color/image_raw   sensor_msgs/msg/Image (rgb8)
+    /<robot>/base_camera/depth/image_raw   sensor_msgs/msg/Image (32FC1, meter)
+    /<robot>/base_camera/camera_info       sensor_msgs/msg/CameraInfo
+    /tf_static                             world -> <robot>/base_camera
+
+이름은 harvest_namespace 가 만든다. 로봇마다 다른 이름을 써야 두 대를 동시에
+띄웠을 때 수신 측이 어느 로봇의 영상인지 구분할 수 있다.
 
 실행 예시:
     ROS_DOMAIN_ID=102 /home/rokey/isaacsim/python.sh base_camera_publish.py
@@ -19,6 +22,8 @@ import argparse
 import os
 import sys
 from pathlib import Path
+
+from harvest_namespace import HarvestNames
 
 
 # 개별 비전 테스트의 기본 Domain이다. 실행 환경에서 명시한 값이 있으면
@@ -138,11 +143,16 @@ CAMERA_ROOT_PATHS = {
 CAMERA_ROOT_PATH = CAMERA_ROOT_PATHS[ARGS.robot_id]
 CAMERA_PRIM_PATH = f"{CAMERA_ROOT_PATH}/RSD455/Camera_OmniVision_OV9782_Color"
 GRAPH_PATH = f"/BaseCameraRosGraph_{ARGS.robot_id}"
-FRAME_ID = "base_camera"
 
-RGB_TOPIC = "/base_camera/color/image_raw"
-DEPTH_TOPIC = "/base_camera/depth/image_raw"
-CAMERA_INFO_TOPIC = "/base_camera/camera_info"
+# 이름은 harvest_namespace 가 정한다. 두 로봇을 동시에 띄우면 예전처럼 고정
+# 이름을 쓰던 시절에는 두 카메라가 한 토픽에 발행하고 서로 다른 위치의 카메라가
+# 같은 TF frame 을 주장해서, 수신 측이 어느 로봇의 영상인지 구분할 수 없었다.
+NAMES = HarvestNames(ARGS.robot_id)
+FRAME_ID = NAMES.camera_frame
+
+RGB_TOPIC = NAMES.rgb_topic
+DEPTH_TOPIC = NAMES.depth_topic
+CAMERA_INFO_TOPIC = NAMES.camera_info_topic
 
 
 def require_prim(stage, prim_path):

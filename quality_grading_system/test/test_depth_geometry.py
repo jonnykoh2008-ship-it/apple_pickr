@@ -54,7 +54,7 @@ def make_frame(frame_index: int = 0) -> InspectionFrame:
         camera_k=camera_k,
         camera_p=camera_p,
         stamp_ns=1_000_000_000 + frame_index,
-        frame_id="quality_camera_optical_frame",
+        frame_id="quality_camera_top_optical_frame",
     )
 
 
@@ -127,6 +127,54 @@ class DepthGeometryTest(unittest.TestCase):
             measure_geometry(
                 InspectionFrame(**{**frame.__dict__, "camera_width": 101})
             )
+
+
+class DepthContaminationTest(unittest.TestCase):
+    """Belt shadow inside the apple mask must not inflate the diameter.
+
+    Observed on the conveyor: identical apples measured 81 mm on clean frames
+    and 94-113 mm whenever the mask bled onto the belt behind the apple.
+    """
+
+    WIDTH = HEIGHT = 100
+    APPLE_DEPTH_MM = 500
+    # 벨트는 사과 최근접면보다 지름만큼 뒤에 있다.
+    BELT_DEPTH_MM = 580
+
+    def _frame(self, *, with_shadow: bool) -> InspectionFrame:
+        apple_mask = np.zeros((self.HEIGHT, self.WIDTH), dtype=np.uint8)
+        apple_mask[40:60, 40:60] = 255
+        depth_mm = np.zeros((self.HEIGHT, self.WIDTH), dtype=np.uint16)
+        depth_mm[apple_mask > 0] = self.APPLE_DEPTH_MM
+        if with_shadow:
+            # 그림자가 마스크에 붙고, 그 픽셀은 벨트 깊이를 가진다.
+            apple_mask[60:80, 40:60] = 255
+            depth_mm[60:80, 40:60] = self.BELT_DEPTH_MM
+
+        base = make_frame()
+        return InspectionFrame(
+            **{
+                **base.__dict__,
+                "camera_width": self.WIDTH,
+                "camera_height": self.HEIGHT,
+                "apple_mask_data": png_bytes(apple_mask),
+                "ignore_mask_data": png_bytes(
+                    np.zeros((self.HEIGHT, self.WIDTH), dtype=np.uint8)
+                ),
+                "depth_data": png_bytes(depth_mm, prefix=b"compressed!!"),
+                "image_data": png_bytes(
+                    np.zeros((self.HEIGHT, self.WIDTH, 3), dtype=np.uint8)
+                ),
+            }
+        )
+
+    def test_shadow_pixels_do_not_change_the_diameter(self) -> None:
+        clean = measure_geometry(self._frame(with_shadow=False)).diameter_mm
+        shadowed = measure_geometry(self._frame(with_shadow=True)).diameter_mm
+        self.assertAlmostEqual(clean, shadowed, places=6)
+
+    def test_clean_frame_still_measures(self) -> None:
+        self.assertGreater(measure_geometry(self._frame(with_shadow=False)).diameter_mm, 0.0)
 
 
 if __name__ == "__main__":

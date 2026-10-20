@@ -35,13 +35,18 @@ class AppleDatasetRecord:
     view_index: int
     rgb_path: Path
     depth_path: Path
-    instance_segmentation_path: Path
-    instance_mapping_path: Path
     camera_params_path: Path
     measured_diameter_mm: float
+    group_key: str
+    depth_kind: str = "radial"
+    apple_mask_path: Path | None = None
+    instance_segmentation_path: Path | None = None
+    instance_mapping_path: Path | None = None
     target_color_mask_path: Path | None = None
     damage_mask_path: Path | None = None
     ignore_mask_path: Path | None = None
+    measured_color_ratio: float | None = None
+    measured_damage_area_cm2: float | None = None
     severe_defect: bool | None = None
 
     @property
@@ -59,6 +64,17 @@ class DatasetCapabilities:
     asset_types: tuple[str, ...]
 
     @property
+    def supports_three_metric_training(self) -> bool:
+        return bool(self.samples) and all(
+            count == self.samples
+            for count in (
+                self.diameter_labels,
+                self.color_mask_labels,
+                self.damage_mask_labels,
+            )
+        )
+
+    @property
     def supports_complete_quality_training(self) -> bool:
         return bool(self.samples) and all(
             count == self.samples
@@ -73,21 +89,26 @@ class DatasetCapabilities:
         value = asdict(self)
         value["color_ratio_labels"] = self.color_mask_labels
         value["damage_area_labels"] = self.damage_mask_labels
+        value["supports_three_metric_training"] = self.supports_three_metric_training
         value["supports_complete_quality_training"] = self.supports_complete_quality_training
         return value
 
 
 def resolve_dataset_root(path: str | Path) -> Path:
     candidate = Path(path).expanduser().resolve()
-    if (candidate / "dataset_manifest.json").is_file():
+    marker_names = ("dataset_manifest.json", "boundary_metadata.json")
+    if any((candidate / name).is_file() for name in marker_names):
         return candidate
     runs = sorted(
         child
         for child in candidate.iterdir()
-        if child.is_dir() and (child / "dataset_manifest.json").is_file()
+        if child.is_dir()
+        and any((child / name).is_file() for name in marker_names)
     ) if candidate.is_dir() else []
     if not runs:
-        raise DatasetContractError(f"dataset_manifest.json not found below {candidate}")
+        raise DatasetContractError(
+            f"dataset_manifest.json or boundary_metadata.json not found below {candidate}"
+        )
     return runs[-1]
 
 
@@ -135,8 +156,99 @@ def _optional_bool(values: dict[str, Any], key: str) -> bool | None:
     return value
 
 
+def _required_annotation_path(
+    root: Path,
+    values: dict[str, Any],
+    key: str,
+) -> Path:
+    path = _optional_path(root, values, key)
+    if path is None:
+        raise DatasetContractError(f"boundary annotation requires {key}")
+    return path
+
+
+def _load_boundary_records(root: Path) -> tuple[AppleDatasetRecord, ...]:
+    metadata = _load_json(root / "boundary_metadata.json")
+    annotations = _load_optional_annotations(root)
+    frame_details = metadata.get("frames_detail", [])
+    if not isinstance(frame_details, list):
+        raise DatasetContractError("boundary_metadata.json frames_detail must be a list")
+
+    source_usd = Path(str(metadata.get("source_usd", "boundary_apple"))).stem
+    records: list[AppleDatasetRecord] = []
+    seen_indices: set[int] = set()
+
+    for item in frame_details:
+        if not isinstance(item, dict):
+            raise DatasetContractError("each frames_detail entry must be an object")
+        frame_index = int(item["frame_index"])
+        if frame_index in seen_indices:
+            raise DatasetContractError(f"duplicate frame_index {frame_index}")
+        seen_indices.add(frame_index)
+
+        rgb_name = str(item.get("rgb_file", f"rgb_{frame_index:04d}.png"))
+        extra = annotations.get(rgb_name)
+        if not isinstance(extra, dict):
+            raise DatasetContractError(f"quality annotation is missing for {rgb_name}")
+
+        diameter = item.get("measured_diameter_mm")
+        if diameter is None or float(diameter) <= 0.0:
+            raise DatasetContractError(
+                f"{rgb_name} requires a positive measured_diameter_mm"
+            )
+        color_percent = item.get("measured_color_percent")
+        damage_area = item.get("measured_damage_cm2")
+        scenario_index = int(item.get("scenario_index", frame_index))
+
+        records.append(
+            AppleDatasetRecord(
+                dataset_root=root,
+                asset_type=source_usd,
+                view_index=int(item.get("view_index", 0)),
+                rgb_path=_require_file(root / rgb_name),
+                depth_path=_required_annotation_path(root, extra, "depth"),
+                camera_params_path=_required_annotation_path(
+                    root, extra, "camera_params"
+                ),
+                measured_diameter_mm=float(diameter),
+                group_key=f"boundary_scenario_{scenario_index:04d}",
+                depth_kind="optical_z",
+                apple_mask_path=_required_annotation_path(
+                    root, extra, "apple_mask"
+                ),
+                target_color_mask_path=_required_annotation_path(
+                    root, extra, "target_color_mask"
+                ),
+                damage_mask_path=_required_annotation_path(
+                    root, extra, "damage_mask"
+                ),
+                ignore_mask_path=_required_annotation_path(
+                    root, extra, "ignore_mask"
+                ),
+                measured_color_ratio=(
+                    float(color_percent) * 0.01
+                    if color_percent is not None else None
+                ),
+                measured_damage_area_cm2=(
+                    float(damage_area) if damage_area is not None else None
+                ),
+                severe_defect=_optional_bool(extra, "severe_defect"),
+            )
+        )
+
+    expected = int(metadata.get("frames", len(records)))
+    if len(records) != expected:
+        raise DatasetContractError(
+            f"boundary metadata declares {expected} frames but found {len(records)}"
+        )
+    return tuple(sorted(records, key=lambda record: record.relative_rgb_path))
+
+
 def load_dataset_records(path: str | Path) -> tuple[AppleDatasetRecord, ...]:
     root = resolve_dataset_root(path)
+    if (root / "boundary_metadata.json").is_file():
+        return _load_boundary_records(root)
+
     manifest = _load_json(root / "dataset_manifest.json")
     annotations = _load_optional_annotations(root)
     records: list[AppleDatasetRecord] = []
@@ -167,16 +279,17 @@ def load_dataset_records(path: str | Path) -> tuple[AppleDatasetRecord, ...]:
                         depth_path=_require_file(
                             size_root / f"distance_to_camera_{stem}.npy"
                         ),
+                        camera_params_path=_require_file(
+                            size_root / f"camera_params_{stem}.json"
+                        ),
+                        measured_diameter_mm=float(item["measured_diameter_mm"]),
+                        group_key=size_root.relative_to(root).as_posix(),
                         instance_segmentation_path=_require_file(
                             size_root / f"instance_id_segmentation_{stem}.png"
                         ),
                         instance_mapping_path=_require_file(
                             size_root / f"instance_id_segmentation_mapping_{stem}.json"
                         ),
-                        camera_params_path=_require_file(
-                            size_root / f"camera_params_{stem}.json"
-                        ),
-                        measured_diameter_mm=float(item["measured_diameter_mm"]),
                         target_color_mask_path=_optional_path(
                             root, extra, "target_color_mask"
                         ),
@@ -223,6 +336,20 @@ def load_apple_mask(record: AppleDatasetRecord):
     import numpy as np
     from PIL import Image
 
+    if record.apple_mask_path is not None:
+        return _load_binary_mask(
+            record.apple_mask_path,
+            (load_camera_intrinsics(record).height, load_camera_intrinsics(record).width),
+        )
+
+    if (
+        record.instance_segmentation_path is None
+        or record.instance_mapping_path is None
+    ):
+        raise DatasetContractError(
+            f"record has neither apple_mask nor instance segmentation: {record.rgb_path}"
+        )
+
     segmentation = np.asarray(
         Image.open(record.instance_segmentation_path).convert("RGBA")
     )
@@ -247,7 +374,7 @@ def load_apple_mask(record: AppleDatasetRecord):
 
 
 def estimate_visible_diameter_mm(record: AppleDatasetRecord) -> float:
-    """Diagnostic visible extent for the existing radial-depth capture."""
+    """Diagnostic visible extent using the record's declared depth convention."""
 
     import numpy as np
 
@@ -260,12 +387,18 @@ def estimate_visible_diameter_mm(record: AppleDatasetRecord) -> float:
             f"too few valid apple depth pixels in {record.depth_path}"
         )
     ys, xs = np.nonzero(valid)
-    radial_depth = depth[ys, xs]
+    sample_depth = depth[ys, xs]
     ray_x = (xs - intrinsics.cx) / intrinsics.fx
     ray_y = (ys - intrinsics.cy) / intrinsics.fy
-    ray_norm = np.sqrt(ray_x * ray_x + ray_y * ray_y + 1.0)
-    points_x = radial_depth * ray_x / ray_norm
-    points_y = radial_depth * ray_y / ray_norm
+    if record.depth_kind == "optical_z":
+        points_x = sample_depth * ray_x
+        points_y = sample_depth * ray_y
+    elif record.depth_kind == "radial":
+        ray_norm = np.sqrt(ray_x * ray_x + ray_y * ray_y + 1.0)
+        points_x = sample_depth * ray_x / ray_norm
+        points_y = sample_depth * ray_y / ray_norm
+    else:
+        raise DatasetContractError(f"unsupported depth_kind: {record.depth_kind}")
     extent_x = np.percentile(points_x, 99.8) - np.percentile(points_x, 0.2)
     extent_y = np.percentile(points_y, 99.8) - np.percentile(points_y, 0.2)
     return float(max(extent_x, extent_y) * 1000.0)
@@ -360,8 +493,15 @@ class AppleQualityTorchDataset:
                 )
             ).astype(np.float32)
         )
-        valid_surface = torch.from_numpy(
-            _letterbox_mask(surface & ~ignore, self.image_size)
+        # Synthetic ignore_mask includes the known damage region so color ratio
+        # excludes it.  Damage positives must still participate in damage loss.
+        valid_masks = torch.from_numpy(
+            np.stack(
+                (
+                    _letterbox_mask(surface & ~ignore, self.image_size),
+                    _letterbox_mask(surface, self.image_size),
+                )
+            )
         )
         target_valid = torch.tensor(
             (
@@ -375,7 +515,7 @@ class AppleQualityTorchDataset:
             float(record.severe_defect) if record.severe_defect is not None else 0.0,
             dtype=torch.float32,
         )
-        return image_tensor, mask_targets, severe_target, target_valid, valid_surface
+        return image_tensor, mask_targets, severe_target, target_valid, valid_masks
 
 
 def main(args: list[str] | None = None) -> None:

@@ -1,0 +1,581 @@
+{
+  "source_usd": "",
+  "frames": 20,
+  "seed": 20260824,
+  "resolution": [
+    640,
+    640
+  ],
+  "fixed_camera_position": [
+    -0.2848668365146523,
+    333.04240665515226,
+    32.813711940428895
+  ],
+  "semantic_classes": {
+    "apple_surface": "target color",
+    "non_target_color": "green/uncolored area",
+    "damage": "damage and color ignore area"
+  },
+  "records": [
+    {
+      "frame_index": 0,
+      "rgb_file": "rgb_0000.png",
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -0.8922166648703254,
+        3.33410993739167,
+        143.37928559715394
+      ],
+      "target_color_ratio_visible": 0.991291796968968,
+      "damage_ratio_visible": 0.0123075460938985,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.210702886955414,
+          17.0762882232666,
+          6.053652606330098
+        ],
+        "sink_depth": 3.4339891095554136
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          8.64788523926059,
+          8.320327192913071,
+          11.755160203512087
+        ],
+        "sink_depth": 3.3398187314515537
+      }
+    },
+    {
+      "frame_index": 1,
+      "rgb_file": "rgb_0001.png",
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        37.652657805790355,
+        15.674009834494626,
+        308.3656275054069
+      ],
+      "target_color_ratio_visible": 0.9927121290994274,
+      "damage_ratio_visible": 0.006675128096648333,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.184524035496901,
+          17.0762882232666,
+          3.621193679442081
+        ],
+        "sink_depth": 3.424564723030349
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          8.913807642848951,
+          11.253731206035923,
+          8.583178540367978
+        ],
+        "sink_depth": 3.4166330374711458
+      }
+    },
+    {
+      "frame_index": 2,
+      "rgb_file": "rgb_0002.png",
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        95.93855446988897,
+        4.334617622115701,
+        88.64903890961695
+      ],
+      "target_color_ratio_visible": 0.9877152163797115,
+      "damage_ratio_visible": 0.013767783386874713,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.082830190190458,
+          17.0762882232666,
+          4.774838363310483
+        ],
+        "sink_depth": 3.38795493872003
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          7.750483947088668,
+          7.823013406896124,
+          11.85826109221429
+        ],
+        "sink_depth": 3.0207462234967606
+      }
+    },
+    {
+      "frame_index": 3,
+      "rgb_file": "rgb_0003.png",
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        1.43015137960802,
+        2.9167647703006168,
+        86.16126175146901
+      ],
+      "target_color_ratio_visible": 0.9819857175765953,
+      "damage_ratio_visible": 0.0,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          9.090861934487,
+          17.0762882232666,
+          6.015909809962937
+        ],
+        "sink_depth": 3.7508463666667846
+      },
+      "damage_patch": {
+        "visible": false,
+        "scale": null
+      }
+    },
+    {
+      "frame_index": 4,
+      "rgb_file": "rgb_0004.png",
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        56.709291725568896,
+        9.013555171357574,
+        32.33935028627785
+      ],
+      "target_color_ratio_visible": 0.9892609266554118,
+      "damage_ratio_visible": 0.021655349605432188,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.68944605096223,
+          17.0762882232666,
+          7.5308487347574005
+        ],
+        "sink_depth": 3.6063366485978676
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          8.955638336380163,
+          10.040773697389735,
+          12.807216167449951
+        ],
+        "sink_depth": 3.4929813406133072
+      }
+    },
+    {
+      "frame_index": 5,
+      "rgb_file": "rgb_0005.png",
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        100.43196610092141,
+        9.627382513972318,
+        292.40186319549446
+      ],
+      "target_color_ratio_visible": 0.9890067127152447,
+      "damage_ratio_visible": 0.015610036391495882,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.42420902475052,
+          17.0762882232666,
+          5.782870506702704
+        ],
+        "sink_depth": 3.5108513191616515
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          8.777718302888449,
+          10.630230195615855,
+          11.799013433505936
+        ],
+        "sink_depth": 3.388252324710474
+      }
+    },
+    {
+      "frame_index": 6,
+      "rgb_file": "rgb_0006.png",
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -9.598058329906554,
+        3.4233362590530003,
+        94.42969623297867
+      ],
+      "target_color_ratio_visible": 0.9897089639115251,
+      "damage_ratio_visible": 0.01504380131174609,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.57088875855076,
+          17.0762882232666,
+          3.7096617720129066
+        ],
+        "sink_depth": 3.563656023329738
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          8.024513623262836,
+          11.73083871855103,
+          10.881723721244864
+        ],
+        "sink_depth": 3.1144683291493567
+      }
+    },
+    {
+      "frame_index": 7,
+      "rgb_file": "rgb_0007.png",
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        57.63481069825978,
+        -4.684266016874684,
+        231.9686482973371
+      ],
+      "target_color_ratio_visible": 1.0,
+      "damage_ratio_visible": 0.006671674104184156,
+      "color_patch": {
+        "visible": false,
+        "scale": null
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          8.724105817720679,
+          7.680788965153565,
+          7.669931166737997
+        ],
+        "sink_depth": 3.2374114426320015
+      }
+    },
+    {
+      "frame_index": 8,
+      "rgb_file": "rgb_0008.png",
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        85.1203576411637,
+        -18.59666965477491,
+        31.741712135568143
+      ],
+      "target_color_ratio_visible": 0.9933909506863243,
+      "damage_ratio_visible": 0.0,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.387784336591865,
+          17.0762882232666,
+          8.953366375579142
+        ],
+        "sink_depth": 3.497738431424536
+      },
+      "damage_patch": {
+        "visible": false,
+        "scale": null
+      }
+    },
+    {
+      "frame_index": 9,
+      "rgb_file": "rgb_0009.png",
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        3.9957139124413743,
+        -5.849984307701497,
+        289.6064974328933
+      ],
+      "target_color_ratio_visible": 0.9857383334891986,
+      "damage_ratio_visible": 0.0,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.128306530980705,
+          17.0762882232666,
+          5.638796212004515
+        ],
+        "sink_depth": 3.4043264214045186
+      },
+      "damage_patch": {
+        "visible": false,
+        "scale": null
+      }
+    },
+    {
+      "frame_index": 10,
+      "rgb_file": "rgb_0010.png",
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        27.829358288016756,
+        -9.702430918891572,
+        241.1369013895173
+      ],
+      "target_color_ratio_visible": 0.9835469502772475,
+      "damage_ratio_visible": 0.009097459917132048,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.329486840244044,
+          17.0762882232666,
+          8.941357226883104
+        ],
+        "sink_depth": 3.4767513327393207
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          8.698882126922467,
+          10.539076540331259,
+          9.042100899066972
+        ],
+        "sink_depth": 3.3137226106890134
+      }
+    },
+    {
+      "frame_index": 11,
+      "rgb_file": "rgb_0011.png",
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        81.70115995279804,
+        13.426412060304727,
+        18.61188933941577
+      ],
+      "target_color_ratio_visible": 0.9871340050139539,
+      "damage_ratio_visible": 0.014221766296745314,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          7.848026704216267,
+          17.0762882232666,
+          6.515021361392896
+        ],
+        "sink_depth": 3.3034256837693206
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          8.527674398855783,
+          10.423887770545505,
+          12.462895649506237
+        ],
+        "sink_depth": 3.324647258710014
+      }
+    },
+    {
+      "frame_index": 12,
+      "rgb_file": "rgb_0012.png",
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        7.330938642032873,
+        6.290105974778854,
+        248.76711614816108
+      ],
+      "target_color_ratio_visible": 0.9869744518205592,
+      "damage_ratio_visible": 0.031135798859815815,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          9.548264119340143,
+          17.0762882232666,
+          6.168661289302418
+        ],
+        "sink_depth": 3.915511153213916
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          7.752281293001091,
+          12.090277971423358,
+          12.206423689408966
+        ],
+        "sink_depth": 3.0351313734759895
+      }
+    },
+    {
+      "frame_index": 13,
+      "rgb_file": "rgb_0013.png",
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        46.82657076130045,
+        21.00860053875092,
+        261.5118471029817
+      ],
+      "target_color_ratio_visible": 0.9877097729516289,
+      "damage_ratio_visible": 0.015979406479187917,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.927460707871713,
+          17.0762882232666,
+          4.715969432286481
+        ],
+        "sink_depth": 3.6920219250852813
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          9.07966312468859,
+          11.047553219176935,
+          12.469342244687578
+        ],
+        "sink_depth": 3.5236267458806765
+      }
+    },
+    {
+      "frame_index": 14,
+      "rgb_file": "rgb_0014.png",
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        87.2933293916236,
+        -16.883631302071773,
+        265.1145581233348
+      ],
+      "target_color_ratio_visible": 0.9795908986439898,
+      "damage_ratio_visible": 0.013915329525881606,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.828271446332746,
+          17.0762882232666,
+          6.102528143475275
+        ],
+        "sink_depth": 3.6563137909312533
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          7.81285116224011,
+          8.812734839884095,
+          9.718737679666317
+        ],
+        "sink_depth": 2.9675024724899726
+      }
+    },
+    {
+      "frame_index": 15,
+      "rgb_file": "rgb_0015.png",
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        -0.018587978726040788,
+        -0.7495615331155641,
+        3.0366964869671254
+      ],
+      "target_color_ratio_visible": 0.9662899165885198,
+      "damage_ratio_visible": 0.0,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.947669342373382,
+          17.0762882232666,
+          10.14065233100551
+        ],
+        "sink_depth": 3.699297033505882
+      },
+      "damage_patch": {
+        "visible": false,
+        "scale": null
+      }
+    },
+    {
+      "frame_index": 16,
+      "rgb_file": "rgb_0016.png",
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        57.5662133119332,
+        -24.335209537952828,
+        290.9104687748913
+      ],
+      "target_color_ratio_visible": 1.0,
+      "damage_ratio_visible": 0.006046755225443984,
+      "color_patch": {
+        "visible": false,
+        "scale": null
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          9.571738805628911,
+          7.543548818371753,
+          9.923976562721073
+        ],
+        "sink_depth": 3.607312393002743
+      }
+    },
+    {
+      "frame_index": 17,
+      "rgb_file": "rgb_0017.png",
+      "pose_class": "lying",
+      "apple_rotation_deg": [
+        94.8516982845527,
+        -3.694587446898751,
+        273.3895086633417
+      ],
+      "target_color_ratio_visible": 0.9856713332706943,
+      "damage_ratio_visible": 0.0,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.117745839811638,
+          17.0762882232666,
+          5.993426665420749
+        ],
+        "sink_depth": 3.4005245725836546
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          8.825996312129321,
+          12.807216167449951,
+          10.297808201980105
+        ],
+        "sink_depth": 3.4463102118830045
+      }
+    },
+    {
+      "frame_index": 18,
+      "rgb_file": "rgb_0018.png",
+      "pose_class": "upright",
+      "apple_rotation_deg": [
+        6.5921840504084805,
+        9.027549120772612,
+        113.54344215017991
+      ],
+      "target_color_ratio_visible": 0.9850097159248635,
+      "damage_ratio_visible": 0.0,
+      "color_patch": {
+        "visible": true,
+        "scale": [
+          8.05223534733564,
+          17.0762882232666,
+          7.319070865829842
+        ],
+        "sink_depth": 3.3769407952922954
+      },
+      "damage_patch": {
+        "visible": true,
+        "scale": [
+          9.571512471727985,
+          9.034304591173335,
+          7.210536540688815
+        ],
+        "sink_depth": 3.579574654469735
+      }
+    },
+    {
+      "frame_index": 19,
+      "rgb_file": "rgb_0019.png",
+      "pose_class": "tilted",
+      "apple_rotation_deg": [
+        41.74814665046594,
+        8.756289136233285,
+        79.58869813060898
+      ],
+      "target_color_ratio_visible": 1.0,
+      "damage_ratio_visible": 0.0,
+      "color_patch": {
+        "visible": false,
+        "scale": null
+      },
+      "damage_patch": {
+        "visible": false,
+        "scale": null
+      }
+    }
+  ]
+}

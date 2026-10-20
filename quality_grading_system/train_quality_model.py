@@ -19,13 +19,13 @@ TARGET_NAMES = ("target_color_mask", "damage_mask", "severe_defect")
 
 
 def split_records(records, validation_fraction: float, seed: int):
-    """Split by source apple/size folder so views never leak across splits."""
+    """Split by apple scenario so its five views never leak across splits."""
 
     if not 0.0 < validation_fraction < 1.0:
         raise ValueError("validation_fraction must be between 0 and 1")
-    groups: dict[Path, list] = {}
+    groups: dict[str, list] = {}
     for record in records:
-        groups.setdefault(record.rgb_path.parent, []).append(record)
+        groups.setdefault(record.group_key, []).append(record)
     keys = list(groups)
     random.Random(seed).shuffle(keys)
     validation_group_count = max(1, round(len(keys) * validation_fraction))
@@ -54,22 +54,38 @@ def _batch_loss(
     mask_targets,
     severe_target,
     target_valid,
-    valid_surface,
+    valid_masks,
 ):
     import torch
     import torch.nn.functional as functional
 
-    pixel_loss = functional.binary_cross_entropy(
-        mask_probabilities.clamp(1e-6, 1.0 - 1e-6),
-        mask_targets,
-        reduction="none",
-    )
+    probabilities = mask_probabilities.clamp(1e-6, 1.0 - 1e-6)
     mask_weight = (
-        valid_surface[:, None].to(pixel_loss.dtype)
-        * target_valid[:, :2, None, None].to(pixel_loss.dtype)
+        valid_masks.to(probabilities.dtype)
+        * target_valid[:, :2, None, None].to(probabilities.dtype)
+    )
+    positive = (mask_targets * mask_weight).sum(dim=(0, 2, 3))
+    negative = ((1.0 - mask_targets) * mask_weight).sum(dim=(0, 2, 3))
+    positive_weight = (negative / positive.clamp_min(1.0)).clamp(1.0, 50.0)
+    pixel_loss = -(
+        positive_weight[None, :, None, None]
+        * mask_targets
+        * probabilities.log()
+        + (1.0 - mask_targets) * (1.0 - probabilities).log()
     )
     mask_denominator = mask_weight.sum().clamp_min(1.0)
-    segmentation_loss = (pixel_loss * mask_weight).sum() / mask_denominator
+    balanced_bce = (pixel_loss * mask_weight).sum() / mask_denominator
+
+    intersection = (probabilities * mask_targets * mask_weight).sum(dim=(2, 3))
+    denominator = (
+        (probabilities + mask_targets) * mask_weight
+    ).sum(dim=(2, 3))
+    dice_loss = 1.0 - (2.0 * intersection + 1.0) / (denominator + 1.0)
+    valid_target_weight = target_valid[:, :2].to(dice_loss.dtype)
+    dice_loss = (
+        dice_loss * valid_target_weight
+    ).sum() / valid_target_weight.sum().clamp_min(1.0)
+    segmentation_loss = balanced_bce + dice_loss
 
     severe_loss = functional.binary_cross_entropy(
         severe_probability[:, 0].clamp(1e-6, 1.0 - 1e-6),
@@ -82,7 +98,7 @@ def _batch_loss(
     with torch.no_grad():
         predicted = mask_probabilities >= 0.5
         truth = mask_targets >= 0.5
-        valid = valid_surface[:, None]
+        valid = valid_masks.to(torch.bool)
         intersection = (predicted & truth & valid).sum(dim=(2, 3)).to(torch.float32)
         union = ((predicted | truth) & valid).sum(dim=(2, 3)).to(torch.float32)
         mask_confidence_target = torch.where(
@@ -114,18 +130,18 @@ def _evaluate(model, loader, device):
     severe_count = torch.tensor(0.0, device=device)
     model.eval()
     with torch.inference_mode():
-        for images, mask_targets, severe_target, target_valid, valid_surface in loader:
+        for images, mask_targets, severe_target, target_valid, valid_masks in loader:
             images = images.to(device)
             mask_targets = mask_targets.to(device)
             severe_target = severe_target.to(device)
             target_valid = target_valid.to(device)
-            valid_surface = valid_surface.to(device)
+            valid_masks = valid_masks.to(device)
             masks, severe, _ = model(images)
             predicted = masks >= 0.5
             truth = mask_targets >= 0.5
             for index in range(2):
                 valid_samples = target_valid[:, index, None, None]
-                valid_pixels = valid_surface[:, None] & valid_samples[:, None]
+                valid_pixels = valid_masks[:, index : index + 1] & valid_samples[:, None]
                 intersections[index] += (
                     predicted[:, index : index + 1]
                     & truth[:, index : index + 1]
@@ -169,6 +185,14 @@ def train(args) -> dict:
         raise RuntimeError(
             "complete quality training requires target_color_mask, damage_mask and "
             "severe_defect annotations"
+        )
+    if (
+        args.require_three_metric_labels
+        and not capabilities.supports_three_metric_training
+    ):
+        raise RuntimeError(
+            "three-metric training requires diameter, target_color_mask and "
+            "damage_mask labels for every sample"
         )
 
     label_counts = {
@@ -220,7 +244,7 @@ def train(args) -> dict:
         running_loss = 0.0
         batches = 0
         for batch in train_loader:
-            images, mask_targets, severe_target, target_valid, valid_surface = (
+            images, mask_targets, severe_target, target_valid, valid_masks = (
                 value.to(device) for value in batch
             )
             optimizer.zero_grad(set_to_none=True)
@@ -232,7 +256,7 @@ def train(args) -> dict:
                 mask_targets,
                 severe_target,
                 target_valid,
-                valid_surface,
+                valid_masks,
             )
             loss.backward()
             optimizer.step()
@@ -255,6 +279,8 @@ def train(args) -> dict:
             "trained_targets": trained_targets,
             "validation_metrics": metrics,
             "dataset_capabilities": capabilities.to_dict(),
+            "quality_criteria": ["color_ratio", "diameter_mm", "damage_area_cm2"],
+            "severe_defect_trained": "severe_defect" in trained_targets,
             "seed": args.seed,
         },
         output,
@@ -287,6 +313,12 @@ def train(args) -> dict:
                     "architecture": MODEL_ARCHITECTURE,
                     "image_size": args.image_size,
                     "trained_targets": trained_targets,
+                    "quality_criteria": [
+                        "color_ratio",
+                        "diameter_mm",
+                        "damage_area_cm2",
+                    ],
+                    "severe_defect_trained": "severe_defect" in trained_targets,
                 },
                 indent=2,
             ),
@@ -323,6 +355,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--device", default="auto")
     parser.add_argument("--max-samples", type=int, default=0)
     parser.add_argument("--require-complete-quality-labels", action="store_true")
+    parser.add_argument("--require-three-metric-labels", action="store_true")
     return parser
 
 

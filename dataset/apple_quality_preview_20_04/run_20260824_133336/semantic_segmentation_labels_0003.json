@@ -1,0 +1,14 @@
+{
+  "0": {
+    "class": "BACKGROUND"
+  },
+  "1": {
+    "class": "UNLABELLED"
+  },
+  "3": {
+    "class": "damage"
+  },
+  "4": {
+    "class": "apple_surface"
+  }
+}

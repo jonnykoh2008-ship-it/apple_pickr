@@ -1,3138 +1,1139 @@
-"""GPU PC 1용 통합 Isaac Sim 수확 서버.
+"""GPU PC 1용 통합 Isaac Sim 수확 서버 (로봇 2대, 월드 1개).
 
 카메라 발행과 M0617 제어는 반드시 같은 Isaac Sim World에서 실행해야 한다.
-이 파일은 기존 ``apple_pick.py``의 검증된 물리·IK 함수를 재사용하고,
-``/harvest/robot_motion`` Action Goal 단위로 동작을 나눈다.
+컨베이어도 한 대뿐이므로 두 로봇은 같은 세계를 공유해야 한다. 그래서 이
+프로세스 하나가 Isaac Sim 하나를 띄우고 그 안에서 로봇 두 대를 함께 굴린다.
+로봇마다 프로세스를 띄우면 Isaac Sim이 두 개 뜨고 월드도 둘로 갈려서,
+컨베이어가 각자 것이 되고 ``/clock``을 둘이 발행해 서로를 덮어쓴다.
+
+이 파일은 ``apple_pick.py``의 물리·IK 함수를 재사용하고,
+``/<robot_id>/harvest/robot_motion`` Action Goal 단위로 동작을 나눈다.
+
+한 프로세스가 담당하는 것:
+    * ``/clock`` (전역 1개)
+    * 로봇별 base D455 RGB/depth/CameraInfo
+    * 로봇별 TF와 ``/<robot_id>/joint_states``
+    * ``/simulation/state`` 세대 (전역)
+    * ``/planning_scene`` snapshot과 snapshot 서비스 (전역)
+    * 로봇별 ``/<robot_id>/harvest/robot_motion`` Action 서버
+    * 로봇별 ``/<robot_id>/harvest/motion_status``
 
 실행 전 ``APPLEPROJ_INTERFACES_PREFIX``에는 Isaac Python 3.11로 빌드한
 appleproj_interfaces의 install prefix를 지정해야 한다.
+
+실행:
+    PYTHONUNBUFFERED=1 ROS_DOMAIN_ID=103 ~/isaacsim/python.sh vision_apple_pick.py
+    PYTHONUNBUFFERED=1 ROS_DOMAIN_ID=103 ~/isaacsim/python.sh vision_apple_pick.py \\
+        --robots robot_01
 """
 
 import os
-import queue
 import sys
-import threading
-import traceback
-from dataclasses import dataclass
 from pathlib import Path
 
 
-DISABLE_CONVEYOR_GRAPH = "--disable-conveyor-graph" in sys.argv
-DISABLE_CAMERA_RUNTIME = "--disable-camera-runtime" in sys.argv
 PROJECT_DIR = Path(__file__).resolve().parent
-BRIDGE_ROOT = Path("/home/rokey/isaacsim/exts/isaacsim.ros2.bridge/jazzy")
-INTERFACE_PREFIX_TEXT = os.environ.get("APPLEPROJ_INTERFACES_PREFIX", "")
-INTERFACE_PREFIX = Path(INTERFACE_PREFIX_TEXT) if INTERFACE_PREFIX_TEXT else None
+ISAAC_SIM_ROOT = Path("/home/rokey/isaacsim")
+ROS2_BRIDGE_ROOT = ISAAC_SIM_ROOT / "exts/isaacsim.ros2.bridge/jazzy"
+ROS2_BRIDGE_LIB_DIR = ROS2_BRIDGE_ROOT / "lib"
+# Isaac Sim은 ROS 2 Bridge 안에 Python 3.11용 rclpy를 번들로 넣어 둔다.
+# 시스템 ROS 2의 rclpy는 3.12 전용이라 Isaac 안에서 import되지 않는다.
+ROS2_BRIDGE_RCLPY_DIR = ROS2_BRIDGE_ROOT / "rclpy"
+ENV_REEXEC_GUARD = "VISION_APPLE_PICK_ENV_READY"
+
 os.environ.setdefault("ROS_DOMAIN_ID", "102")
 
 
 def prepare_isaac_ros_environment():
-    """Isaac Python 3.11용 rclpy와 custom Action을 import할 환경을 만든다."""
-    if INTERFACE_PREFIX is None or not INTERFACE_PREFIX.is_dir():
+    """Isaac Python 3.11용 rclpy와 custom 메시지를 쓸 환경을 만든다.
+
+    ``LD_LIBRARY_PATH``
+        ROS 2 Bridge의 Jazzy 라이브러리와, custom 메시지의 C 타입서포트
+        ``.so`` 가 들어 있는 install prefix의 ``lib`` 이다. 둘 다 dlopen 이
+        찾는 경로라서 프로세스가 시작한 뒤에 바꾸면 늦다. 빠진 경로가
+        있으면 환경을 채워 현재 Python을 한 번만 재실행한다. 이게 없으면
+        publisher를 만드는 순간
+        ``libappleproj_interfaces__rosidl_typesupport_fastrtps_c.so``
+        를 못 찾아 ``Type support not from this implementation`` 으로 죽는다.
+
+    ``sys.path``
+        rclpy는 Isaac이 번들한 3.11 빌드를, custom 메시지는
+        ``build_interfaces_for_isaac.sh`` 가 3.11로 다시 컴파일한 것을 쓴다.
+    """
+    if not ROS2_BRIDGE_LIB_DIR.is_dir():
         raise RuntimeError(
-            "APPLEPROJ_INTERFACES_PREFIX에 Isaac Python 3.11용 "
-            "appleproj_interfaces install 경로를 지정하세요."
+            f"Isaac Sim ROS 2 Jazzy 라이브러리 폴더가 없습니다: {ROS2_BRIDGE_LIB_DIR}"
         )
-    python_path = INTERFACE_PREFIX / "lib/python3.11/site-packages"
-    required_paths = [BRIDGE_ROOT / "lib", INTERFACE_PREFIX / "lib"]
+    if not ROS2_BRIDGE_RCLPY_DIR.is_dir():
+        raise RuntimeError(f"Isaac 번들 rclpy 폴더가 없습니다: {ROS2_BRIDGE_RCLPY_DIR}")
+
+    text = os.environ.get("APPLEPROJ_INTERFACES_PREFIX", "").strip()
+    if not text:
+        raise RuntimeError(
+            "APPLEPROJ_INTERFACES_PREFIX가 비어 있습니다. "
+            "./build_interfaces_for_isaac.sh 를 먼저 실행하고 "
+            "export APPLEPROJ_INTERFACES_PREFIX=$PWD/install_isaac311/appleproj_interfaces "
+            "를 설정하세요."
+        )
+    prefix = Path(text)
+    if not prefix.is_dir():
+        raise RuntimeError(f"APPLEPROJ_INTERFACES_PREFIX 경로가 없습니다: {prefix}")
+
+    required = [str(ROS2_BRIDGE_LIB_DIR), str(prefix / "lib")]
     current = [p for p in os.environ.get("LD_LIBRARY_PATH", "").split(":") if p]
-    missing = [str(p) for p in required_paths if str(p) not in current]
-    if missing and os.environ.get("VISION_PICK_ENV_READY") != "1":
-        env = os.environ.copy()
-        env["LD_LIBRARY_PATH"] = ":".join([*missing, *current])
-        env["VISION_PICK_ENV_READY"] = "1"
-        os.execve(sys.executable, [sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]], env)
-    sys.path[:0] = [str(BRIDGE_ROOT / "rclpy"), str(python_path)]
+    missing = [path for path in required if path not in current]
+    if missing:
+        if os.environ.get(ENV_REEXEC_GUARD) == "1":
+            raise RuntimeError(
+                f"LD_LIBRARY_PATH 보정 후에도 경로가 반영되지 않았습니다: {missing}"
+            )
+        environment = os.environ.copy()
+        environment["LD_LIBRARY_PATH"] = ":".join([*missing, *current])
+        environment[ENV_REEXEC_GUARD] = "1"
+        os.execve(
+            sys.executable,
+            [sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]],
+            environment,
+        )
+
+    # custom 메시지를 rclpy 번들보다 앞에 둔다. 같은 패키지 이름이 양쪽에
+    # 있으면 먼저 찾은 쪽이 이긴다.
+    site_packages = [
+        str(candidate) for candidate in prefix.glob("lib/python3.*/site-packages")
+    ]
+    sys.path[:0] = [*site_packages, str(ROS2_BRIDGE_RCLPY_DIR)]
+    return prefix
 
 
 prepare_isaac_ros_environment()
-if DISABLE_CONVEYOR_GRAPH or DISABLE_CAMERA_RUNTIME:
-    # rclpy와 apple_pick에는 이 파일 전용 진단 옵션을 전달하지 않는다.
-    diagnostic_args = {
-        "--disable-conveyor-graph",
-        "--disable-camera-runtime",
-    }
-    sys.argv = [arg for arg in sys.argv if arg not in diagnostic_args]
 
-# import 시 SimulationApp을 한 번만 생성하며 main()은 실행하지 않는다.
-import apple_pick as harvest
-import omni.graph.core as og
-import rclpy
-import usdrt.Sdf
-from appleproj_interfaces.action import RobotMotion
-from appleproj_interfaces.msg import (
-    CheckpointEvent,
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.insert(0, str(PROJECT_DIR))
+
+# apple_pick가 SimulationApp을 만든다. 다른 Isaac 모듈보다 먼저 import해야 한다.
+import apple_pick as harvest  # noqa: E402
+
+import queue  # noqa: E402
+import threading  # noqa: E402
+import traceback  # noqa: E402
+from dataclasses import dataclass, field  # noqa: E402
+
+import numpy as np  # noqa: E402
+
+import omni.graph.core as og  # noqa: E402
+import usdrt.Sdf  # noqa: E402
+from isaacsim.core.utils.extensions import enable_extension  # noqa: E402
+from pxr import Usd, UsdGeom  # noqa: E402
+
+import rclpy  # noqa: E402
+from rclpy.action import ActionServer, CancelResponse, GoalResponse  # noqa: E402
+from rclpy.callback_groups import ReentrantCallbackGroup  # noqa: E402
+from rclpy.executors import MultiThreadedExecutor  # noqa: E402
+from rclpy.node import Node  # noqa: E402
+from rclpy.parameter import Parameter  # noqa: E402
+from rclpy.qos import (  # noqa: E402
+    DurabilityPolicy,
+    HistoryPolicy,
+    QoSProfile,
+    ReliabilityPolicy,
+)
+
+from appleproj_interfaces.action import RobotMotion  # noqa: E402
+from appleproj_interfaces.msg import (  # noqa: E402
     MotionStatus,
     ObstacleProxy,
-    PlaceCoordinatorStatus,
     PlanningScene,
     SimulationState,
 )
-from appleproj_interfaces.srv import GetPlanningScene, PlaceCommand, RetryInspection
-from geometry_msgs.msg import PoseStamped
-from isaacsim.core.utils.extensions import enable_extension
-from isaacsim.core.prims import SingleArticulation
-from pxr import Gf, Usd, UsdGeom
-from rclpy.action import ActionServer, CancelResponse, GoalResponse
-from rclpy.executors import MultiThreadedExecutor
-from rclpy.node import Node
-from rclpy.parameter import Parameter
-from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
+from appleproj_interfaces.srv import GetPlanningScene  # noqa: E402
+from geometry_msgs.msg import Pose, PoseStamped  # noqa: E402
 
-from motion_planning_visualization import MotionPlanningVisualizationPublisher
-from conveyor_checkpoint_tracker import (
-    ConveyorBounds,
-    InspectionCheckpointTracker,
-    LandingObservation,
-    LandingTracker,
-)
+from harvest_namespace import HarvestNames  # noqa: E402
 
 
-MOTION_SEQUENCE = [
-    RobotMotion.Goal.APPROACH,
-    RobotMotion.Goal.GRASP,
-    RobotMotion.Goal.TWIST,
-    RobotMotion.Goal.PULL,
-    RobotMotion.Goal.TRANSPORT,
-    RobotMotion.Goal.PLACE,
-    RobotMotion.Goal.RELEASE,
-    RobotMotion.Goal.RETRACT,
-]
-STOP_STATE = {
-    RobotMotion.Goal.GRASP: "TWIST",
-    RobotMotion.Goal.TWIST: "PULL",
-    RobotMotion.Goal.PULL: "RETREAT",
-    RobotMotion.Goal.TRANSPORT: "PLACE_ABOVE",
-    RobotMotion.Goal.PLACE: "RELEASE",
-    RobotMotion.Goal.RELEASE: "LIFT",
-    RobotMotion.Goal.RETRACT: "DONE",
-}
-RRT_FSM_STATES = {
-    "TREE_EXIT",
-    "NEUTRAL_TRANSFER",
-    "ALIGN_HALF",
-    "ALIGN_DOWN",
-    "CONVEYOR_OUTSIDE_HIGH",
-    "PLACE_ABOVE",
-    "LIFT",
-    "EXIT",
-}
-# GRASP 완료 후 RELEASE 완료 전까지는 사과가 그리퍼에 물려 있을 수 있다.
-# 이 구간에서 실패하면 Drive 유지 토크를 낮추지 않는다.
-APPLE_HELD_INDEX_RANGE = (
-    MOTION_SEQUENCE.index(RobotMotion.Goal.TWIST),
-    MOTION_SEQUENCE.index(RobotMotion.Goal.RELEASE),
-)
-ACTION_TIMEOUT_S = 3.0
-# ENTER 전에 손가락 collider가 사과 쪽으로 남아 있지 않도록 실제 관절값을
-# 확인한다. 이 값은 Isaac Sim 그리퍼 Drive 정착 시험 후 조정할 초기값이다.
-GRIPPER_OPEN_TOLERANCE_RAD = 0.02
-# docs/architecture/ros2_interfaces.md의 오류 코드 표를 그대로 옮긴 것이다.
-# 현재 실행 경로는 문자열 리터럴을 직접 사용하므로 이 표는 참조용이며,
-# 리터럴을 이 표로 일원화하는 작업은 별도 정리 대상이다.
+# ══════════════════════════════════════════════════════════════
+# 실행 옵션
+# ══════════════════════════════════════════════════════════════
+def parse_robot_ids():
+    """--robots 로 구동할 로봇을 고른다. 기본은 두 대 모두."""
+    if "--robots" not in sys.argv:
+        return harvest.ROBOT_IDS
+    index = sys.argv.index("--robots")
+    selected = []
+    for value in sys.argv[index + 1 :]:
+        if value.startswith("--"):
+            break
+        for item in value.split(","):
+            item = item.strip()
+            if not item:
+                continue
+            if item not in harvest.ROBOT_RUNTIME_PROFILES:
+                raise SystemExit(f"알 수 없는 robot id 입니다: {item}")
+            selected.append(item)
+    if not selected:
+        raise SystemExit("--robots 에 로봇을 하나 이상 지정하세요.")
+    return tuple(dict.fromkeys(selected))
+
+
+ROBOT_IDS = parse_robot_ids()
+
+CAMERA_WIDTH = int(os.environ.get("HARVEST_CAMERA_WIDTH", "1280"))
+CAMERA_HEIGHT = int(os.environ.get("HARVEST_CAMERA_HEIGHT", "720"))
+CAMERA_FRAME_SKIP = int(os.environ.get("HARVEST_CAMERA_FRAME_SKIP", "1"))
+
+CLOCK_GRAPH_PATH = "/HarvestClockRosGraph"
+
+# 컨베이어 탑뷰 카메라. 이름과 frame 은 GPU PC 2 의
+# conveyor_camera_adapter_node 가 구독하는 계약
+# (docs/architecture/ros2_interfaces.md) 그대로다.
+CONVEYOR_CAMERA_ROOT = "/World/conv_rsd455"
+CONVEYOR_CAMERA_NS = "/conveyor_camera"
+CONVEYOR_CAMERA_FRAME = "quality_camera_top_optical_frame"
+CONVEYOR_CAMERA_GRAPH_PATH = "/ConveyorCameraRosGraph"
+
+# 컨베이어 벨트 명령 속도. 저장된 USD 의 ConveyorBeltGraph 에는 Velocity
+# 변수값이 authored 되어 있지 않아, 실행 시 여기서 넣지 않으면 벨트가 0 으로
+# 서 있고 사과가 배치 지점에 머물러 검사 ROI 에 영영 들어가지 않는다.
+# 예전에는 conveyor_camera_publish.py 가 이 값을 세팅했는데 그 프로세스를
+# 이 서버로 통합하면서 속도 설정도 함께 가져왔다.
+CONVEYOR_BELT_GRAPH_PATH = "/World/ConveyorTrack_01/ConveyorBeltGraph"
+CONVEYOR_SPEED_MPS = float(os.environ.get("HARVEST_CONVEYOR_SPEED", "0.3"))
+
+# 오류 코드는 docs/architecture/ros2_interfaces.md 의 300번대 체계를 쓴다.
 ERROR_CODES = {
-    "IK_FAILED": "300:IK_FAILED",
-    "APPROACH_UNREACHABLE": "301:APPROACH_UNREACHABLE",
-    "COLLISION_RISK": "302:COLLISION_RISK",
-    # 미구현: 특이점 판정 threshold가 docs/features/harvesting.md에서 TBD이므로
-    # 임의 값으로 구현하지 않는다. threshold 확정 전까지 이 코드는 발행되지 않는다.
-    "SINGULARITY_RISK": "303:SINGULARITY_RISK",
-    "MOTION_TIMEOUT": "304:MOTION_TIMEOUT",
-    "STEM_NOT_BROKEN": "305:STEM_NOT_BROKEN",
     "GOAL_REJECTED": "306:GOAL_REJECTED",
     "CANCELLED": "307:CANCELLED",
     "SIMULATION_RESET": "308:SIMULATION_RESET",
-    "INVALID_TARGET_POSE": "309:INVALID_TARGET_POSE",
-    "TF_UNAVAILABLE": "310:TF_UNAVAILABLE",
-    "JOINT_STATE_UNAVAILABLE": "311:JOINT_STATE_UNAVAILABLE",
     "INTERNAL_ERROR": "312:INTERNAL_ERROR",
 }
 
-CAMERA_PATH = harvest.ROBOT_PROFILE.camera_prim_path
-CAMERA_GRAPH_PATH = f"/BaseCameraRosGraph_{harvest.ROBOT_PROFILE.robot_id}"
-ROBOT_TF_GRAPH_PATH = f"/RobotTfRosGraph_{harvest.ROBOT_PROFILE.robot_id}"
-CONVEYOR_GRAPH_PATH = "/World/ConveyorTrack/ConveyorBeltGraph"
-FIXED_CAMERA_RUNTIME_PATHS = (
-    "/World/base_rsd455_01",
-    "/World/base_rsd455_02",
-    "/World/conv_rsd455_01",
-    "/World/conv_rsd455_02",
-    "/World/ConveyorTrack/conv_rsd455",
+MOTION_NAMES = {
+    RobotMotion.Goal.APPROACH: "APPROACH",
+    RobotMotion.Goal.GRASP: "GRASP",
+    RobotMotion.Goal.TWIST: "TWIST",
+    RobotMotion.Goal.PULL: "PULL",
+    RobotMotion.Goal.TRANSPORT: "TRANSPORT",
+    RobotMotion.Goal.PLACE: "PLACE",
+    RobotMotion.Goal.RELEASE: "RELEASE",
+    RobotMotion.Goal.RETRACT: "RETRACT",
+}
+
+RELIABLE_QOS = QoSProfile(
+    reliability=ReliabilityPolicy.RELIABLE,
+    durability=DurabilityPolicy.VOLATILE,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=10,
 )
-PLACE_STATUS_TOPIC = "/conveyor/place_coordinator_status"
-PLACE_COMMAND_SERVICE = "/conveyor/place_command"
-CHECKPOINT_TOPIC = "/conveyor/checkpoint_events"
-RETRY_INSPECTION_SERVICE = "/quality/retry_inspection"
+LATCHED_QOS = QoSProfile(
+    reliability=ReliabilityPolicy.RELIABLE,
+    durability=DurabilityPolicy.TRANSIENT_LOCAL,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=1,
+)
 
 
-def evaluate_retry_inspection_request(
-    inspection_id, apple_id, reason, simulation_ready
-):
-    """Return a truthful retry response until a GPU PC 2 handoff exists."""
-    identifiers = {
-        "inspection_id": str(inspection_id).strip(),
-        "apple_id": str(apple_id).strip(),
-        "reason": str(reason).strip(),
-    }
-    missing = [name for name, value in identifiers.items() if not value]
-    if missing:
-        return False, "", f"필수 필드가 비어 있습니다: {', '.join(missing)}"
-    if not simulation_ready:
-        return False, "", "Isaac Sim이 READY 또는 PLAYING 상태가 아닙니다."
-    return (
-        False,
-        "",
-        "GPU PC 2 재검사 실행 전달 계약이 아직 없어 요청을 접수할 수 없습니다.",
+# ══════════════════════════════════════════════════════════════
+# ROS 2 Bridge 그래프
+# ══════════════════════════════════════════════════════════════
+def quaternion_xyzw_from_matrix(matrix):
+    """회전행렬을 ROS 순서 [x, y, z, w] 쿼터니언으로 바꾼다."""
+    return harvest.quat_wxyz_to_xyzw(
+        harvest.rot_matrix_to_quat(np.asarray(matrix, dtype=float))
     )
 
 
-def apply_runtime_diagnostic_overrides(stage):
-    """원본 USD를 저장하지 않고 현재 실행의 Session Layer만 변경한다."""
-    if not DISABLE_CONVEYOR_GRAPH:
-        return
-    conveyor_graph = stage.GetPrimAtPath(CONVEYOR_GRAPH_PATH)
-    if not conveyor_graph.IsValid():
-        raise RuntimeError(
-            f"진단용 비활성화 대상 Prim을 찾을 수 없습니다: {CONVEYOR_GRAPH_PATH}"
-        )
-    with Usd.EditContext(stage, stage.GetSessionLayer()):
-        conveyor_graph.SetActive(False)
-    print(
-        f"   [DIAGNOSTIC] Conveyor graph disabled in Session Layer: "
-        f"{CONVEYOR_GRAPH_PATH}"
-    )
+# USD 카메라는 로컬 -Z 를 보고 +Y 가 위다. ROS 광학 프레임은 +Z 가 전방이고
+# +Y 가 아래다. 두 규약은 X 축 180도 회전만큼 다르다.
+#
+# 이 변환 없이 카메라 prim 의 자세를 그대로 TF 로 내보내면, 구독자가
+# depth 로 역투영한 점(광학 규약)을 엉뚱한 축으로 world 에 옮긴다. 실측에서
+# 실제 사과가 (0.87, 0.08, 1.01) 인데 (2.71, -0.41, 2.41) 로 나왔다.
+USD_CAMERA_TO_ROS_OPTICAL = np.array(
+    [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]], dtype=float
+)
 
 
-def disable_camera_runtime_assets(stage):
-    """첫 물리 스텝 전에 고정 D455 payload를 Session Layer에서 제거한다."""
-    if not DISABLE_CAMERA_RUNTIME:
-        return
-    camera_prims = []
-    for camera_path in FIXED_CAMERA_RUNTIME_PATHS:
-        camera_prim = stage.GetPrimAtPath(camera_path)
-        if not camera_prim.IsValid():
-            raise RuntimeError(
-                f"진단용 비활성화 대상 카메라 Prim을 찾을 수 없습니다: {camera_path}"
-            )
-        camera_prims.append(camera_prim)
-    with Usd.EditContext(stage, stage.GetSessionLayer()):
-        for camera_prim in camera_prims:
-            camera_prim.SetActive(False)
-    print(
-        "   [DIAGNOSTIC] Fixed D455 runtime disabled in Session Layer: "
-        + ", ".join(FIXED_CAMERA_RUNTIME_PATHS)
-    )
+def camera_optical_frame_pose(stage, camera_path):
+    """카메라 광학 프레임의 world (position, rotation)."""
+    position, rotation = harvest.get_prim_world_pose(stage, camera_path)
+    return position, rotation @ USD_CAMERA_TO_ROS_OPTICAL
 
 
-def print_startup_lifecycle(label, stage, world):
-    """첫 Play/step 전후의 Kit, Stage 및 Timeline 생존 상태를 기록한다."""
-    context_stage = harvest.simulation_app.context.get_stage()
-    print(
-        f"   [LIFECYCLE] {label}: "
-        f"app_running={harvest.simulation_app.is_running()}, "
-        f"app_exiting={harvest.simulation_app.is_exiting()}, "
-        f"context_stage={context_stage is not None}, "
-        f"expected_stage={context_stage == stage}, "
-        f"world_playing={world.is_playing()}, "
-        f"world_stopped={world.is_stopped()}",
-        flush=True,
-    )
+def build_clock_graph(stage):
+    """``/clock`` 을 전역으로 한 번만 발행한다.
 
-
-@dataclass(frozen=True)
-class PusherJointConfig:
-    pusher_id: int
-    articulation_prim_path: str
-    joint_name: str
-    home_position_m: float
-    extended_position_m: float
-    position_tolerance_m: float
-    jam_effort_threshold_n: float
-
-
-def _required_environment(name):
-    value = os.environ.get(name, "").strip()
-    if not value:
-        raise RuntimeError(f"필수 푸셔 런타임 설정이 없습니다: {name}")
-    return value
-
-
-def pushers_enabled():
-    """Keep harvesting runnable when the optional phase-2 pusher is absent."""
-    value = os.environ.get("APPLEPROJ_ENABLE_PUSHERS", "0").strip().lower()
-    if value in ("0", "false", "no", "off", ""):
-        return False
-    if value in ("1", "true", "yes", "on"):
-        return True
-    raise RuntimeError(
-        "APPLEPROJ_ENABLE_PUSHERS는 1/true/on 또는 0/false/off여야 합니다"
-    )
-
-
-def load_pusher_configuration(timing_config_type):
-    """Load physical values without inventing defaults for still-TBD requirements."""
-    configs = []
-    for pusher_id in (1, 2, 3):
-        prefix = f"APPLEPROJ_PUSHER_{pusher_id}"
-        try:
-            home = float(_required_environment(f"{prefix}_HOME_M"))
-            extended = float(_required_environment(f"{prefix}_EXTENDED_M"))
-            tolerance = float(_required_environment(f"{prefix}_POSITION_TOLERANCE_M"))
-            jam_effort = float(_required_environment(f"{prefix}_JAM_EFFORT_N"))
-        except ValueError as exc:
-            raise RuntimeError(f"{prefix} 수치 설정이 실수가 아닙니다") from exc
-        if home == extended or tolerance <= 0.0 or jam_effort <= 0.0:
-            raise RuntimeError(
-                f"{prefix}: home/extended는 달라야 하고 tolerance/effort는 양수여야 합니다"
-            )
-        configs.append(
-            PusherJointConfig(
-                pusher_id=pusher_id,
-                articulation_prim_path=_required_environment(f"{prefix}_PRIM_PATH"),
-                joint_name=_required_environment(f"{prefix}_JOINT_NAME"),
-                home_position_m=home,
-                extended_position_m=extended,
-                position_tolerance_m=tolerance,
-                jam_effort_threshold_n=jam_effort,
-            )
-        )
-    try:
-        timing = timing_config_type(
-            trigger_timeout_s=float(_required_environment("APPLEPROJ_PUSHER_TRIGGER_TIMEOUT_S")),
-            push_timeout_s=float(_required_environment("APPLEPROJ_PUSHER_PUSH_TIMEOUT_S")),
-            home_timeout_s=float(_required_environment("APPLEPROJ_PUSHER_HOME_TIMEOUT_S")),
-        )
-    except ValueError as exc:
-        raise RuntimeError("푸셔 timeout 설정이 유효한 양수가 아닙니다") from exc
-    return configs, timing
-
-
-class IsaacPrismaticPusherActuator:
-    """Position-drive adapter for three configured Isaac Sim articulations."""
-
-    def __init__(self, world, configs):
-        self.configs = {config.pusher_id: config for config in configs}
-        self.articulations = {}
-        self.joint_indices = {}
-        prim_paths = [config.articulation_prim_path for config in configs]
-        if len(set(prim_paths)) != len(prim_paths):
-            raise RuntimeError("각 푸셔는 서로 다른 articulation prim path를 사용해야 합니다")
-        for config in configs:
-            articulation = world.scene.add(
-                SingleArticulation(
-                    prim_path=config.articulation_prim_path,
-                    name=f"conveyor_pusher_{config.pusher_id}",
-                )
-            )
-            self.articulations[config.pusher_id] = articulation
-
-    @property
-    def available(self):
-        return True
-
-    def validate_initialized(self):
-        for pusher_id, articulation in self.articulations.items():
-            config = self.configs[pusher_id]
-            if not articulation.handles_initialized:
-                raise RuntimeError(
-                    f"PUSHER_{pusher_id} articulation handle 초기화 실패: "
-                    f"{config.articulation_prim_path}"
-                )
-            if config.joint_name not in articulation.dof_names:
-                raise RuntimeError(
-                    f"PUSHER_{pusher_id} joint를 찾을 수 없습니다: {config.joint_name}"
-                )
-            index = articulation.get_dof_index(config.joint_name)
-            properties = articulation.dof_properties[index]
-            if int(properties["type"]) != 2:
-                raise RuntimeError(
-                    f"PUSHER_{pusher_id} joint가 prismatic DOF가 아닙니다: {config.joint_name}"
-                )
-            if not bool(properties["hasLimits"]):
-                raise RuntimeError(f"PUSHER_{pusher_id} prismatic joint limit이 없습니다")
-            lower = float(properties["lower"])
-            upper = float(properties["upper"])
-            for label, target in (
-                ("home", config.home_position_m),
-                ("extended", config.extended_position_m),
-            ):
-                if target < lower or target > upper:
-                    raise RuntimeError(
-                        f"PUSHER_{pusher_id} {label} target {target}가 "
-                        f"joint limit [{lower}, {upper}] 밖입니다"
-                    )
-            if float(properties["maxVelocity"]) <= 0.0 or float(properties["maxEffort"]) <= 0.0:
-                raise RuntimeError(
-                    f"PUSHER_{pusher_id} joint maxVelocity/maxEffort가 유효하지 않습니다"
-                )
-            self.joint_indices[pusher_id] = int(index)
-
-    def _position(self, pusher_id):
-        articulation = self.articulations[pusher_id]
-        index = self.joint_indices[pusher_id]
-        value = articulation.get_joint_positions(
-            joint_indices=harvest.np.asarray([index], dtype=harvest.np.int32)
-        )
-        if value is None or len(value) != 1 or not harvest.np.isfinite(value[0]):
-            raise RuntimeError(f"PUSHER_{pusher_id} joint position을 읽을 수 없습니다")
-        return float(value[0])
-
-    def _command(self, pusher_id, target):
-        articulation = self.articulations[pusher_id]
-        index = self.joint_indices[pusher_id]
-        articulation.apply_action(
-            harvest.ArticulationAction(
-                joint_positions=harvest.np.asarray([target], dtype=float),
-                joint_indices=harvest.np.asarray([index], dtype=harvest.np.int32),
-            )
-        )
-
-    def is_home(self, pusher_id):
-        config = self.configs[pusher_id]
-        return abs(self._position(pusher_id) - config.home_position_m) <= config.position_tolerance_m
-
-    def begin_extend(self, pusher_id):
-        self._command(pusher_id, self.configs[pusher_id].extended_position_m)
-
-    def is_extended(self, pusher_id):
-        config = self.configs[pusher_id]
-        return (
-            abs(self._position(pusher_id) - config.extended_position_m)
-            <= config.position_tolerance_m
-        )
-
-    def begin_retract(self, pusher_id):
-        self._command(pusher_id, self.configs[pusher_id].home_position_m)
-
-    def is_jammed(self, pusher_id):
-        articulation = self.articulations[pusher_id]
-        index = self.joint_indices[pusher_id]
-        effort = articulation.get_measured_joint_efforts(
-            joint_indices=harvest.np.asarray([index], dtype=harvest.np.int32)
-        )
-        if effort is None or len(effort) != 1 or not harvest.np.isfinite(effort[0]):
-            raise RuntimeError(f"PUSHER_{pusher_id} joint effort를 읽을 수 없습니다")
-        return abs(float(effort[0])) >= self.configs[pusher_id].jam_effort_threshold_n
-
-    def progress(self, pusher_id, extending):
-        config = self.configs[pusher_id]
-        span = config.extended_position_m - config.home_position_m
-        extension = (self._position(pusher_id) - config.home_position_m) / span
-        extension = max(0.0, min(1.0, extension))
-        return extension if extending else 1.0 - extension
-
-    def stop_all(self):
-        for pusher_id in self.configs:
-            self._command(pusher_id, self._position(pusher_id))
-
-    def try_home_all(self):
-        for pusher_id, config in self.configs.items():
-            self._command(pusher_id, config.home_position_m)
-
-
-def _multiply_xyzw(a, b):
-    x1, y1, z1, w1 = a
-    x2, y2, z2, w2 = b
-    value = harvest.np.array([
-        w1*x2 + x1*w2 + y1*z2 - z1*y2,
-        w1*y2 - x1*z2 + y1*w2 + z1*x2,
-        w1*z2 + x1*y2 - y1*x2 + z1*w2,
-        w1*w2 - x1*x2 - y1*y2 - z1*z2,
-    ])
-    return value / harvest.np.linalg.norm(value)
-
-
-def create_base_camera_graph(stage):
-    """같은 Isaac World에서 RGB-D, CameraInfo, clock과 고정 TF를 발행한다."""
-    camera = harvest.require_prim(stage, CAMERA_PATH)
-    if not camera.IsA(UsdGeom.Camera):
-        raise RuntimeError(f"Color Camera Prim이 아닙니다: {CAMERA_PATH}")
-    if stage.GetPrimAtPath(CAMERA_GRAPH_PATH).IsValid():
-        raise RuntimeError(f"카메라 ROS 그래프가 이미 존재합니다: {CAMERA_GRAPH_PATH}")
-    enable_extension("isaacsim.ros2.bridge")
-    harvest.simulation_app.update()
-    matrix = UsdGeom.XformCache().GetLocalToWorldTransform(camera)
-    position = list(matrix.ExtractTranslation())
-    q = matrix.ExtractRotationQuat()
-    i = q.GetImaginary()
-    rotation = _multiply_xyzw(
-        [float(i[0]), float(i[1]), float(i[2]), float(q.GetReal())],
-        [1.0, 0.0, 0.0, 0.0],
-    ).tolist()
-    k = og.Controller.Keys
-    with Usd.EditContext(stage, stage.GetSessionLayer()):
-        og.Controller.edit(
-            {"graph_path": CAMERA_GRAPH_PATH, "evaluator_name": "execution",
-             "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION},
-            {
-                k.CREATE_NODES: [
-                    ("Tick", "omni.graph.action.OnPlaybackTick"),
-                    ("Time", "isaacsim.core.nodes.IsaacReadSimulationTime"),
-                    ("Clock", "isaacsim.ros2.bridge.ROS2PublishClock"),
-                    ("Render", "isaacsim.core.nodes.IsaacCreateRenderProduct"),
-                    ("Rgb", "isaacsim.ros2.bridge.ROS2CameraHelper"),
-                    ("Depth", "isaacsim.ros2.bridge.ROS2CameraHelper"),
-                    ("Info", "isaacsim.ros2.bridge.ROS2CameraInfoHelper"),
-                    ("Tf", "isaacsim.ros2.bridge.ROS2PublishRawTransformTree"),
-                ],
-                k.CONNECT: [
-                    ("Tick.outputs:tick", "Clock.inputs:execIn"),
-                    ("Time.outputs:simulationTime", "Clock.inputs:timeStamp"),
-                    ("Tick.outputs:tick", "Render.inputs:execIn"),
-                    ("Render.outputs:execOut", "Rgb.inputs:execIn"),
-                    ("Render.outputs:execOut", "Depth.inputs:execIn"),
-                    ("Render.outputs:execOut", "Info.inputs:execIn"),
-                    ("Render.outputs:renderProductPath", "Rgb.inputs:renderProductPath"),
-                    ("Render.outputs:renderProductPath", "Depth.inputs:renderProductPath"),
-                    ("Render.outputs:renderProductPath", "Info.inputs:renderProductPath"),
-                    ("Tick.outputs:tick", "Tf.inputs:execIn"),
-                    ("Time.outputs:simulationTime", "Tf.inputs:timeStamp"),
-                ],
-                k.SET_VALUES: [
-                    ("Render.inputs:cameraPrim", [usdrt.Sdf.Path(CAMERA_PATH)]),
-                    ("Render.inputs:width", 1280), ("Render.inputs:height", 720),
-                    ("Rgb.inputs:frameId", "base_camera"),
-                    ("Rgb.inputs:topicName", "/base_camera/color/image_raw"),
-                    ("Rgb.inputs:type", "rgb"), ("Rgb.inputs:frameSkipCount", 1),
-                    ("Depth.inputs:frameId", "base_camera"),
-                    ("Depth.inputs:topicName", "/base_camera/depth/image_raw"),
-                    ("Depth.inputs:type", "depth"), ("Depth.inputs:frameSkipCount", 1),
-                    ("Info.inputs:frameId", "base_camera"),
-                    ("Info.inputs:topicName", "/base_camera/camera_info"),
-                    ("Info.inputs:frameSkipCount", 1),
-                    ("Tf.inputs:topicName", "/tf_static"),
-                    ("Tf.inputs:parentFrameId", "world"),
-                    ("Tf.inputs:childFrameId", "base_camera"),
-                    ("Tf.inputs:staticPublisher", True),
-                    ("Tf.inputs:translation", position), ("Tf.inputs:rotation", rotation),
-                ],
-            },
-        )
-
-
-def create_robot_tf_graph(stage):
-    """M0617의 /joint_states와 전체 로봇 TF를 /clock 시각으로 발행한다.
-
-    docs/architecture/tf_frames.md의 구조를 따른다.
-
-        world → odom → base_link → link_1 … link_6 → palm → 손가락
-
-    `world → odom`은 항등, `odom → base_link`는 MVP에서 로봇이 고정이므로
-    USD에서 읽은 고정 변환이다. 로봇 링크만 Isaac이 동적으로 발행한다.
-
-    현재 저장된 USD에서는 `m0617_rail/root_joint`가 Articulation root로
-    기능한다. TF link 범위는 `--robot-id`로 선택한 `m0617_01` 또는
-    `m0617_02` 본체와 그리퍼로 제한한다.
-
-    같은 TF를 두 노드가 중복 발행하지 않도록 robot_state_publisher는 쓰지
-    않는다.
+    로봇마다 발행하면 두 publisher 가 같은 토픽에 써서 구독자가 받는
+    시각이 둘 사이를 오간다.
     """
-    # open_project_stage()가 선택한 m0617_rail 아래의 root_joint와 M0617
-    # mount FixedJoint를 검증한다. OmniGraph 노드는 정확한 articulation root
-    # prim을 요구하므로 root_joint 경로를 직접 전달한다.
-    articulation_path = harvest.ARTICULATION_ROOT_JOINT_PATH
-    articulation = harvest.require_prim(stage, articulation_path)
-    if not articulation.HasAPI(harvest.UsdPhysics.ArticulationRootAPI):
-        raise RuntimeError(
-            f"Articulation Root API가 없습니다: {articulation_path}"
-        )
-    if stage.GetPrimAtPath(ROBOT_TF_GRAPH_PATH).IsValid():
-        raise RuntimeError(f"로봇 TF 그래프가 이미 존재합니다: {ROBOT_TF_GRAPH_PATH}")
-    enable_extension("isaacsim.ros2.bridge")
-    harvest.simulation_app.update()
-
-    # TF가 USD 월드 기준인지 대조할 수 있게 기준값을 남긴다. 카메라 static
-    # TF와 같은 좌표계여야 detector가 낸 사과 좌표와 로봇이 맞물린다.
-    base_world, _base_quat = harvest.get_prim_world_pose(
-        stage, harvest.ROBOT_BASE_PATH
-    )
-    # 선택한 M0617 서브트리의 rigid body만 고른다. base_link는 parentPrim이므로
-    # 자기참조를 막기 위해 제외한다.
-    robot_root = harvest.require_prim(stage, harvest.ROBOT_PRIM_PATH)
-    link_paths = [
-        str(prim.GetPath())
-        for prim in Usd.PrimRange(robot_root)
-        if prim.HasAPI(harvest.UsdPhysics.RigidBodyAPI)
-        and str(prim.GetPath()) != harvest.ROBOT_BASE_PATH
-    ]
-    if not link_paths:
-        raise RuntimeError(
-            f"로봇 링크를 찾지 못했습니다: {harvest.ROBOT_PRIM_PATH}"
-        )
-    # get_prim_world_pose는 wxyz를 돌려주지만 RawTransformTree는 xyzw를
-    # 요구한다(카메라 노드와 동일 규약). 순서를 바꾸지 않으면 회전이 어긋난다.
-    base_quat = [
-        float(_base_quat[1]),
-        float(_base_quat[2]),
-        float(_base_quat[3]),
-        float(_base_quat[0]),
-    ]
-    print(f"   Robot TF     articulation {articulation_path}")
-    print(f"   Robot TF     base_link USD world {harvest.vec(base_world)}")
-    print(f"   Robot TF     동적 링크 {len(link_paths)}개 (레일 제외)")
-
-    k = og.Controller.Keys
+    keys = og.Controller.Keys
     with Usd.EditContext(stage, stage.GetSessionLayer()):
         og.Controller.edit(
-            {"graph_path": ROBOT_TF_GRAPH_PATH, "evaluator_name": "execution",
-             "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION},
             {
-                k.CREATE_NODES: [
-                    ("Tick", "omni.graph.action.OnPlaybackTick"),
-                    ("Time", "isaacsim.core.nodes.IsaacReadSimulationTime"),
-                    ("JointState", "isaacsim.ros2.bridge.ROS2PublishJointState"),
-                    ("WorldOdom", "isaacsim.ros2.bridge.ROS2PublishRawTransformTree"),
-                    ("OdomBase", "isaacsim.ros2.bridge.ROS2PublishRawTransformTree"),
-                    ("RobotTf", "isaacsim.ros2.bridge.ROS2PublishTransformTree"),
+                "graph_path": CLOCK_GRAPH_PATH,
+                "evaluator_name": "execution",
+                "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION,
+            },
+            {
+                keys.CREATE_NODES: [
+                    ("OnPlaybackTick", "omni.graph.action.OnPlaybackTick"),
+                    ("ReadSimTime", "isaacsim.core.nodes.IsaacReadSimulationTime"),
+                    ("PublishClock", "isaacsim.ros2.bridge.ROS2PublishClock"),
                 ],
-                k.CONNECT: [
-                    ("Tick.outputs:tick", "JointState.inputs:execIn"),
-                    ("Time.outputs:simulationTime", "JointState.inputs:timeStamp"),
-                    ("Tick.outputs:tick", "WorldOdom.inputs:execIn"),
-                    ("Time.outputs:simulationTime", "WorldOdom.inputs:timeStamp"),
-                    ("Tick.outputs:tick", "OdomBase.inputs:execIn"),
-                    ("Time.outputs:simulationTime", "OdomBase.inputs:timeStamp"),
-                    ("Tick.outputs:tick", "RobotTf.inputs:execIn"),
-                    ("Time.outputs:simulationTime", "RobotTf.inputs:timeStamp"),
+                keys.CONNECT: [
+                    ("OnPlaybackTick.outputs:tick", "PublishClock.inputs:execIn"),
+                    (
+                        "ReadSimTime.outputs:simulationTime",
+                        "PublishClock.inputs:timeStamp",
+                    ),
                 ],
-                k.SET_VALUES: [
-                    ("JointState.inputs:targetPrim",
-                     [usdrt.Sdf.Path(articulation_path)]),
-                    ("JointState.inputs:topicName", "/joint_states"),
-                    # world → odom: MVP에서는 항등 변환이다.
-                    ("WorldOdom.inputs:topicName", "/tf_static"),
-                    ("WorldOdom.inputs:parentFrameId", "world"),
-                    ("WorldOdom.inputs:childFrameId", "odom"),
-                    ("WorldOdom.inputs:staticPublisher", True),
-                    ("WorldOdom.inputs:translation", [0.0, 0.0, 0.0]),
-                    ("WorldOdom.inputs:rotation", [0.0, 0.0, 0.0, 1.0]),
-                    # odom → base_link: USD 조립 자세에서 읽은 고정 변환이다.
-                    # 카메라 static TF와 동일한 방식이라 좌표계가 일치한다.
-                    ("OdomBase.inputs:topicName", "/tf_static"),
-                    ("OdomBase.inputs:parentFrameId", "odom"),
-                    ("OdomBase.inputs:childFrameId", "base_link"),
-                    ("OdomBase.inputs:staticPublisher", True),
-                    ("OdomBase.inputs:translation", list(base_world)),
-                    ("OdomBase.inputs:rotation", base_quat),
-                    # base_link 기준으로 선택한 로봇 링크만 동적 발행한다.
-                    # articulation 전체를 주지 않고 링크를 명시해 robot별
-                    # TF 경계를 유지한다.
-                    ("RobotTf.inputs:topicName", "/tf"),
-                    ("RobotTf.inputs:parentPrim",
-                     [usdrt.Sdf.Path(harvest.ROBOT_BASE_PATH)]),
-                    ("RobotTf.inputs:targetPrims",
-                     [usdrt.Sdf.Path(path) for path in link_paths]),
+                keys.SET_VALUES: [("PublishClock.inputs:topicName", "/clock")],
+            },
+        )
+    print("   /clock 그래프 생성 (전역 1개)")
+
+
+def build_camera_graph(stage, profile, names):
+    """한 로봇의 base D455 RGB/depth/CameraInfo와 카메라 TF를 발행한다."""
+    camera_path = profile.camera_prim_path
+    camera_prim = stage.GetPrimAtPath(camera_path)
+    if not camera_prim.IsValid() or not camera_prim.IsA(UsdGeom.Camera):
+        raise harvest.HarvestError(
+            f"D455 payload 안의 Color Camera 가 로드되지 않았습니다: {camera_path}. "
+            "에셋 서버 연결 또는 로컬 캐시를 확인하세요."
+        )
+    translation, rotation = camera_optical_frame_pose(stage, camera_path)
+    quaternion = quaternion_xyzw_from_matrix(rotation)
+    graph_path = f"/BaseCameraRosGraph_{profile.robot_id}"
+
+    keys = og.Controller.Keys
+    with Usd.EditContext(stage, stage.GetSessionLayer()):
+        og.Controller.edit(
+            {
+                "graph_path": graph_path,
+                "evaluator_name": "execution",
+                "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION,
+            },
+            {
+                keys.CREATE_NODES: [
+                    ("OnPlaybackTick", "omni.graph.action.OnPlaybackTick"),
+                    ("ReadSimTime", "isaacsim.core.nodes.IsaacReadSimulationTime"),
+                    (
+                        "CreateRenderProduct",
+                        "isaacsim.core.nodes.IsaacCreateRenderProduct",
+                    ),
+                    ("PublishRgb", "isaacsim.ros2.bridge.ROS2CameraHelper"),
+                    ("PublishDepth", "isaacsim.ros2.bridge.ROS2CameraHelper"),
+                    (
+                        "PublishCameraInfo",
+                        "isaacsim.ros2.bridge.ROS2CameraInfoHelper",
+                    ),
+                    (
+                        "PublishCameraTf",
+                        "isaacsim.ros2.bridge.ROS2PublishRawTransformTree",
+                    ),
+                ],
+                keys.CONNECT: [
+                    (
+                        "OnPlaybackTick.outputs:tick",
+                        "CreateRenderProduct.inputs:execIn",
+                    ),
+                    ("CreateRenderProduct.outputs:execOut", "PublishRgb.inputs:execIn"),
+                    (
+                        "CreateRenderProduct.outputs:execOut",
+                        "PublishDepth.inputs:execIn",
+                    ),
+                    (
+                        "CreateRenderProduct.outputs:execOut",
+                        "PublishCameraInfo.inputs:execIn",
+                    ),
+                    (
+                        "CreateRenderProduct.outputs:renderProductPath",
+                        "PublishRgb.inputs:renderProductPath",
+                    ),
+                    (
+                        "CreateRenderProduct.outputs:renderProductPath",
+                        "PublishDepth.inputs:renderProductPath",
+                    ),
+                    (
+                        "CreateRenderProduct.outputs:renderProductPath",
+                        "PublishCameraInfo.inputs:renderProductPath",
+                    ),
+                    ("OnPlaybackTick.outputs:tick", "PublishCameraTf.inputs:execIn"),
+                    (
+                        "ReadSimTime.outputs:simulationTime",
+                        "PublishCameraTf.inputs:timeStamp",
+                    ),
+                ],
+                keys.SET_VALUES: [
+                    (
+                        "CreateRenderProduct.inputs:cameraPrim",
+                        [usdrt.Sdf.Path(camera_path)],
+                    ),
+                    ("CreateRenderProduct.inputs:width", CAMERA_WIDTH),
+                    ("CreateRenderProduct.inputs:height", CAMERA_HEIGHT),
+                    ("PublishRgb.inputs:frameId", names.camera_frame),
+                    ("PublishRgb.inputs:topicName", names.rgb_topic),
+                    ("PublishRgb.inputs:type", "rgb"),
+                    ("PublishRgb.inputs:frameSkipCount", CAMERA_FRAME_SKIP),
+                    ("PublishDepth.inputs:frameId", names.camera_frame),
+                    ("PublishDepth.inputs:topicName", names.depth_topic),
+                    ("PublishDepth.inputs:type", "depth"),
+                    ("PublishDepth.inputs:frameSkipCount", CAMERA_FRAME_SKIP),
+                    ("PublishCameraInfo.inputs:frameId", names.camera_frame),
+                    ("PublishCameraInfo.inputs:topicName", names.camera_info_topic),
+                    ("PublishCameraInfo.inputs:frameSkipCount", CAMERA_FRAME_SKIP),
+                    ("PublishCameraTf.inputs:topicName", "/tf_static"),
+                    ("PublishCameraTf.inputs:parentFrameId", "world"),
+                    ("PublishCameraTf.inputs:childFrameId", names.camera_frame),
+                    ("PublishCameraTf.inputs:staticPublisher", True),
+                    ("PublishCameraTf.inputs:translation", translation.tolist()),
+                    ("PublishCameraTf.inputs:rotation", quaternion.tolist()),
                 ],
             },
         )
+    print(f"   [{profile.robot_id}] 카메라 그래프 {graph_path}")
+    print(f"       RGB   {names.rgb_topic}")
+    print(f"       Depth {names.depth_topic}")
+    print(f"       Info  {names.camera_info_topic}")
+    print(f"       frame {names.camera_frame}")
 
 
-@dataclass
-class PendingGoal:
-    handle: object
-    finished: threading.Event
-    result: object = None
+def build_conveyor_camera_graph(stage):
+    """컨베이어 탑뷰 D455 를 품질검사용 토픽으로 발행한다.
 
+    GPU PC 2 의 conveyor_camera_adapter_node 가 구독하는 이름과 frame 을
+    그대로 쓴다. 예전에는 conveyor_camera_publish.py 가 별도 Isaac Sim
+    프로세스로 이걸 발행했는데, 그러면 Isaac 이 두 개 뜨고 월드가 갈려서
+    수확한 사과와 검사받는 사과가 서로 다른 세계에 있게 된다. 카메라는
+    로봇과 같은 월드에서 발행해야 한다.
 
-class MotionExecutionError(RuntimeError):
-    def __init__(self, error_code, message):
-        super().__init__(message)
-        self.error_code = error_code
-
-
-class RobotMotionNode(Node):
-    """ROS callback에서는 요청만 보관하고 Isaac API는 메인 스레드만 사용한다."""
-
-    def __init__(self):
-        super().__init__(
-            "isaac_robot_motion_server",
-            parameter_overrides=[Parameter("use_sim_time", value=True)],
+    현재 stage 에는 탑뷰 conv_rsd455 한 대만 있다. 왼쪽·오른쪽
+    (conv_rsd455_01/_02) 프림이 추가되면 이 함수를 그 카메라에도 부르면
+    된다.
+    """
+    camera_path = f"{CONVEYOR_CAMERA_ROOT}/RSD455/Camera_OmniVision_OV9782_Color"
+    camera_prim = stage.GetPrimAtPath(camera_path)
+    if not camera_prim.IsValid() or not camera_prim.IsA(UsdGeom.Camera):
+        print(
+            f"   [WARN] 컨베이어 탑뷰 카메라가 없어 품질 스트림을 건너뜁니다: "
+            f"{camera_path}"
         )
-        self.requests = queue.Queue(maxsize=1)
-        self.busy = False
-        self.lock = threading.Lock()
+        return False
+    translation, rotation = camera_optical_frame_pose(stage, camera_path)
+    quaternion = quaternion_xyzw_from_matrix(rotation)
+
+    keys = og.Controller.Keys
+    with Usd.EditContext(stage, stage.GetSessionLayer()):
+        og.Controller.edit(
+            {
+                "graph_path": CONVEYOR_CAMERA_GRAPH_PATH,
+                "evaluator_name": "execution",
+                "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION,
+            },
+            {
+                keys.CREATE_NODES: [
+                    ("OnPlaybackTick", "omni.graph.action.OnPlaybackTick"),
+                    ("ReadSimTime", "isaacsim.core.nodes.IsaacReadSimulationTime"),
+                    (
+                        "CreateRenderProduct",
+                        "isaacsim.core.nodes.IsaacCreateRenderProduct",
+                    ),
+                    ("PublishRgb", "isaacsim.ros2.bridge.ROS2CameraHelper"),
+                    ("PublishDepth", "isaacsim.ros2.bridge.ROS2CameraHelper"),
+                    (
+                        "PublishCameraInfo",
+                        "isaacsim.ros2.bridge.ROS2CameraInfoHelper",
+                    ),
+                    (
+                        "PublishCameraTf",
+                        "isaacsim.ros2.bridge.ROS2PublishRawTransformTree",
+                    ),
+                ],
+                keys.CONNECT: [
+                    (
+                        "OnPlaybackTick.outputs:tick",
+                        "CreateRenderProduct.inputs:execIn",
+                    ),
+                    ("CreateRenderProduct.outputs:execOut", "PublishRgb.inputs:execIn"),
+                    (
+                        "CreateRenderProduct.outputs:execOut",
+                        "PublishDepth.inputs:execIn",
+                    ),
+                    (
+                        "CreateRenderProduct.outputs:execOut",
+                        "PublishCameraInfo.inputs:execIn",
+                    ),
+                    (
+                        "CreateRenderProduct.outputs:renderProductPath",
+                        "PublishRgb.inputs:renderProductPath",
+                    ),
+                    (
+                        "CreateRenderProduct.outputs:renderProductPath",
+                        "PublishDepth.inputs:renderProductPath",
+                    ),
+                    (
+                        "CreateRenderProduct.outputs:renderProductPath",
+                        "PublishCameraInfo.inputs:renderProductPath",
+                    ),
+                    ("OnPlaybackTick.outputs:tick", "PublishCameraTf.inputs:execIn"),
+                    (
+                        "ReadSimTime.outputs:simulationTime",
+                        "PublishCameraTf.inputs:timeStamp",
+                    ),
+                ],
+                keys.SET_VALUES: [
+                    (
+                        "CreateRenderProduct.inputs:cameraPrim",
+                        [usdrt.Sdf.Path(camera_path)],
+                    ),
+                    ("CreateRenderProduct.inputs:width", CAMERA_WIDTH),
+                    ("CreateRenderProduct.inputs:height", CAMERA_HEIGHT),
+                    ("PublishRgb.inputs:frameId", CONVEYOR_CAMERA_FRAME),
+                    ("PublishRgb.inputs:topicName", f"{CONVEYOR_CAMERA_NS}/color/image_raw"),
+                    ("PublishRgb.inputs:type", "rgb"),
+                    ("PublishRgb.inputs:frameSkipCount", CAMERA_FRAME_SKIP),
+                    ("PublishDepth.inputs:frameId", CONVEYOR_CAMERA_FRAME),
+                    ("PublishDepth.inputs:topicName", f"{CONVEYOR_CAMERA_NS}/depth/image_raw"),
+                    ("PublishDepth.inputs:type", "depth"),
+                    ("PublishDepth.inputs:frameSkipCount", CAMERA_FRAME_SKIP),
+                    ("PublishCameraInfo.inputs:frameId", CONVEYOR_CAMERA_FRAME),
+                    (
+                        "PublishCameraInfo.inputs:topicName",
+                        f"{CONVEYOR_CAMERA_NS}/camera_info",
+                    ),
+                    ("PublishCameraInfo.inputs:frameSkipCount", CAMERA_FRAME_SKIP),
+                    ("PublishCameraTf.inputs:topicName", "/tf_static"),
+                    ("PublishCameraTf.inputs:parentFrameId", "world"),
+                    ("PublishCameraTf.inputs:childFrameId", CONVEYOR_CAMERA_FRAME),
+                    ("PublishCameraTf.inputs:staticPublisher", True),
+                    ("PublishCameraTf.inputs:translation", translation.tolist()),
+                    ("PublishCameraTf.inputs:rotation", quaternion.tolist()),
+                ],
+            },
+        )
+    print("   컨베이어 탑뷰 카메라 그래프 생성")
+    print(f"       RGB   {CONVEYOR_CAMERA_NS}/color/image_raw")
+    print(f"       Depth {CONVEYOR_CAMERA_NS}/depth/image_raw")
+    print(f"       Info  {CONVEYOR_CAMERA_NS}/camera_info")
+    print(f"       frame {CONVEYOR_CAMERA_FRAME}")
+    return True
+
+
+def set_conveyor_speed(stage):
+    """벨트 이송이 실제로 사과를 움직이게 만든다.
+
+    속도 변수만 넣는 것으로는 부족했다. 두 가지가 더 필요하다.
+
+    1. ``RuntimeConveyorBeltSurface`` 는 벨트 위를 덮은 정적 평면이라,
+       사과가 움직이는 벨트가 아니라 안 움직이는 이 평면 위에 얹힌다.
+       배치 목표 계산에는 계속 쓰되 물리 collision 은 끈다.
+    2. 사과 collider 에 마찰 재질을 묶는다. 마찰이 없으면 벨트가 지나가도
+       사과가 미끄러져 제자리에 남는다.
+
+    전부 Session Layer 에만 적용한다. 예전에는 conveyor_camera_publish.py
+    가 이걸 자기 월드에서 했는데, 그 프로세스를 이 서버로 통합했다.
+    """
+    graph = stage.GetPrimAtPath(CONVEYOR_BELT_GRAPH_PATH)
+    if not graph.IsValid():
+        print(f"   [WARN] 컨베이어 그래프가 없습니다: {CONVEYOR_BELT_GRAPH_PATH}")
+        return False
+    velocity = graph.GetAttribute("graph:variable:Velocity")
+    if not velocity.IsValid():
+        print("   [WARN] ConveyorBeltGraph 에 Velocity 변수가 없습니다.")
+        return False
+
+    from pxr import Gf, PhysxSchema, UsdPhysics, UsdShade
+
+    bound = 0
+    with Usd.EditContext(stage, stage.GetSessionLayer()):
+        velocity.Set(float(CONVEYOR_SPEED_MPS))
+
+        # 덮개 평면 물리는 configure_conveyor_transport 가 reset 전에 만든다.
+
+        material = UsdShade.Material.Define(stage, "/World/RuntimeApplePhysicsMaterial")
+        physics_material = UsdPhysics.MaterialAPI.Apply(material.GetPrim())
+        physics_material.CreateStaticFrictionAttr(0.9).Set(0.9)
+        physics_material.CreateDynamicFrictionAttr(0.8).Set(0.8)
+        physics_material.CreateRestitutionAttr(0.05).Set(0.05)
+
+        all_prims = tuple(stage.TraverseAll())
+        for rigid in all_prims:
+            if "apple" not in str(rigid.GetPath()).lower():
+                continue
+            if not rigid.HasAPI(UsdPhysics.RigidBodyAPI):
+                continue
+            if bool(rigid.GetAttribute("physics:kinematicEnabled").Get()):
+                continue
+            for collider in all_prims:
+                if not collider.GetPath().HasPrefix(rigid.GetPath()):
+                    continue
+                if not collider.HasAPI(UsdPhysics.CollisionAPI):
+                    continue
+                UsdShade.MaterialBindingAPI.Apply(collider).Bind(
+                    material,
+                    bindingStrength=UsdShade.Tokens.strongerThanDescendants,
+                    materialPurpose="physics",
+                )
+                bound += 1
+    print(
+        f"   컨베이어 이송 설정: 덮개 surface velocity (0, -{CONVEYOR_SPEED_MPS:.2f}, 0) m/s, "
+        f"사과 마찰 재질 {bound}개 바인딩"
+    )
+    return True
+
+
+def build_plate_conveyor_graph(stage):
+    """덮개 평면을 IsaacConveyor 노드로 구동한다.
+
+    PhysxSurfaceVelocityAPI 를 USD 로 authoring 하는 방식은 이 버전에서
+    적용되지 않았다(공 낙하 실측: 드리프트만 있고 이송 없음). 스테이지의
+    롤러 그래프가 쓰는 것과 같은 IsaacConveyor 노드는 런타임 physx API 로
+    매 스텝 surface velocity 를 넣으므로 확실하다.
+    """
+    keys = og.Controller.Keys
+    with Usd.EditContext(stage, stage.GetSessionLayer()):
+        og.Controller.edit(
+            {
+                "graph_path": "/ConveyorPlateGraph",
+                "evaluator_name": "execution",
+                "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION,
+            },
+            {
+                keys.CREATE_NODES: [
+                    ("OnPlaybackTick", "omni.graph.action.OnPlaybackTick"),
+                    ("Conveyor", "isaacsim.asset.gen.conveyor.IsaacConveyor"),
+                ],
+                keys.CONNECT: [
+                    ("OnPlaybackTick.outputs:tick", "Conveyor.inputs:onStep"),
+                    ("OnPlaybackTick.outputs:deltaSeconds", "Conveyor.inputs:delta"),
+                ],
+                keys.SET_VALUES: [
+                    (
+                        "Conveyor.inputs:conveyorPrim",
+                        [usdrt.Sdf.Path(harvest.RUNTIME_CONVEYOR_COLLIDER_PATH)],
+                    ),
+                    ("Conveyor.inputs:enabled", True),
+                    ("Conveyor.inputs:velocity", float(CONVEYOR_SPEED_MPS)),
+                    # direction 은 대상 prim 로컬 기준. 덮개는 회전이 없어
+                    # 로컬 -Y == 월드 -Y (배치 지점 -> 탑뷰 카메라 방향).
+                    ("Conveyor.inputs:direction", [0.0, -1.0, 0.0]),
+                ],
+            },
+        )
+    print(f"   덮개 컨베이어 그래프 생성: {CONVEYOR_SPEED_MPS:.2f} m/s, -Y")
+
+
+def build_robot_state_graph(stage, profile, names):
+    """한 로봇의 링크 TF와 joint_states 를 발행한다.
+
+    robot_state_publisher 는 쓰지 않는다. TF 의 권위자는 Isaac Sim 이고
+    같은 TF 를 두 노드가 중복 발행하지 않는다.
+    """
+    graph_path = f"/RobotStateRosGraph_{profile.robot_id}"
+    keys = og.Controller.Keys
+    with Usd.EditContext(stage, stage.GetSessionLayer()):
+        og.Controller.edit(
+            {
+                "graph_path": graph_path,
+                "evaluator_name": "execution",
+                "pipeline_stage": og.GraphPipelineStage.GRAPH_PIPELINE_STAGE_SIMULATION,
+            },
+            {
+                keys.CREATE_NODES: [
+                    ("OnPlaybackTick", "omni.graph.action.OnPlaybackTick"),
+                    ("ReadSimTime", "isaacsim.core.nodes.IsaacReadSimulationTime"),
+                    ("PublishTf", "isaacsim.ros2.bridge.ROS2PublishTransformTree"),
+                    ("PublishJointState", "isaacsim.ros2.bridge.ROS2PublishJointState"),
+                ],
+                keys.CONNECT: [
+                    ("OnPlaybackTick.outputs:tick", "PublishTf.inputs:execIn"),
+                    ("ReadSimTime.outputs:simulationTime", "PublishTf.inputs:timeStamp"),
+                    ("OnPlaybackTick.outputs:tick", "PublishJointState.inputs:execIn"),
+                    (
+                        "ReadSimTime.outputs:simulationTime",
+                        "PublishJointState.inputs:timeStamp",
+                    ),
+                ],
+                keys.SET_VALUES: [
+                    ("PublishTf.inputs:topicName", "/tf"),
+                    (
+                        "PublishTf.inputs:targetPrims",
+                        [usdrt.Sdf.Path(profile.robot_prim_path)],
+                    ),
+                    ("PublishJointState.inputs:topicName", names.joint_states_topic),
+                    (
+                        # ArticulationRootAPI 가 붙어 있는 prim 을 정확히
+                        # 가리켜야 한다. 부모 Xform 을 주면 이 노드는
+                        # "is not an articulation" 으로 조용히 실패하고
+                        # joint_states 토픽 자체가 생기지 않는다.
+                        "PublishJointState.inputs:targetPrim",
+                        [usdrt.Sdf.Path(profile.articulation_root_joint_path)],
+                    ),
+                ],
+            },
+        )
+    print(f"   [{profile.robot_id}] 로봇 상태 그래프 {graph_path}")
+    print(f"       joint_states {names.joint_states_topic}")
+
+
+# ══════════════════════════════════════════════════════════════
+# 시뮬레이션 스레드에 넘길 작업
+# ══════════════════════════════════════════════════════════════
+@dataclass
+class MotionJob:
+    """Action 콜백이 만들고 시뮬레이션 스레드가 실행하는 한 단계.
+
+    Isaac Sim API 는 스레드 안전하지 않다. Action 콜백에서 직접 world 를
+    step 하면 렌더 스레드와 충돌하므로, 작업만 넘기고 결과를 기다린다.
+    큐가 하나라서 두 로봇의 단계가 한 번에 하나씩 순서대로 실행된다.
+    """
+
+    robot_id: str
+    motion_type: int
+    target_position: np.ndarray
+    done: threading.Event = field(default_factory=threading.Event)
+    cancel: threading.Event = field(default_factory=threading.Event)
+    success: bool = False
+    error_code: str = ""
+    message: str = ""
+    progress: float = 0.0
+
+
+class HarvestWorld:
+    """한 Isaac Sim World 와 그 안의 로봇 런타임 전부."""
+
+    def __init__(self, robot_ids):
+        # 이송 설정은 apple_pick.bootstrap 이 reset 직후 직접 수행한다.
+        context = harvest.bootstrap(robot_ids)
+        self.world = context["world"]
+        self.stage = context["stage"]
+        self.runtimes = context["runtimes"]
+        self.fsms = {
+            robot_id: harvest.AppleHarvestFSM(runtime)
+            for robot_id, runtime in self.runtimes.items()
+        }
         self.reset_id = 0
         self.scene_version = 0
-        self.simulation_state = SimulationState.INITIALIZING
-        self.scene_message = None
-        self.last_motion_failure = None
-        self.place_status = None
-        latched_qos = QoSProfile(
-            history=HistoryPolicy.KEEP_LAST,
-            depth=1,
-            reliability=ReliabilityPolicy.RELIABLE,
-            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+
+    def close(self):
+        for fsm in self.fsms.values():
+            fsm.close()
+        for runtime in self.runtimes.values():
+            runtime.close()
+
+    def all_proxies(self):
+        """두 나무의 proxy 를 합친 전역 snapshot."""
+        merged = []
+        for runtime in self.runtimes.values():
+            merged.extend(runtime.proxies)
+        return tuple(merged)
+
+    def refresh_scene_if_moved(self):
+        changed = False
+        for runtime in self.runtimes.values():
+            if runtime.refresh_scene_if_moved():
+                changed = True
+        if changed:
+            self.scene_version += 1
+        return changed
+
+    def execute(self, job):
+        """한 Goal 단계를 실행한다. 시뮬레이션 스레드에서만 호출한다."""
+        runtime = self.runtimes[job.robot_id]
+        fsm = self.fsms[job.robot_id]
+        motion_type = job.motion_type
+
+        if motion_type == RobotMotion.Goal.APPROACH:
+            _assembly, center = fsm.select_apple(job.target_position)
+            fsm.approach(center)
+        elif motion_type == RobotMotion.Goal.GRASP:
+            fsm.grasp()
+        elif motion_type == RobotMotion.Goal.TWIST:
+            fsm.twist()
+        elif motion_type == RobotMotion.Goal.PULL:
+            fsm.linear_pull()
+        elif motion_type == RobotMotion.Goal.TRANSPORT:
+            position, rotation = harvest.conveyor_place_pose(self.stage)
+            transit, height = harvest.conveyor_transit_pose(runtime, position, rotation)
+            print(f"   [{job.robot_id}] 컨베이어 경유 높이 {height * 100:.0f} cm")
+            fsm.transport(transit, rotation)
+        elif motion_type == RobotMotion.Goal.PLACE:
+            position, rotation = harvest.conveyor_place_pose(self.stage)
+            fsm.place(position, rotation)
+        elif motion_type == RobotMotion.Goal.RELEASE:
+            fsm.release()
+        elif motion_type == RobotMotion.Goal.RETRACT:
+            fsm.retract()
+        else:
+            raise harvest.HarvestError(
+                f"지원하지 않는 motion_type 입니다: {motion_type}"
+            )
+        return True
+
+
+# ══════════════════════════════════════════════════════════════
+# 로봇별 Action 서버
+# ══════════════════════════════════════════════════════════════
+class RobotMotionServer:
+    """한 로봇의 Action 서버와 상태 발행."""
+
+    def __init__(self, node, robot_id, job_queue, state_provider):
+        self.node = node
+        self.robot_id = robot_id
+        self.names = HarvestNames(robot_id)
+        self.job_queue = job_queue
+        self.state_provider = state_provider
+        self.busy = threading.Lock()
+        self.active_job = None
+
+        callback_group = ReentrantCallbackGroup()
+        self.motion_status_publisher = node.create_publisher(
+            MotionStatus, self.names.motion_status_topic, RELIABLE_QOS
         )
-        self.state_publisher = self.create_publisher(
-            SimulationState, "/simulation/state", latched_qos
-        )
-        self.scene_publisher = self.create_publisher(
-            PlanningScene, "/planning_scene", latched_qos
-        )
-        self.planning_visualization = MotionPlanningVisualizationPublisher(self)
-        self.scene_service = self.create_service(
-            GetPlanningScene, "/planning_scene/get_snapshot", self.get_scene
-        )
-        self.retry_inspection_service = self.create_service(
-            RetryInspection,
-            RETRY_INSPECTION_SERVICE,
-            self.retry_inspection,
-        )
-        status_qos = QoSProfile(
-            history=HistoryPolicy.KEEP_LAST,
-            depth=10,
-            reliability=ReliabilityPolicy.RELIABLE,
-            durability=DurabilityPolicy.VOLATILE,
-        )
-        self.motion_status_subscription = self.create_subscription(
-            MotionStatus,
-            "/harvest/motion_status",
-            self.on_motion_status,
-            status_qos,
-        )
-        self.checkpoint_publisher = self.create_publisher(
-            CheckpointEvent, CHECKPOINT_TOPIC, status_qos
-        )
-        self.place_status_subscription = self.create_subscription(
-            PlaceCoordinatorStatus,
-            PLACE_STATUS_TOPIC,
-            self.on_place_status,
-            latched_qos,
-        )
-        self.place_client = self.create_client(
-            PlaceCommand, PLACE_COMMAND_SERVICE
-        )
-        self.server = ActionServer(
-            self,
+        self.action_server = ActionServer(
+            node,
             RobotMotion,
-            "/harvest/robot_motion",
-            execute_callback=self.execute,
-            goal_callback=self.accept_goal,
-            cancel_callback=lambda _goal: CancelResponse.ACCEPT,
+            self.names.robot_motion_action,
+            execute_callback=self.execute_callback,
+            goal_callback=self.goal_callback,
+            cancel_callback=self.cancel_callback,
+            callback_group=callback_group,
+        )
+        node.get_logger().info(
+            f"Action 서버 준비: {self.names.robot_motion_action}"
         )
 
-    def accept_goal(self, request):
-        with self.lock:
-            valid_state = self.simulation_state in (
-                SimulationState.READY,
-                SimulationState.PLAYING,
+    def publish_status(self, state, success, progress, error_code="", text=""):
+        message = MotionStatus()
+        message.header.stamp = self.node.get_clock().now().to_msg()
+        message.header.frame_id = "world"
+        message.current_state = state
+        message.success = bool(success)
+        message.progress = float(progress)
+        message.error_code = error_code
+        message.message = text
+        self.motion_status_publisher.publish(message)
+
+    def goal_callback(self, goal_request):
+        """세대와 busy 상태를 함께 검사해 Goal 을 승인한다."""
+        snapshot = self.state_provider()
+        if snapshot["state"] not in (SimulationState.READY, SimulationState.PLAYING):
+            self.node.get_logger().warning(
+                f"[{self.robot_id}] simulation 이 READY/PLAYING 이 아니라 거부"
             )
-            valid_version = (
-                request.reset_id == self.reset_id
-                and request.scene_version == self.scene_version
+            return GoalResponse.REJECT
+        if goal_request.reset_id != snapshot["reset_id"]:
+            self.node.get_logger().warning(
+                f"[{self.robot_id}] reset_id 불일치: "
+                f"{goal_request.reset_id} != {snapshot['reset_id']}"
             )
-            # v2.0에서는 외부 PC가 waypoint를 주입하지 않는다. APPROACH
-            # 경로는 이 GPU PC 1 Action 서버가 현재 관절 상태와 동일한
-            # planning world로 생성한다.
-            valid_waypoints = len(request.waypoints) == 0
-            if (
-                self.busy
-                or request.motion_type not in MOTION_SEQUENCE
-                or not valid_state
-                or not valid_version
-                or not valid_waypoints
-            ):
-                self.get_logger().warning(
-                    "RobotMotion Goal 거부: "
-                    f"busy={self.busy}, state={self.simulation_state}, "
-                    f"goal version={request.reset_id}/{request.scene_version}, "
-                    f"current={self.reset_id}/{self.scene_version}, "
-                    f"waypoints={len(request.waypoints)}"
-                )
-                return GoalResponse.REJECT
-            self.busy = True
+            return GoalResponse.REJECT
+        if goal_request.scene_version != snapshot["scene_version"]:
+            self.node.get_logger().warning(
+                f"[{self.robot_id}] scene_version 불일치: "
+                f"{goal_request.scene_version} != {snapshot['scene_version']}"
+            )
+            return GoalResponse.REJECT
+        if self.busy.locked():
+            self.node.get_logger().warning(
+                f"[{self.robot_id}] 실행 중에는 새 Goal 을 받지 않습니다."
+            )
+            return GoalResponse.REJECT
         return GoalResponse.ACCEPT
 
-    def on_motion_status(self, message):
-        """GPU PC 1 supervisor의 Goal 전 검증 실패를 진단용으로 기록한다."""
-        if message.success:
-            return
-        with self.lock:
-            self.last_motion_failure = (
-                message.current_state,
-                message.error_code,
-                message.message,
-                self.reset_id,
-                self.scene_version,
-            )
-        self.get_logger().warning(
-            "motion status 실패 기록: "
-            f"state={message.current_state}, code={message.error_code}, "
-            f"message={message.message}"
-        )
+    def cancel_callback(self, _goal_handle):
+        if self.active_job is not None:
+            self.active_job.cancel.set()
+        return CancelResponse.ACCEPT
 
-    def retry_inspection(self, request, response):
-        """Reject promptly instead of leaving Personal PC 2 to time out."""
-        with self.lock:
-            simulation_ready = self.simulation_state in (
-                SimulationState.READY,
-                SimulationState.PLAYING,
-            )
-        accepted, new_inspection_id, message = evaluate_retry_inspection_request(
-            request.inspection_id,
-            request.apple_id,
-            request.reason,
-            simulation_ready,
-        )
-        response.accepted = accepted
-        response.new_inspection_id = new_inspection_id
-        response.message = message
-        self.get_logger().warning(
-            "RetryInspection 거절: "
-            f"inspection={request.inspection_id}, apple={request.apple_id}, "
-            f"message={message}"
-        )
-        return response
+    def execute_callback(self, goal_handle):
+        request = goal_handle.request
+        name = MOTION_NAMES.get(request.motion_type, "UNKNOWN")
+        result = RobotMotion.Result()
 
-    def on_place_status(self, message):
-        with self.lock:
-            self.place_status = message
-
-    def latest_place_status(self):
-        with self.lock:
-            return self.place_status
-
-    def publish_checkpoint(self, record):
-        value = CheckpointEvent()
-        value.header.stamp = self.get_clock().now().to_msg()
-        value.header.frame_id = record.checkpoint_id
-        value.apple_id = record.apple_id
-        value.checkpoint_id = record.checkpoint_id
-        value.event = (
-            CheckpointEvent.ENTER if record.entered else CheckpointEvent.EXIT
-        )
-        self.checkpoint_publisher.publish(value)
-
-    def send_landing_result(self, result):
-        if not self.place_client.service_is_ready():
-            self.get_logger().error(
-                "Place Coordinator service가 없어 landing 결과를 전달하지 못했습니다."
-            )
-            return
-        status = self.latest_place_status()
-        if status is None:
-            self.get_logger().error("Place 상태 없이 landing 결과를 전달할 수 없습니다.")
-            return
-        request = PlaceCommand.Request()
-        request.header.stamp = self.get_clock().now().to_msg()
-        request.header.frame_id = "world"
-        request.command = (
-            PlaceCommand.Request.CONFIRM_LANDING
-            if result.state == LandingTracker.CONFIRMED
-            else PlaceCommand.Request.FAIL
-        )
-        request.robot_id = result.robot_id
-        request.reservation_id = result.reservation_id
-        request.apple_id = result.apple_id
-        request.place_position_id = status.place_position_id
-        request.reset_id = int(status.reset_id)
-        request.scene_version = int(status.scene_version)
-        if result.state != LandingTracker.CONFIRMED:
-            request.error_code = "LANDING_TIMEOUT"
-        request.message = result.message
-        future = self.place_client.call_async(request)
-
-        def report_response(done):
-            try:
-                response = done.result()
-            except Exception as error:
-                self.get_logger().error(f"landing 결과 전달 실패: {error}")
-                return
-            if not response.accepted:
-                self.get_logger().error(
-                    f"landing 결과 거부 {response.error_code}: {response.message}"
-                )
-
-        future.add_done_callback(report_response)
-
-    def execute(self, goal_handle):
-        pending = PendingGoal(goal_handle, threading.Event())
-        self.requests.put(pending)
-        pending.finished.wait()
-        with self.lock:
-            self.busy = False
-        return pending.result
-
-    def publish_state(self, state, message=""):
-        with self.lock:
-            self.simulation_state = int(state)
-            reset_id = self.reset_id
-            scene_version = self.scene_version
-        value = SimulationState()
-        value.header.stamp = self.get_clock().now().to_msg()
-        value.header.frame_id = "world"
-        value.state = int(state)
-        value.reset_id = int(reset_id)
-        value.scene_version = int(scene_version)
-        value.message = message
-        self.state_publisher.publish(value)
-        if int(state) in (SimulationState.STOPPED, SimulationState.INITIALIZING):
-            self.planning_visualization.clear(
-                f"state={int(state)} reset={reset_id} scene={scene_version}"
-            )
-
-    def publish_motion_plan(self, snapshot):
-        """실제 planner가 검증한 snapshot만 RViz 토픽으로 전달한다."""
-        with self.lock:
-            scene = self.scene_message
-            reset_id = self.reset_id
-            scene_version = self.scene_version
-        self.planning_visualization.publish_plan(
-            snapshot,
-            scene,
-            reset_id,
-            scene_version,
-        )
-
-    def publish_motion_failure(self, target_position, error_code, message):
-        self.planning_visualization.publish_failure(
-            target_position,
-            error_code,
-            message,
-        )
-
-    @staticmethod
-    def _pose_stamped(position, quaternion_xyzw, stamp):
-        value = PoseStamped()
-        value.header.stamp = stamp
-        value.header.frame_id = "world"
-        value.pose.position.x = float(position[0])
-        value.pose.position.y = float(position[1])
-        value.pose.position.z = float(position[2])
-        value.pose.orientation.x = float(quaternion_xyzw[0])
-        value.pose.orientation.y = float(quaternion_xyzw[1])
-        value.pose.orientation.z = float(quaternion_xyzw[2])
-        value.pose.orientation.w = float(quaternion_xyzw[3])
-        return value
-
-    def publish_scene(self, reset_id, scene_version, specs, base_pose, tcp_pose):
-        stamp = self.get_clock().now().to_msg()
-        scene = PlanningScene()
-        scene.header.stamp = stamp
-        scene.header.frame_id = "world"
-        scene.reset_id = int(reset_id)
-        scene.scene_version = int(scene_version)
-        base_position, base_quaternion_wxyz = base_pose
-        tcp_position, tcp_rotation = tcp_pose
-        base_xyzw = harvest.np.array(
-            [
-                base_quaternion_wxyz[1],
-                base_quaternion_wxyz[2],
-                base_quaternion_wxyz[3],
-                base_quaternion_wxyz[0],
-            ]
-        )
-        tcp_wxyz = harvest.rot_matrix_to_quat(tcp_rotation)
-        tcp_xyzw = harvest.np.array(
-            [tcp_wxyz[1], tcp_wxyz[2], tcp_wxyz[3], tcp_wxyz[0]]
-        )
-        scene.robot_base_pose = self._pose_stamped(base_position, base_xyzw, stamp)
-        scene.robot_tcp_pose = self._pose_stamped(tcp_position, tcp_xyzw, stamp)
-        for spec in specs:
-            proxy = ObstacleProxy()
-            proxy.obstacle_id = spec["obstacle_id"]
-            proxy.shape = {
-                "sphere": ObstacleProxy.SHAPE_SPHERE,
-                "box": ObstacleProxy.SHAPE_BOX,
-                "capsule": ObstacleProxy.SHAPE_CAPSULE,
-            }[spec["shape"]]
-            proxy.obstacle_class = {
-                "trunk": ObstacleProxy.CLASS_TRUNK,
-                "branch": ObstacleProxy.CLASS_BRANCH,
-            }[spec["obstacle_class"]]
-            position = spec["position"]
-            orientation = spec["orientation_xyzw"]
-            dimensions = spec["dimensions"]
-            proxy.pose.position.x = float(position[0])
-            proxy.pose.position.y = float(position[1])
-            proxy.pose.position.z = float(position[2])
-            proxy.pose.orientation.x = float(orientation[0])
-            proxy.pose.orientation.y = float(orientation[1])
-            proxy.pose.orientation.z = float(orientation[2])
-            proxy.pose.orientation.w = float(orientation[3])
-            proxy.dimensions.x = float(dimensions[0])
-            proxy.dimensions.y = float(dimensions[1])
-            proxy.dimensions.z = float(dimensions[2])
-            proxy.safety_margin = float(spec["safety_margin"])
-            scene.obstacles.append(proxy)
-        with self.lock:
-            self.reset_id = int(reset_id)
-            self.scene_version = int(scene_version)
-            self.scene_message = scene
-        self.scene_publisher.publish(scene)
-        self.get_logger().info(
-            f"planning scene 발행: reset={reset_id}, version={scene_version}, "
-            f"obstacles={len(scene.obstacles)}"
-        )
-
-    def get_scene(self, _request, response):
-        with self.lock:
-            scene = self.scene_message
-        response.success = scene is not None
-        if scene is not None:
-            response.scene = scene
-            response.message = "latest planning scene"
-        else:
-            response.message = "planning scene이 아직 준비되지 않았습니다."
-        return response
-
-    def execution_version(self):
-        with self.lock:
-            return self.reset_id, self.scene_version, self.simulation_state
-
-
-class AppleConveyorContactMonitor:
-    """Tracks recent PhysX contact between released apples and the belt collider."""
-
-    def __init__(self, now_callback):
-        self.now_callback = now_callback
-        self.last_contact_s = {}
-        self._subscription = (
-            harvest.omni.physx.get_physx_simulation_interface()
-            .subscribe_contact_report_events(self._on_contact_report)
-        )
-
-    @staticmethod
-    def _decode_path(encoded):
-        return harvest.RobotTreeContactMonitor._decode_path(encoded)
-
-    def _on_contact_report(self, headers, _data):
-        now_s = float(self.now_callback())
-        for header in headers:
-            if int(header.num_contact_data) <= 0:
-                continue
-            paths = [
-                self._decode_path(header.actor0),
-                self._decode_path(header.actor1),
-                self._decode_path(header.collider0),
-                self._decode_path(header.collider1),
-            ]
-            if not any(
-                path.startswith(harvest.RUNTIME_CONVEYOR_COLLIDER_PATH)
-                for path in paths
-            ):
-                continue
-            for assembly in harvest.APPLE_ASSEMBLIES:
-                body_path = assembly["apple_body_path"]
-                if any(path.startswith(body_path) for path in paths):
-                    self.last_contact_s[body_path] = now_s
-
-    def is_in_contact(self, apple_body_path, now_s):
-        contact_s = self.last_contact_s.get(str(apple_body_path))
-        return contact_s is not None and float(now_s) - contact_s <= 2.0 / 60.0
-
-    def reset(self):
-        self.last_contact_s.clear()
-
-    def close(self):
-        self._subscription = None
-
-
-class ConveyorLifecycleRuntime:
-    """Isaac-main-thread adapter for landing and the single inspection ROI."""
-
-    def __init__(self, node, engine, stage, world):
-        self.node = node
-        self.engine = engine
-        self.stage = stage
-        self.world = world
-        collider = harvest.require_prim(
-            stage, harvest.RUNTIME_CONVEYOR_COLLIDER_PATH
-        )
-        cache = UsdGeom.BBoxCache(
-            Usd.TimeCode.Default(),
-            [UsdGeom.Tokens.default_, UsdGeom.Tokens.render, UsdGeom.Tokens.proxy],
-            useExtentsHint=True,
-        )
-        box = cache.ComputeWorldBound(collider).ComputeAlignedBox()
-        minimum = harvest.np.asarray(box.GetMin(), dtype=float)
-        maximum = harvest.np.asarray(box.GetMax(), dtype=float)
-        travel_axis = int(harvest.np.argmax((maximum - minimum)[:2]))
-        self.bounds = ConveyorBounds(minimum, maximum, travel_axis)
-        self.belt_speed = float(
-            os.environ.get("APPLEPROJ_CONVEYOR_SPEED_MPS", "0.30")
-        )
-        self._configure_surface_velocity()
-        self.landing = LandingTracker(self.bounds, self.belt_speed)
-        self.contact = AppleConveyorContactMonitor(
-            lambda: float(self.world.current_time)
-        )
-        self.inspection = None
-        roi_start = os.environ.get("APPLEPROJ_INSPECTION_ROI_START_FRACTION")
-        roi_end = os.environ.get("APPLEPROJ_INSPECTION_ROI_END_FRACTION")
-        if roi_start is not None and roi_end is not None:
-            self.inspection = InspectionCheckpointTracker(
-                self.bounds,
-                (float(roi_start), float(roi_end)),
-                self.node.publish_checkpoint,
-            )
-        else:
-            self.node.get_logger().warning(
-                "단일 카메라 유효 ROI 위치가 설정되지 않아 "
-                "CONVEYOR_INSPECTION_ROI event 발행은 비활성화됩니다. "
-                "APPLEPROJ_INSPECTION_ROI_START_FRACTION과 "
-                "APPLEPROJ_INSPECTION_ROI_END_FRACTION을 설정하세요."
-            )
-        self.generation = None
-        self.active_landing_key = None
-        self.transport_apple_paths = set()
-        self._transport_log_paths = set()
-
-    def _configure_surface_velocity(self):
-        conveyor_direction = harvest.np.asarray(
-            self.engine.conveyor[3], dtype=float
-        )
-        harvest.configure_conveyor_surface_velocity(
-            self.stage, conveyor_direction, self.belt_speed
-        )
-
-    @staticmethod
-    def _apple_body_path(apple_prim_path):
-        return str(apple_prim_path).rsplit("/", 1)[0]
-
-    def _velocity(self, apple_body_path):
-        prim = self.stage.GetPrimAtPath(apple_body_path)
-        if not prim.IsValid() or not prim.HasAPI(harvest.UsdPhysics.RigidBodyAPI):
-            return None
-        value = harvest.UsdPhysics.RigidBodyAPI(prim).GetVelocityAttr().Get()
-        if value is None:
-            return None
-        velocity = harvest.np.asarray(value, dtype=float)
-        return velocity if velocity.shape == (3,) else None
-
-    def _drive_released_apples(self):
-        """release된 사과가 실제 상판에 있을 때 진행축 속도를 보장한다."""
-        direction = harvest.np.asarray(self.engine.conveyor[3], dtype=float)
-        for apple_path in tuple(self.transport_apple_paths):
-            apple_prim = self.stage.GetPrimAtPath(apple_path)
-            if not apple_prim.IsValid():
-                self.transport_apple_paths.discard(apple_path)
-                self._transport_log_paths.discard(apple_path)
-                continue
-            center = harvest.compute_live_prim_center(self.stage, apple_path)
-            inside_xy = all(
-                self.bounds.minimum[axis] <= center[axis] <= self.bounds.maximum[axis]
-                for axis in (0, 1)
-            )
-            on_surface = harvest.apple_on_conveyor_surface(
-                center,
-                self.bounds.minimum,
-                self.bounds.maximum,
-                self.engine.apple_radius,
-            )
-            if not inside_xy:
-                self.transport_apple_paths.discard(apple_path)
-                self._transport_log_paths.discard(apple_path)
-                continue
-            if not on_surface:
-                continue
-            body_path = self._apple_body_path(apple_path)
-            velocity = self._velocity(body_path)
-            if velocity is None:
-                continue
-            corrected = harvest.conveyor_transport_velocity(
-                velocity, direction, self.belt_speed
-            )
-            if harvest.np.linalg.norm(corrected - velocity) <= 0.01:
-                continue
-            body = self.stage.GetPrimAtPath(body_path)
-            stage_id = harvest.omni.usd.get_context().get_stage_id()
-            encoded_body_path = harvest.PhysicsSchemaTools.sdfPathToInt(
-                body.GetPath()
-            )
-            harvest.omni.physx.get_physx_simulation_interface().wake_up(
-                stage_id, encoded_body_path
-            )
-            harvest.UsdPhysics.RigidBodyAPI(body).GetVelocityAttr().Set(
-                Gf.Vec3f(*(float(value) for value in corrected))
-            )
-            if apple_path not in self._transport_log_paths:
-                self._transport_log_paths.add(apple_path)
-                self.node.get_logger().info(
-                    f"컨베이어 속도 보정 apple={apple_path}: "
-                    f"{velocity.tolist()} -> {corrected.tolist()} m/s"
-                )
-
-    def process(self):
-        status = self.node.latest_place_status()
-        if status is None:
-            return
-        generation = (int(status.reset_id), int(status.scene_version))
-        if generation != self.generation:
-            self.generation = generation
-            self.active_landing_key = None
-            self.landing.reset()
-            self.contact.reset()
-            if self.inspection is not None:
-                self.inspection.reset()
-        now_s = float(self.world.current_time)
-        if status.state == PlaceCoordinatorStatus.LANDING_CHECK:
-            key = (status.lock_owner_robot_id, status.reservation_id)
-            if key != self.active_landing_key:
-                apple_path = self.engine.last_released_apple_path
-                if not apple_path:
-                    self.node.get_logger().error(
-                        "LANDING_CHECK 상태지만 RELEASE된 apple prim 기록이 없습니다."
-                    )
-                    return
-                self.active_landing_key = key
-                self.transport_apple_paths.add(apple_path)
-                self.landing.start(
-                    status.lock_owner_robot_id,
-                    status.reservation_id,
-                    status.apple_id,
-                    apple_path,
-                    now_s,
-                )
-                if self.inspection is not None:
-                    self.inspection.bind_apple(status.apple_id, apple_path)
-        self._drive_released_apples()
-        if self.landing.session is not None and not self.landing.terminal:
-            apple_path = self.landing.apple_prim_path
-            apple_body_path = self._apple_body_path(apple_path)
-            velocity = self._velocity(apple_body_path)
-            if velocity is None:
-                velocity = harvest.np.full(3, harvest.np.nan)
-            apple_center = harvest.compute_live_prim_center(
-                self.stage, apple_path
-            )
-            observation = LandingObservation(
-                center=apple_center,
-                linear_velocity=velocity,
-                belt_contact=(
-                    self.contact.is_in_contact(apple_body_path, now_s)
-                    or harvest.apple_on_conveyor_surface(
-                        apple_center,
-                        self.bounds.minimum,
-                        self.bounds.maximum,
-                        self.engine.apple_radius,
-                    )
-                ),
-                gripper_attached=not self.engine.last_release_detached,
-            )
-            result = self.landing.update(observation, now_s)
-            if result is not None:
-                self.node.send_landing_result(result)
-        if self.inspection is not None:
-            centers = {
-                prim_path: harvest.compute_live_prim_center(self.stage, prim_path)
-                for prim_path in self.inspection.apple_paths.values()
-                if self.stage.GetPrimAtPath(prim_path).IsValid()
-            }
-            self.inspection.update(centers)
-
-    def reset(self):
-        # MotionEngine reset이 runtime belt collider를 다시 만들기 때문에 PhysX
-        # API도 새 Prim에 다시 적용해야 한다.
-        self._configure_surface_velocity()
-        self.active_landing_key = None
-        self.transport_apple_paths.clear()
-        self._transport_log_paths.clear()
-        self.landing.reset()
-        self.contact.reset()
-        if self.inspection is not None:
-            self.inspection.reset()
-
-    def close(self):
-        self.contact.close()
-
-
-class MotionEngine:
-    """기존 FSM을 Action 단계 경계에서 정지시키는 메인 스레드 실행기."""
-
-    def __init__(
-        self,
-        world,
-        robot,
-        stage,
-        state_callback=None,
-        execution_state_callback=None,
-        planning_visualization_callback=None,
-        planning_failure_callback=None,
-    ):
-        self.world, self.robot, self.stage = world, robot, stage
-        self.scene_signature = harvest.tree_scene_signature(stage)
-        self.state_callback = state_callback
-        self.execution_state_callback = execution_state_callback
-        self.planning_visualization_callback = planning_visualization_callback
-        self.planning_failure_callback = planning_failure_callback
-        self.ik, self.lula = harvest.create_ik_solver(robot, stage)
-        self.gripper_indices = [robot.get_dof_index(n) for n in harvest.GRIPPER_JOINTS]
-        self.arm_indices = harvest.np.asarray(
-            [robot.get_dof_index(n) for n in harvest.ARM_JOINTS],
-            dtype=harvest.np.int32,
-        )
-        robot_position, _ = harvest.get_prim_world_pose(stage, harvest.ROBOT_BASE_PATH)
-        self.robot_base_position = harvest.np.asarray(robot_position, dtype=float)
-        _, apple_size = harvest.compute_apple_center(stage)
-        self.apple_radius = 0.5 * float(harvest.np.max(apple_size))
-        self.conveyor = harvest.compute_conveyor_start(stage, robot_position, apple_size)
-        self.expected_index = 0
-        self.fsm = None
-        self.collision_motion = None
-        self.joint_break = harvest.JointBreakMonitor(stage)
-        self.tree_contact = harvest.RobotTreeContactMonitor(stage)
-        self.apple_contact = harvest.RobotAppleContactMonitor(stage)
-        self.gripper_drive_max_force = harvest.GRIPPER_GRASP_MAX_FORCE
-        self.active_handle = None
-        self.active_reset_id = None
-        self.active_scene_version = None
-        self.action_last_progress_time = None
-        self.progress_tcp_position = None
-        self.progress_tcp_rotation = None
-        self.entry_preshape = harvest.GRIPPER_OPEN.copy()
-        # swept clearance를 측정한 시점의 기준 자세와 여유이다.
-        self.entry_reference = None
-        self.last_released_apple_path = ""
-        self.last_release_detached = False
-        self.initial_arm_positions = harvest.INITIAL_ARM_JOINTS_RAD.copy()
-        self.initial_gripper_positions = (
-            self._require_gripper_joint_positions().copy()
-        )
-        (
-            self.initial_tcp_position,
-            self.initial_tcp_rotation,
-        ) = (value.copy() for value in self._current_tcp_pose())
-        print(
-            f"   Initial state arm={harvest.vec(self.initial_arm_positions)}, "
-            f"TCP={harvest.vec(self.initial_tcp_position)}"
-        )
-
-    def close(self):
-        self.joint_break.close()
-        self.tree_contact.close()
-        self.apple_contact.close()
-
-    def accept_scene_signature(self, signature):
-        """새 planning scene 세대를 적용하고 이전 Action 순서를 폐기한다."""
-        self.scene_signature = signature
-        self._reset_action_sequence("TREE_SCENE_CHANGED")
-
-    def _reset_action_sequence(self, reason):
-        """실패한 Goal의 부분 FSM을 폐기하고 다음 요청을 APPROACH로 맞춘다."""
-        held_low, held_high = APPLE_HELD_INDEX_RANGE
-        apple_may_be_held = held_low <= self.expected_index <= held_high
-        if apple_may_be_held:
-            # 사과를 이미 물고 있는 단계에서 실패하면 팔만 정지시키고 유지
-            # 토크는 그대로 둔다. 여기서 GRASP 수준으로 낮추면 실패 처리
-            # 자체가 사과를 떨어뜨린다.
-            self._set_gripper_drive_max_force(
-                harvest.GRIPPER_HOLD_MAX_FORCE,
-                f"HOLD {reason}",
-                report=True,
-            )
-        else:
-            self._set_gripper_drive_max_force(
-                harvest.GRIPPER_GRASP_MAX_FORCE,
-                f"RESET {reason}",
-                report=True,
-            )
-        print(f"   Action reset {reason}: next expected APPROACH")
-        self.expected_index = 0
-        self.fsm = None
-        self.collision_motion = None
-        self.tree_contact.reset()
-        self.apple_contact.reset()
-        self.entry_preshape = harvest.GRIPPER_OPEN.copy()
-        self.entry_reference = None
-
-    def _hold_robot(self):
-        """실행 실패 시 후퇴 동작 없이 현재 관절 위치를 유지한다."""
-        try:
-            positions = self.robot.get_joint_positions()
-            if positions is None:
-                return
-            positions = harvest.np.asarray(positions, dtype=float)
-            if not harvest.np.all(harvest.np.isfinite(positions)):
-                return
-            indices = harvest.np.arange(len(positions), dtype=harvest.np.int32)
-            self.robot.apply_action(
-                harvest.ArticulationAction(
-                    joint_positions=positions,
-                    joint_indices=indices,
-                )
-            )
-        except Exception as error:
-            print(f"   Robot hold warning: {error}")
-
-    def _publish_planning_failure(self, request, error_code, message):
-        """시각화 실패는 Action 결과 또는 안전 정지에 영향을 주지 않는다."""
-        if self.planning_failure_callback is None:
-            return
-        try:
-            failure_position, _rotation = self._current_tcp_pose()
-        except Exception:
-            position = request.target_pose.pose.position
-            failure_position = harvest.np.asarray(
-                [position.x, position.y, position.z],
+        with self.busy:
+            position = np.array(
+                [
+                    request.target_pose.pose.position.x,
+                    request.target_pose.pose.position.y,
+                    request.target_pose.pose.position.z,
+                ],
                 dtype=float,
             )
-        try:
-            self.planning_failure_callback(
-                failure_position,
-                str(error_code),
-                str(message),
+            job = MotionJob(
+                robot_id=self.robot_id,
+                motion_type=request.motion_type,
+                target_position=position,
             )
-        except Exception as error:
-            print(f"   [VISUALIZATION WARNING] failure marker: {error}")
+            self.active_job = job
+            self.publish_status(name, True, 0.0, "", f"{name} 시작")
+            self.job_queue.put(job)
 
-    def _check_execution_guard(self):
-        """cancel/reset/scene 변경과 simulation-time timeout을 공통 검사한다."""
-        if self.active_handle is not None and self.active_handle.is_cancel_requested:
-            raise MotionExecutionError("307:CANCELLED", "사용자가 동작을 취소했습니다.")
-        if self.world.is_stopped() or not harvest.simulation_app.is_running():
-            raise MotionExecutionError(
-                "308:SIMULATION_RESET",
-                "Isaac Sim Timeline이 Stop되었거나 simulation이 종료됐습니다.",
-            )
-        if harvest.tree_scene_signature(self.stage) != self.scene_signature:
-            raise MotionExecutionError(
-                "308:SIMULATION_RESET",
-                "Action 실행 중 나무 transform이 변경되어 기존 "
-                "planning proxy, RRT tree, trajectory를 폐기합니다.",
-            )
-        if self.execution_state_callback is not None:
-            reset_id, scene_version, state = self.execution_state_callback()
-            if (
-                reset_id != self.active_reset_id
-                or scene_version != self.active_scene_version
-                or state in (SimulationState.STOPPED, SimulationState.INITIALIZING)
-            ):
-                raise MotionExecutionError(
-                    "308:SIMULATION_RESET",
-                    "Goal 승인 후 reset_id/scene_version 또는 simulation 상태가 "
-                    "변경됐습니다.",
-                )
-        if self.action_last_progress_time is not None:
-            position, rotation = self._current_tcp_pose()
-            if self.progress_tcp_position is None:
-                self.progress_tcp_position = position.copy()
-                self.progress_tcp_rotation = rotation.copy()
-            else:
-                position_delta = float(
-                    harvest.np.linalg.norm(position - self.progress_tcp_position)
-                )
-                rotation_delta = harvest.rotation_error_deg(
-                    rotation, self.progress_tcp_rotation
-                )
-                if (
-                    position_delta >= harvest.RMPFLOW_STALL_POSITION_DELTA_M
-                    or rotation_delta >= harvest.RMPFLOW_STALL_ROTATION_DELTA_DEG
-                ):
-                    self.action_last_progress_time = float(self.world.current_time)
-                    self.progress_tcp_position = position.copy()
-                    self.progress_tcp_rotation = rotation.copy()
-            elapsed = (
-                float(self.world.current_time) - self.action_last_progress_time
-            )
-            if elapsed >= ACTION_TIMEOUT_S:
-                raise MotionExecutionError(
-                    "304:MOTION_TIMEOUT",
-                    f"Action 단계에서 simulation time "
-                    f"{ACTION_TIMEOUT_S:.1f}초 동안 유의미한 TCP 진전이 "
-                    "없습니다.",
-                )
+            while not job.done.wait(timeout=0.1):
+                if goal_handle.is_cancel_requested:
+                    job.cancel.set()
+                feedback = RobotMotion.Feedback()
+                feedback.current_state = name
+                feedback.progress = float(job.progress)
+                goal_handle.publish_feedback(feedback)
 
-    def _set_gripper_drive_max_force(self, max_force, state, report=False):
-        """동작 단계에 맞춰 그리퍼 Drive 토크 한계를 갱신한다."""
-        max_force = float(max_force)
-        changed = not harvest.np.isclose(
-            max_force, self.gripper_drive_max_force, atol=1e-9
+            self.active_job = None
+
+        if job.cancel.is_set() and not job.success:
+            goal_handle.canceled()
+            result.success = False
+            result.error_code = ERROR_CODES["CANCELLED"]
+            result.message = f"{name} 취소됨"
+        elif job.success:
+            goal_handle.succeed()
+            result.success = True
+            result.error_code = ""
+            result.message = f"{name} 완료"
+        else:
+            goal_handle.abort()
+            result.success = False
+            result.error_code = job.error_code or ERROR_CODES["INTERNAL_ERROR"]
+            result.message = job.message
+
+        self.publish_status(
+            name,
+            result.success,
+            1.0 if result.success else job.progress,
+            result.error_code,
+            result.message,
         )
-        if changed:
-            harvest.set_gripper_drive_max_force(self.stage, max_force)
-            self.gripper_drive_max_force = max_force
-        if report:
-            print(
-                f"   Gripper force {state}: max {max_force:.3f} N·m/joint"
-            )
+        return result
+
+
+# ══════════════════════════════════════════════════════════════
+# ROS 2 노드
+# ══════════════════════════════════════════════════════════════
+class HarvestServerNode(Node):
+    """전역 상태 발행과 로봇별 Action 서버를 담는 노드."""
+
+    def __init__(self, robot_ids, job_queue, state_provider):
+        super().__init__("harvest_server")
+        self.set_parameters([Parameter("use_sim_time", Parameter.Type.BOOL, True)])
+        self.state_provider = state_provider
+        self._last_scene = None
+
+        self.simulation_state_publisher = self.create_publisher(
+            SimulationState, HarvestNames.simulation_state_topic, LATCHED_QOS
+        )
+        self.planning_scene_publisher = self.create_publisher(
+            PlanningScene, HarvestNames.planning_scene_topic, LATCHED_QOS
+        )
+        self.snapshot_service = self.create_service(
+            GetPlanningScene,
+            HarvestNames.planning_scene_service,
+            self.on_snapshot_request,
+            callback_group=ReentrantCallbackGroup(),
+        )
+        self.servers = {
+            robot_id: RobotMotionServer(self, robot_id, job_queue, state_provider)
+            for robot_id in robot_ids
+        }
+        self.create_timer(0.2, self.publish_simulation_state)
+
+    def publish_simulation_state(self):
+        snapshot = self.state_provider()
+        message = SimulationState()
+        message.header.stamp = self.get_clock().now().to_msg()
+        message.header.frame_id = "world"
+        message.state = snapshot["state"]
+        message.reset_id = snapshot["reset_id"]
+        message.scene_version = snapshot["scene_version"]
+        message.message = snapshot["message"]
+        self.simulation_state_publisher.publish(message)
+
+    def publish_planning_scene(self, snapshot):
+        """정적 나무 proxy snapshot 을 전체 한 개로 발행한다.
+
+        컨베이어와 마찬가지로 planning scene 은 하나의 세계를 기술하므로
+        전역이다. 두 나무의 proxy 를 합쳐 보낸다.
+        """
+        message = PlanningScene()
+        message.header.stamp = self.get_clock().now().to_msg()
+        message.header.frame_id = "world"
+        message.reset_id = snapshot["reset_id"]
+        message.scene_version = snapshot["scene_version"]
+        message.robot_base_pose = self._pose_stamped(
+            snapshot["robot_base_position"], snapshot["robot_base_rotation"]
+        )
+        message.robot_tcp_pose = self._pose_stamped(
+            snapshot["tcp_position"], snapshot["tcp_rotation"]
+        )
+        message.obstacles = [self._obstacle(spec) for spec in snapshot["proxies"]]
+        self.planning_scene_publisher.publish(message)
+        self._last_scene = message
+
+    def _pose_stamped(self, position, rotation):
+        pose = PoseStamped()
+        pose.header.stamp = self.get_clock().now().to_msg()
+        pose.header.frame_id = "world"
+        pose.pose.position.x = float(position[0])
+        pose.pose.position.y = float(position[1])
+        pose.pose.position.z = float(position[2])
+        quaternion = quaternion_xyzw_from_matrix(rotation)
+        pose.pose.orientation.x = float(quaternion[0])
+        pose.pose.orientation.y = float(quaternion[1])
+        pose.pose.orientation.z = float(quaternion[2])
+        pose.pose.orientation.w = float(quaternion[3])
+        return pose
 
     @staticmethod
-    def result(success, code="", message=""):
-        value = RobotMotion.Result()
-        value.success, value.error_code, value.message = success, code, message
-        return value
+    def _obstacle(spec):
+        obstacle = ObstacleProxy()
+        obstacle.obstacle_id = spec.obstacle_id
+        obstacle.shape = int(spec.shape)
+        obstacle.obstacle_class = int(spec.obstacle_class)
+        pose = Pose()
+        pose.position.x = float(spec.position[0])
+        pose.position.y = float(spec.position[1])
+        pose.position.z = float(spec.position[2])
+        pose.orientation.x = float(spec.orientation_xyzw[0])
+        pose.orientation.y = float(spec.orientation_xyzw[1])
+        pose.orientation.z = float(spec.orientation_xyzw[2])
+        pose.orientation.w = float(spec.orientation_xyzw[3])
+        obstacle.pose = pose
+        obstacle.dimensions.x = float(spec.dimensions[0])
+        obstacle.dimensions.y = float(spec.dimensions[1])
+        obstacle.dimensions.z = float(spec.dimensions[2])
+        obstacle.safety_margin = float(spec.safety_margin)
+        return obstacle
 
-    def feedback(self, handle, state, progress):
-        value = RobotMotion.Feedback()
-        value.current_state, value.progress = state, float(progress)
-        handle.publish_feedback(value)
+    def on_snapshot_request(self, _request, response):
+        if self._last_scene is None:
+            response.success = False
+            response.message = "아직 planning scene snapshot 을 만들지 않았습니다."
+            return response
+        response.success = True
+        response.scene = self._last_scene
+        response.message = ""
+        return response
 
-    def _publish_pause(self):
-        if self.state_callback is not None:
-            self.state_callback(
-                SimulationState.PAUSED,
-                "Timeline Pause: 실행 중 Goal을 유지하고 로봇 명령을 보류합니다.",
-            )
 
-    def _publish_resume(self):
-        if self.state_callback is not None:
-            self.state_callback(
-                SimulationState.PLAYING,
-                "Timeline 재개: 보류한 Goal 실행을 계속합니다.",
-            )
-
-    def _require_arm_joint_positions(self):
-        """Lula에 전달할 현재 팔 관절값과 Articulation handle을 검증한다."""
-        joints = self.ik.get_joints_subset()
-        if not joints.is_initialized:
-            raise MotionExecutionError(
-                "311:JOINT_STATE_UNAVAILABLE",
-                "로봇 Articulation handle이 초기화되지 않았습니다. "
-                "Isaac Sim Timeline Stop 이후에는 물리 재초기화가 필요합니다."
-            )
-        positions = joints.get_joint_positions()
-        if positions is None:
-            raise MotionExecutionError(
-                "311:JOINT_STATE_UNAVAILABLE", "로봇 팔 관절 위치를 읽지 못했습니다."
-            )
-        positions = harvest.np.asarray(positions, dtype=float)
-        expected_shape = (len(harvest.ARM_JOINTS),)
-        if positions.shape != expected_shape:
-            raise MotionExecutionError(
-                "311:JOINT_STATE_UNAVAILABLE",
-                f"로봇 팔 관절 배열 크기가 잘못되었습니다: "
-                f"{positions.shape}, expected={expected_shape}"
-            )
-        if not harvest.np.all(harvest.np.isfinite(positions)):
-            raise MotionExecutionError(
-                "311:JOINT_STATE_UNAVAILABLE",
-                "로봇 팔 관절 위치에 NaN 또는 Inf가 있습니다.",
-            )
-        return positions
-
-    def _require_gripper_joint_positions(self):
-        """ENTER 안전 검사에 사용할 실제 그리퍼 관절값을 반환한다."""
-        positions = self.robot.get_joint_positions(
-            joint_indices=harvest.np.asarray(
-                self.gripper_indices, dtype=harvest.np.int32
-            )
-        )
-        if positions is None:
-            raise MotionExecutionError(
-                "311:JOINT_STATE_UNAVAILABLE",
-                "그리퍼 관절 위치를 읽지 못했습니다.",
-            )
-        positions = harvest.np.asarray(positions, dtype=float)
-        expected_shape = (len(harvest.GRIPPER_JOINTS),)
-        if positions.shape != expected_shape:
-            raise MotionExecutionError(
-                "311:JOINT_STATE_UNAVAILABLE",
-                f"그리퍼 관절 배열 크기가 잘못되었습니다: "
-                f"{positions.shape}, expected={expected_shape}",
-            )
-        if not harvest.np.all(harvest.np.isfinite(positions)):
-            raise MotionExecutionError(
-                "311:JOINT_STATE_UNAVAILABLE",
-                "그리퍼 관절 위치에 NaN 또는 Inf가 있습니다.",
-            )
-        return positions
-
-    def _wait_for_gripper_open_before_enter(self, handle, apple_center):
-        """실제 collider swept clearance가 가장 큰 entry pre-shape를 선택한다."""
-        hold_arm_positions = self._require_arm_joint_positions().copy()
-        # swept clearance는 이후 ENTER에서 실제로 유지될 자세에서 재야 의미가
-        # 있으므로, 측정 구간부터 진입과 같은 Drive 토크를 사용한다.
-        self._set_gripper_drive_max_force(
-            harvest.GRIPPER_ENTRY_MAX_FORCE, "ENTRY_PRESHAPE", report=True
-        )
-        # 이 구간은 팔을 고정한 채 그리퍼만 움직이므로 TCP는 설계상 정지해
-        # 있다. TCP 진전 기반 watchdog을 그대로 두면 정상 동작이
-        # MOTION_TIMEOUT으로 오판되므로 명시적으로 중단한다. 대신 아래
-        # 후보 sampling과 settle 루프의 고정 step 상한이 무한 대기를 막고,
-        # cancel/reset 검사는 _check_execution_guard에서 계속 수행한다.
-        self.action_last_progress_time = None
-        self.progress_tcp_position = None
-        self.progress_tcp_rotation = None
-        def step_gripper(target):
-            self._check_execution_guard()
-            pause_reported = False
-            while not self.world.is_playing():
-                self._check_execution_guard()
-                if not pause_reported:
-                    self._publish_pause()
-                    pause_reported = True
-                harvest.simulation_app.update()
-            if pause_reported:
-                self._publish_resume()
-            self.robot.apply_action(
-                harvest.ArticulationAction(
-                    joint_positions=hold_arm_positions,
-                    joint_indices=self.arm_indices,
-                )
-            )
-            harvest.apply_gripper_positions(
-                self.robot, self.gripper_indices, target
-            )
-            self.world.step(render=not harvest.args.headless)
-            if self.tree_contact.detected:
-                raise MotionExecutionError(
-                    "302:COLLISION_RISK",
-                    "ENTRY_PRESHAPE 설정 중 로봇이 나무 collider에 접촉했습니다: "
-                    f"robot={self.tree_contact.robot_path}, "
-                    f"tree={self.tree_contact.tree_path}",
-                )
-            if self.apple_contact.finger_contacted or self.joint_break.broken:
-                raise MotionExecutionError(
-                    "302:COLLISION_RISK",
-                    "ENTRY_PRESHAPE 설정 중 사과에 조기 접촉했습니다.",
-                )
-
-        results = []
-        for index, (name, target) in enumerate(harvest.GRIPPER_ENTRY_CANDIDATES):
-            for _frame in range(harvest.ENTRY_PRESHAPE_SAMPLE_STEPS):
-                step_gripper(target)
-            actual = self._require_gripper_joint_positions()
-            target_error = float(harvest.np.max(harvest.np.abs(actual - target)))
-            tcp, _rotation = self._current_tcp_pose()
-            clearance, closest_path = harvest.compute_gripper_entry_swept_clearance(
-                self.stage,
-                tcp,
-                apple_center,
-                self.apple_radius,
-            )
-            print(
-                f"   [ENTRY CANDIDATE] {name}: clearance {clearance:.4f} m, "
-                f"joint error {target_error:.4f} rad, closest={closest_path}"
-            )
-            results.append((clearance, name, target.copy(), closest_path))
-            self.feedback(
-                handle,
-                "ENTRY_PRESHAPE_TEST",
-                0.1 + 0.25 * (index + 1) / len(harvest.GRIPPER_ENTRY_CANDIDATES),
-            )
-
-        target_clearance = max(
-            harvest.ENTRY_SWEEP_MIN_CLEARANCE_M,
-            harvest.ENTRY_TARGET_HALF_OPENING_M - self.apple_radius,
-        )
-        safe_results = [
-            result
-            for result in results
-            if result[0] >= harvest.ENTRY_SWEEP_MIN_CLEARANCE_M
-        ]
-        if not safe_results:
-            best = max(results, key=lambda item: item[0])
-            raise MotionExecutionError(
-                "302:COLLISION_RISK",
-                "어떤 ENTRY_PRESHAPE도 최소 swept clearance를 확보하지 "
-                f"못했습니다: best={best[0]:.4f} m, candidate={best[1]}, "
-                f"required={harvest.ENTRY_SWEEP_MIN_CLEARANCE_M:.4f} m",
-            )
-        clearance, name, target, closest_path = min(
-            safe_results,
-            key=lambda item: (abs(item[0] - target_clearance), item[0]),
-        )
-        print(
-            f"   [ENTRY TARGET] half opening "
-            f"{harvest.ENTRY_TARGET_HALF_OPENING_M:.3f} m, "
-            f"desired clearance {target_clearance:.4f} m, selected {name}"
-        )
-        for frame in range(harvest.ENTRY_PRESHAPE_MAX_SETTLE_STEPS):
-            actual = self._require_gripper_joint_positions()
-            max_error = float(harvest.np.max(harvest.np.abs(actual - target)))
-            if max_error <= GRIPPER_OPEN_TOLERANCE_RAD:
-                break
-            step_gripper(target)
-        else:
-            raise MotionExecutionError(
-                "304:MOTION_TIMEOUT",
-                f"선택한 ENTRY_PRESHAPE가 관절 목표에 도달하지 못했습니다: {name}",
-            )
-
-        tcp, _rotation = self._current_tcp_pose()
-        clearance, closest_path = harvest.compute_gripper_entry_swept_clearance(
-            self.stage, tcp, apple_center, self.apple_radius
-        )
-        if clearance < harvest.ENTRY_SWEEP_MIN_CLEARANCE_M:
-            raise MotionExecutionError(
-                "302:COLLISION_RISK",
-                f"ENTRY swept clearance가 부족합니다: {clearance:.4f} m, "
-                f"candidate={name}, closest={closest_path}",
-            )
-        self.entry_preshape = target.copy()
-        # ENTER는 이 자세에서 사과 중심을 향한 순수 평행이동을 가정하고 측정한
-        # 여유로 진입한다. 실제 팔은 남은 위치/자세 오차를 진입 중에 함께
-        # 보정하므로 기준값을 남겨 매 검사마다 실측과 대조한다.
-        _measured_tcp, measured_rotation = self._current_tcp_pose()
-        lever_arm = harvest.compute_gripper_entry_lever_arm(self.stage, tcp)
-        self.entry_reference = {
-            "tcp": tcp.copy(),
-            "rotation": measured_rotation.copy(),
-            "apple_center": harvest.np.asarray(apple_center, dtype=float).copy(),
-            "direction": harvest.np.asarray(apple_center, dtype=float) - tcp,
-            "clearance": float(clearance),
-            "lever_arm": float(lever_arm),
-        }
-        print(
-            f"   [OPEN READY] {name}: swept clearance {clearance:.4f} m, "
-            f"closest={closest_path}"
-        )
-        print(
-            f"   [ENTRY BUDGET] 여유 {clearance:.4f} m, "
-            f"회전 지렛대 {lever_arm:.4f} m "
-            f"(1 deg 회전 = {harvest.np.deg2rad(1.0) * lever_arm * 1000:.1f} mm)"
-        )
-        self.feedback(handle, "GRIPPER_OPEN_READY", 0.4)
-
-        # 그리퍼 전용 구간이 끝났으므로 TCP 진전 watchdog을 다시 켠다. 개방
-        # 대기 시간은 다음 ENTER 단계의 무진전 시간에 합산하지 않는다.
-        self.action_last_progress_time = float(self.world.current_time)
-        self.progress_tcp_position, self.progress_tcp_rotation = (
-            value.copy() for value in self._current_tcp_pose()
-        )
-
-    def _current_tcp_pose(self):
-        """USD palm + local +Y 0.093 m로 물리 TCP pose를 한 번만 계산한다."""
-        try:
-            position, rotation = harvest.current_tcp_pose(self.robot)
-        except Exception as error:
-            raise MotionExecutionError(
-                "310:TF_UNAVAILABLE",
-                f"USD palm→TCP 변환을 계산하지 못했습니다: {error}",
-            ) from error
-        position = harvest.np.asarray(position, dtype=float)
-        rotation = harvest.np.asarray(rotation, dtype=float)
-        if (
-            position.shape != (3,)
-            or rotation.shape != (3, 3)
-            or not harvest.np.all(harvest.np.isfinite(position))
-            or not harvest.np.all(harvest.np.isfinite(rotation))
-        ):
-            raise MotionExecutionError(
-                "310:TF_UNAVAILABLE", "USD palm→TCP pose가 유효하지 않습니다."
-            )
-        return position, rotation
-
-    def execute(self, handle, reset_id, scene_version, simulation_state):
-        request = handle.request
-        if (
-            request.reset_id != reset_id
-            or request.scene_version != scene_version
-        ):
-            handle.abort()
-            return self.result(
-                False,
-                "308:SIMULATION_RESET",
-                "Goal 생성 이후 planning scene 버전이 변경됐습니다.",
-            )
-        if simulation_state not in (SimulationState.READY, SimulationState.PLAYING):
-            handle.abort()
-            return self.result(
-                False,
-                "306:GOAL_REJECTED",
-                f"Isaac Sim 실행 상태가 준비되지 않았습니다: {simulation_state}",
-            )
-        if request.motion_type != MOTION_SEQUENCE[self.expected_index]:
-            expected = MOTION_SEQUENCE[self.expected_index]
-            self._hold_robot()
-            self._reset_action_sequence("306:GOAL_REJECTED")
-            handle.abort()
-            return self.result(
-                False,
-                "306:GOAL_REJECTED",
-                f"Action 단계 순서가 잘못되었습니다: "
-                f"expected={expected}, received={request.motion_type}",
-            )
-        if request.target_pose.header.frame_id != "world":
-            handle.abort()
-            return self.result(
-                False,
-                "309:INVALID_TARGET_POSE",
-                "target_pose frame_id는 world여야 합니다.",
-            )
-        target_position = request.target_pose.pose.position
-        target_orientation = request.target_pose.pose.orientation
-        target_values = harvest.np.array(
-            [
-                target_position.x,
-                target_position.y,
-                target_position.z,
-                target_orientation.x,
-                target_orientation.y,
-                target_orientation.z,
-                target_orientation.w,
-            ],
-            dtype=float,
-        )
-        if (
-            not harvest.np.all(harvest.np.isfinite(target_values))
-            or harvest.np.linalg.norm(target_values[3:]) <= 1e-12
-        ):
-            handle.abort()
-            return self.result(
-                False,
-                "309:INVALID_TARGET_POSE",
-                "target_pose 위치/자세가 유효하지 않습니다.",
-            )
-        self.active_handle = handle
-        self.active_reset_id = int(reset_id)
-        self.active_scene_version = int(scene_version)
-        self.action_last_progress_time = float(self.world.current_time)
-        self.progress_tcp_position = None
-        self.progress_tcp_rotation = None
-        try:
-            self._check_execution_guard()
-            # docs/features/harvesting.md는 APPROACH가 아니라 Action 실행 직전
-            # 일반 조건으로 실제 PhysX collider 겹침 검사를 요구한다.
-            overlap = harvest.find_robot_tree_physx_overlap(self.stage)
-            if overlap is not None:
-                raise MotionExecutionError(
-                    "302:COLLISION_RISK",
-                    f"실행 전 실제 PhysX collider가 겹쳐 있습니다: {overlap}",
-                )
-            if request.motion_type == RobotMotion.Goal.APPROACH:
-                self._approach(handle, request.target_pose, request.waypoints)
-            else:
-                self._run_fsm(handle, STOP_STATE[request.motion_type])
-                if request.motion_type == RobotMotion.Goal.GRASP:
-                    self._report_grasp_state()
-                if request.motion_type == RobotMotion.Goal.PULL:
-                    if not self.joint_break.broken:
-                        raise MotionExecutionError(
-                            "305:STEM_NOT_BROKEN",
-                            "PULL 완료 시점까지 사과 FixedJoint가 분리되지 "
-                            "않았습니다.",
-                        )
-                    self._verify_apple_follows_gripper("PULL")
-                if request.motion_type == RobotMotion.Goal.RELEASE:
-                    self.last_released_apple_path = str(harvest.APPLE_PATH)
-                    self.last_release_detached = bool(self.joint_break.broken)
-                if request.motion_type == RobotMotion.Goal.RETRACT:
-                    self._return_to_initial(handle)
-        except MotionExecutionError as error:
-            self._publish_planning_failure(
-                request,
-                error.error_code,
-                str(error),
-            )
-            self._hold_robot()
-            self._reset_action_sequence(error.error_code)
-            if error.error_code == "307:CANCELLED":
-                handle.canceled()
-            else:
-                handle.abort()
-            return self.result(False, error.error_code, str(error))
-        except harvest.ApproachUnreachableError as error:
-            self._publish_planning_failure(
-                request,
-                "301:APPROACH_UNREACHABLE",
-                str(error),
-            )
-            self._hold_robot()
-            self._reset_action_sequence("301:APPROACH_UNREACHABLE")
-            handle.abort()
-            return self.result(False, "301:APPROACH_UNREACHABLE", str(error))
-        except Exception as error:
-            self._publish_planning_failure(
-                request,
-                "312:INTERNAL_ERROR",
-                str(error),
-            )
-            self._hold_robot()
-            self._reset_action_sequence("312:INTERNAL_ERROR")
-            handle.abort()
-            return self.result(False, "312:INTERNAL_ERROR", str(error))
-        finally:
-            self.active_handle = None
-            self.action_last_progress_time = None
-            self.progress_tcp_position = None
-            self.progress_tcp_rotation = None
-        self.expected_index += 1
-        if self.expected_index == len(MOTION_SEQUENCE):
-            self._reset_action_sequence("CYCLE_COMPLETE")
-        handle.succeed()
-        return self.result(True, "", "동작 완료")
-
-    def _approach(self, handle, pose, waypoint_messages):
-        apple = pose.pose.position
-        center = harvest.np.array([apple.x, apple.y, apple.z], dtype=float)
-        if not harvest.np.all(harvest.np.isfinite(center)):
-            raise MotionExecutionError(
-                "309:INVALID_TARGET_POSE", "사과 좌표에 NaN 또는 Inf가 있습니다."
-            )
-        harvest.activate_nearest_apple(self.stage, center)
-        self.joint_break.select_active_apple()
-        _apple_center, apple_size = harvest.compute_apple_center(self.stage)
-        self.apple_radius = 0.5 * float(harvest.np.max(apple_size))
-        if self.joint_break.broken:
-            raise MotionExecutionError(
-                "308:SIMULATION_RESET",
-                "선택한 사과 FixedJoint가 이미 분리됐습니다. 시뮬레이션을 "
-                "Reset한 뒤 다시 실행하세요.",
-            )
-        if waypoint_messages:
-            raise MotionExecutionError(
-                "306:GOAL_REJECTED",
-                "v2.0 APPROACH는 GPU PC 1 Action 서버가 계획하므로 외부 "
-                "waypoint를 허용하지 않습니다.",
-            )
-        orientation = pose.pose.orientation
-        quaternion_xyzw = harvest.np.array(
-            [orientation.x, orientation.y, orientation.z, orientation.w],
-            dtype=float,
-        )
-        quaternion_norm = float(harvest.np.linalg.norm(quaternion_xyzw))
-        if (
-            not harvest.np.all(harvest.np.isfinite(quaternion_xyzw))
-            or quaternion_norm <= 1e-12
-        ):
-            raise MotionExecutionError(
-                "309:INVALID_TARGET_POSE",
-                "APPROACH target orientation이 유효하지 않습니다.",
-            )
-        quaternion_xyzw /= quaternion_norm
-        self.joint_break.set_state("PRE_GRASP")
-        self.tree_contact.reset()
-        self.tree_contact.set_state("APPROACH")
-        self.apple_contact.reset()
-        self.apple_contact.set_state("APPROACH")
-        self.feedback(handle, "APPROACH", 0.1)
-
-        def contact_guard():
-            if self.tree_contact.detected:
-                raise MotionExecutionError(
-                    "302:COLLISION_RISK",
-                    "APPROACH 중 실제 로봇 collider가 나무 collider에 접촉했습니다: "
-                    f"robot={self.tree_contact.robot_path}, tree={self.tree_contact.tree_path}",
-                )
-            if (
-                self.apple_contact.finger_contacted
-                or self.apple_contact.palm_contacted
-            ):
-                contact_type = (
-                    "finger" if self.apple_contact.finger_contacted else "palm"
-                )
-                contact_path = (
-                    self.apple_contact.finger_path
-                    if self.apple_contact.finger_contacted
-                    else self.apple_contact.palm_path
-                )
-                raise MotionExecutionError(
-                    "302:COLLISION_RISK",
-                    "STAGING/PREGRASP 이전 APPROACH 중 목표 사과에 조기 "
-                    f"접촉했습니다: type={contact_type}, robot={contact_path}",
-                )
-            return self.joint_break.broken
-
-        selected = None
-        failures = []
-        raw_candidates = harvest.approach_direction_candidates(
-            self.stage,
-            self.robot_base_position,
-            center,
-        )
-        candidate_specs = []
-        for candidate_name, direction in raw_candidates:
-            rotation, direction = harvest.make_approach_rotation_for_direction(
-                self.robot_base_position,
-                center,
-                direction,
-            )
-            pregrasp = center - direction * harvest.PREGRASP_DISTANCE_M
-            staging = center - direction * harvest.APPLE_OBSTACLE_RELEASE_DISTANCE_M
-            print(
-                f"   [APPROACH CANDIDATE] {candidate_name}: "
-                f"axis {harvest.vec(direction)}, staging {harvest.vec(staging)}, "
-                f"pregrasp {harvest.vec(pregrasp)}"
-            )
-            candidate_specs.append(
-                {
-                    "name": candidate_name,
-                    "direction": direction,
-                    "rotation": rotation,
-                    "pregrasp": pregrasp,
-                }
-            )
-
-        if not candidate_specs:
-            raise harvest.ApproachUnreachableError("접근 방향 후보가 없습니다.")
-
-        current_tcp, _current_rotation = self._current_tcp_pose()
-        preview_motion = harvest.CollisionAwareMotion(
-            robot=self.robot,
-            stage=self.stage,
-            apple_center=center,
-            path_start=current_tcp,
-            pregrasp_tcp=candidate_specs[0]["pregrasp"],
-        )
-        if preview_motion.start_collision is not None:
-            raise MotionExecutionError(
-                "302:COLLISION_RISK",
-                "나무가 M0617 초기 자세의 collision sphere와 이미 "
-                f"겹쳐 있습니다: "
-                f"{preview_motion.collision_text(preview_motion.start_collision)}",
-            )
-
-        # 기본 WORLD_Z를 먼저 검사하고 즉시 실행한다. 전체 14개 후보를 시작 전에
-        # 모두 생성·검사하면 연속 수확 전환 때 Isaac 메인 스레드가 오래 멈춘다.
-        # 현재 후보가 IK/충돌검사/RRT에서 실패한 경우에만 다음 방향을 생성한다.
-        for candidate_index, candidate in enumerate(candidate_specs):
-            candidate_name = candidate["name"]
-            direction = candidate["direction"]
-            rotation = candidate["rotation"]
-            pregrasp = candidate["pregrasp"]
-            current_tcp, _current_rotation = self._current_tcp_pose()
-            if candidate_index == 0:
-                candidate_motion = preview_motion
-                candidate_motion.plan_callback = self.planning_visualization_callback
-            else:
-                candidate_motion = harvest.CollisionAwareMotion(
-                    robot=self.robot,
-                    stage=self.stage,
-                    apple_center=center,
-                    path_start=current_tcp,
-                    pregrasp_tcp=pregrasp,
-                    plan_callback=self.planning_visualization_callback,
-                )
-            if candidate_motion.start_collision is not None:
-                raise MotionExecutionError(
-                    "302:COLLISION_RISK",
-                    "나무가 M0617 현재 자세의 collision sphere와 이미 "
-                    f"겹쳐 있습니다: "
-                    f"{candidate_motion.collision_text(candidate_motion.start_collision)}",
-                )
-            initial = self._require_arm_joint_positions()
-            planned = harvest.AppleHarvestFSM(
-                pregrasp,
-                rotation,
-                center,
-                rotation,
-                direction,
-                *self.conveyor,
-                robot_base_position=self.robot_base_position,
-                start_at_pregrasp=True,
-            )
-            ik_valid, failed_state = harvest.validate_planned_ik(
-                planned,
-                self.lula,
-                initial,
-                pregrasp,
-                rotation,
-                stop_after_state="RETREAT",
-                return_failure_state=True,
-            )
-            if not ik_valid:
-                failures.append(
-                    f"{candidate_name}=IK_FAILED state={failed_state}"
-                )
-                continue
-
-            entry_check = candidate_motion.validate_entry_segment(
-                self.lula,
-                initial,
-                pregrasp,
-                center,
-                rotation,
-            )
-            if not entry_check["success"]:
-                failures.append(f"{candidate_name}={entry_check['reason']}")
-                print(
-                    f"   [ENTRY PREFLIGHT] {candidate_name} REJECTED: "
-                    f"{entry_check['reason']}"
-                )
-                collision_report = entry_check.get("collision_report")
-                if collision_report is not None:
-                    candidate_motion.show_collision_debug(collision_report)
-                continue
-            print(
-                f"   [ENTRY PREFLIGHT] {candidate_name} SAFE: "
-                f"clearance {entry_check['minimum_clearance']:.4f} m, "
-                f"joint travel {entry_check['joint_travel']:.4f} rad, "
-                f"samples {entry_check['sample_count']}"
-            )
-            candidate_motion.clear_collision_debug()
-            self.collision_motion = candidate_motion
-            try:
-                _steps, complete = harvest.move_arm_to_pregrasp(
-                    world=self.world,
-                    robot=self.robot,
-                    lula_solver=self.lula,
-                    collision_motion=self.collision_motion,
-                    gripper_indices=self.gripper_indices,
-                    pregrasp_tcp=pregrasp,
-                    approach_rotation=rotation,
-                    approach_direction=direction,
-                    max_physics_steps=0,
-                    contact_guard=contact_guard,
-                    execution_guard=self._check_execution_guard,
-                    pause_callback=self._publish_pause,
-                    resume_callback=self._publish_resume,
-                )
-            except harvest.ApproachUnreachableError as error:
-                if self.joint_break.broken:
-                    raise MotionExecutionError(
-                        "302:COLLISION_RISK",
-                        "RRT trajectory 실행 중 목표 사과 stem joint가 "
-                        f"파손됐습니다: candidate={candidate_name}, "
-                        f"state={self.joint_break.break_state}",
-                    ) from error
-                failures.append(f"{candidate_name}={error}")
-                print(f"   [APPROACH REPLAN] {candidate_name} 실패: {error}")
-                continue
-            if complete:
-                selected = (candidate_name, direction, rotation, pregrasp)
-                break
-            if self.world.is_stopped() or not harvest.simulation_app.is_running():
-                raise MotionExecutionError(
-                    "308:SIMULATION_RESET", "Isaac Sim Timeline이 Stop되었습니다."
-                )
-            failures.append(f"{candidate_name}=INCOMPLETE")
-
-        if selected is None:
-            raise harvest.ApproachUnreachableError(
-                "나무 proxy를 피할 수 있는 수직/대각선/수평 접근 경로가 "
-                f"없습니다: {'; '.join(failures)}"
-            )
-        candidate_name, direction, rotation, pregrasp = selected
-        print(f"   [APPROACH SELECTED] {candidate_name} axis {harvest.vec(direction)}")
-        self._wait_for_gripper_open_before_enter(handle, center)
-        tcp, palm_rotation = self._current_tcp_pose()
-        self.fsm = harvest.AppleHarvestFSM(
-            tcp, palm_rotation, center, rotation, direction, *self.conveyor,
-            robot_base_position=self.robot_base_position,
-            start_at_pregrasp=True,
-        )
-        # APPROACH Action에 선택한 접근축의 pre-grasp → 사과 진입을 포함한다.
-        # 다음 GRASP Action은 이 자세를 유지하고 그리퍼만 폐합한다.
-        self._run_fsm(handle, "GRASP")
-        self.feedback(handle, "APPROACH", 1.0)
-
-    def _report_grasp_state(self):
-        actual_gripper = harvest.np.asarray(
-            self.robot.get_joint_positions(
-                joint_indices=harvest.np.asarray(
-                    self.gripper_indices, dtype=harvest.np.int32
-                )
-            ),
-            dtype=float,
-        )
-        tcp, _rotation = self._current_tcp_pose()
-        apple = harvest.compute_live_prim_center(self.stage, harvest.APPLE_PATH)
-        distance = float(harvest.np.linalg.norm(apple - tcp))
-        max_target_error = float(
-            harvest.np.max(harvest.np.abs(harvest.GRIPPER_CLOSED - actual_gripper))
-        )
-        print(
-            f"   [GRASP CHECK] TCP-apple={distance:.4f} m, "
-            f"gripper max target error={max_target_error:.4f} rad, "
-            f"joint_broken={self.joint_break.broken}"
-        )
-        if self.joint_break.broken:
-            raise MotionExecutionError(
-                "302:COLLISION_RISK",
-                f"사과 FixedJoint가 {self.joint_break.break_state} 중 조기 파손됐습니다.",
-            )
-
-    def _verify_apple_follows_gripper(self, stage_name):
-        """stem 분리 후 사과가 실제로 그리퍼를 따라왔는지 확인한다.
-
-        stem이 끊겼더라도 파지가 불완전하면 사과가 그 자리에 떨어진다. 이
-        경우까지 성공으로 보고하면 GPU PC 1 supervisor가 빈 그리퍼로 TRANSPORT와
-        PLACE를 진행한다. 단독 실행 경로(apple_pick.py)는 같은 검사를
-        APPLE_GRASP_MAX_DISTANCE_M로 수행한다.
-        """
-        tcp, _rotation = self._current_tcp_pose()
-        apple = harvest.compute_live_prim_center(self.stage, harvest.APPLE_PATH)
-        distance = float(harvest.np.linalg.norm(apple - tcp))
-        print(f"   [{stage_name} APPLE CHECK] TCP-apple={distance:.4f} m")
-        if distance > harvest.APPLE_GRASP_MAX_DISTANCE_M:
-            # 오류 코드 표에 "사과 이탈" 전용 심볼이 없어 물리 접촉 상태가
-            # 의도와 다른 경우에 이 파일이 이미 사용하는 302를 따른다.
-            raise MotionExecutionError(
-                "302:COLLISION_RISK",
-                f"{stage_name} 후 사과가 그리퍼를 따라오지 않았습니다: "
-                f"TCP-사과 거리 {distance:.4f} m > "
-                f"{harvest.APPLE_GRASP_MAX_DISTANCE_M:.4f} m",
-            )
-
-    def _gripper_preshape_deviation(self):
-        """진입 중 실제 그리퍼 관절이 측정 자세에서 얼마나 벗어났는지 반환한다."""
-        try:
-            actual = self._require_gripper_joint_positions()
-        except MotionExecutionError:
-            return None
-        return float(
-            harvest.np.max(harvest.np.abs(actual - self.entry_preshape))
-        )
-
-    def _entry_drift(self):
-        """측정 전제에서 팔이 벗어난 양을 위치분과 회전분으로 나눠 반환한다."""
-        reference = self.entry_reference
-        if reference is None:
-            return None
-        position, rotation = self._current_tcp_pose()
-        lateral = harvest.point_to_line_distance(
-            position, reference["tcp"], reference["direction"]
-        )
-        rotation_rad = harvest.np.deg2rad(
-            harvest.rotation_error_deg(rotation, reference["rotation"])
-        )
-        return lateral, rotation_rad * reference["lever_arm"], reference["clearance"]
-
-    def _check_entry_arm_deviation(self, motion_state):
-        """진입 중 swept 여유와 현재 실제 표면 여유를 함께 판정한다.
-
-        측정 여유에서 이탈량을 빼는 방식은 횡방향 이탈과 손목 회전이 모두
-        사과 쪽을 향한다고 보고 단순 합산하므로 지나치게 보수적이다. 현재
-        자세에서 clearance를 다시 재면 팔이 어떤 경로로 왔는지와 무관하게
-        실제 남은 여유를 알 수 있다. 이탈량은 원인 파악용 로그로만 남긴다.
-        """
-        if motion_state not in {"ENTER", "ENTER_SLOW"}:
-            return
-        if self.entry_reference is None:
-            return
-        if self.fsm.frame % harvest.ENTRY_LIVE_CHECK_INTERVAL_STEPS != 0:
-            return
-        position, _rotation = self._current_tcp_pose()
-        clearance, closest_path = harvest.compute_gripper_entry_swept_clearance(
-            self.stage,
-            position,
-            self.entry_reference["apple_center"],
-            self.apple_radius,
-            vertices_only=True,
-        )
-        surface_clearance, surface_path = (
-            harvest.compute_gripper_apple_surface_clearance(
-                self.stage,
-                self.entry_reference["apple_center"],
-                self.apple_radius,
-            )
-        )
-        if self.fsm.frame % 60 == 0:
-            drift = self._entry_drift()
-            detail = ""
-            if drift is not None:
-                lateral, swing, measured = drift
-                # 손가락 편차도 같이 찍어 팔 이탈과 그리퍼 처짐을 구분한다.
-                preshape = self._gripper_preshape_deviation()
-                preshape_text = (
-                    "n/a" if preshape is None else f"{preshape:.4f} rad"
-                )
-                detail = (
-                    f", lateral {lateral * 1000:.1f} mm, "
-                    f"swing {swing * 1000:.1f} mm, "
-                    f"측정시 {measured * 1000:.1f} mm, finger {preshape_text}"
-                )
-            print(
-                f"   [ENTRY LIVE] {motion_state} frame {self.fsm.frame}: "
-                f"swept {clearance * 1000:.1f} mm, "
-                f"surface {surface_clearance * 1000:.1f} mm{detail}"
-            )
-        if clearance < harvest.ENTRY_LIVE_MIN_CLEARANCE_M:
-            raise MotionExecutionError(
-                "302:COLLISION_RISK",
-                f"{motion_state} 중 실측 swept clearance가 "
-                f"{clearance * 1000:.1f} mm로 한계 "
-                f"{harvest.ENTRY_LIVE_MIN_CLEARANCE_M * 1000:.1f} mm 아래입니다: "
-                f"closest={closest_path}. 사과에 닿기 전에 진입을 중단합니다.",
-            )
-        if surface_clearance < harvest.APPLE_APPROACH_MIN_SURFACE_GAP_M:
-            if surface_clearance <= 0.0:
-                raise MotionExecutionError(
-                    "302:COLLISION_RISK",
-                    f"{motion_state} 중 실제 gripper collider가 사과 표면을 "
-                    f"침범했습니다: clearance={surface_clearance * 1000:.2f} mm, "
-                    f"closest={surface_path}. GRASP로 전환하지 않습니다.",
-                )
-            if motion_state == "ENTER_SLOW":
-                actual, actual_rotation = self._current_tcp_pose()
-                current_state = self.fsm.NAMES[self.fsm.state]
-                if current_state == "ENTER_SLOW":
-                    self.fsm.complete_current_at_standoff(
-                        actual, actual_rotation
-                    )
-                print(
-                    "   [4MM STANDOFF] actual surface clearance "
-                    f"{surface_clearance * 1000:.2f} mm, "
-                    f"closest={surface_path}; 팔 진입을 멈추고 저토크 GRASP로 전환"
-                )
-                return True
-            raise MotionExecutionError(
-                "302:COLLISION_RISK",
-                f"{motion_state} 중 실제 gripper-사과 표면 여유가 "
-                f"{surface_clearance * 1000:.1f} mm로 요청된 "
-                f"{harvest.APPLE_APPROACH_MIN_SURFACE_GAP_M * 1000:.1f} mm "
-                f"아래입니다: closest={surface_path}. 저속 진입 전에 너무 "
-                "가까워 동작을 중단합니다.",
-            )
-        return False
-
-    def _handle_entry_apple_contact(self, motion_state, arm_positions):
-        """GRASP 전 접촉은 부위와 무관하게 비정상 직접 접촉으로 거부한다."""
-        if motion_state not in {"ENTER", "ENTER_SLOW"}:
-            return False
-        actual, actual_rotation = self._current_tcp_pose()
-        target = harvest.np.asarray(self.fsm.specs[self.fsm.state][0], dtype=float)
-        target_error = float(harvest.np.linalg.norm(target - actual))
-        if self.apple_contact.finger_contacted:
-            raise MotionExecutionError(
-                "302:COLLISION_RISK",
-                "GRASP 전에 손가락 collider가 사과에 먼저 접촉했습니다: "
-                f"robot={self.apple_contact.finger_path}, "
-                f"{motion_state} target_error={target_error:.4f} m",
-            )
-        if self.apple_contact.palm_contacted:
-            self.robot.apply_action(
-                harvest.ArticulationAction(
-                    joint_positions=harvest.np.asarray(
-                        arm_positions, dtype=float
-                    ).copy(),
-                    joint_indices=self.arm_indices,
-                )
-            )
-            raise MotionExecutionError(
-                "302:COLLISION_RISK",
-                "GRASP 전 palm collider가 사과에 직접 접촉했습니다: "
-                f"robot={self.apple_contact.palm_path}, "
-                f"{motion_state} target_error={target_error:.4f} m. "
-                "4 mm 비접촉 여유를 확보하지 못해 진입을 중단합니다.",
-            )
-        return False
-
-    def _run_fsm(self, handle, stop_state):
-        if self.fsm is None or self.collision_motion is None:
-            raise MotionExecutionError(
-                "306:GOAL_REJECTED", "APPROACH가 먼저 완료되지 않았습니다."
-            )
-        failures = 0
-        hold_arm_positions = None
-        grasp_contact_hold_positions = None
-        grasp_settle_remaining = harvest.GRASP_SETTLE_STEPS
-        reported_force_state = None
-        while not self.fsm.done and self.fsm.NAMES[self.fsm.state] != stop_state:
-            self._check_execution_guard()
-            pause_reported = False
-            while not self.world.is_playing():
-                self._check_execution_guard()
-                if not pause_reported:
-                    self._publish_pause()
-                    pause_reported = True
-                harvest.simulation_app.update()
-            if pause_reported:
-                self._publish_resume()
-            current_arm_positions = self._require_arm_joint_positions()
-            motion_state = self.fsm.NAMES[self.fsm.state]
-            self.tree_contact.set_state(motion_state)
-            self.apple_contact.set_state(motion_state)
-
-            if motion_state == "CLEAR_UP" and self.fsm.frame == 0:
-                clearance_report = (
-                    self.collision_motion.configuration_tree_clearance(
-                        current_arm_positions
-                    )
-                )
-                clearance = float(clearance_report["minimum_clearance"])
-                if clearance > 0.0:
-                    actual, actual_rotation = self._current_tcp_pose()
-                    print(
-                        "   [CLEAR_UP SKIP] RETREAT 자세가 나무 proxy "
-                        f"안전영역 밖입니다: clearance {clearance:.4f} m; "
-                        "고정 0.45 m TREE_EXIT을 생략하고 "
-                        "NEUTRAL_TRANSFER RRT로 직접 이동합니다.",
-                        flush=True,
-                    )
-                    self.fsm.skip_tree_exit_from_clear_pose(
-                        actual,
-                        actual_rotation,
-                    )
-                    continue
-                print(
-                    "   [CLEAR_UP KEEP] RETREAT 자세가 나무 proxy "
-                    f"안전영역 안입니다: clearance {clearance:.4f} m",
-                    flush=True,
-                )
-
-            if motion_state in RRT_FSM_STATES:
-                self._run_rrt_fsm_state(handle, motion_state)
-                continue
-
-            if self._handle_entry_apple_contact(
-                motion_state, current_arm_positions
-            ):
-                continue
-
-            if motion_state in {"GRASP", "RELEASE"} and hold_arm_positions is None:
-                hold_arm_positions = current_arm_positions.copy()
-                if motion_state == "GRASP":
-                    self._set_gripper_drive_max_force(
-                        harvest.GRIPPER_GRASP_MAX_FORCE,
-                        "GRASP",
-                        report=True,
-                    )
-                    if self.apple_contact.palm_contacted:
-                        raise MotionExecutionError(
-                            "302:COLLISION_RISK",
-                            "GRASP 시작 전에 palm 접촉이 기록되었습니다. "
-                            "4 mm 비접촉 standoff가 성립하지 않아 폐합하지 않습니다.",
-                        )
-                    else:
-                        print(
-                            "   [GRASP STANDOFF] ENTER_SLOW 100%; "
-                            f"사과 표면 {harvest.APPLE_APPROACH_MIN_SURFACE_GAP_M * 1000:.1f} mm "
-                            "비접촉 자세에서 저토크 GRASP를 시작합니다."
-                        )
-
-            if motion_state == "GRASP" and grasp_settle_remaining > 0:
-                self.joint_break.set_state("GRASP_SETTLE")
-                self.robot.apply_action(
-                    harvest.ArticulationAction(
-                        joint_positions=hold_arm_positions,
-                        joint_indices=self.arm_indices,
-                    )
-                )
-                harvest.apply_gripper_target(
-                    self.robot,
-                    self.gripper_indices,
-                    0.0,
-                    open_positions=self.entry_preshape,
-                )
-                completed = (
-                    harvest.GRASP_SETTLE_STEPS - grasp_settle_remaining + 1
-                )
-                if completed == 1 or completed % 60 == 0:
-                    print(
-                        f"   GRASP SETTLE {completed:3d}/"
-                        f"{harvest.GRASP_SETTLE_STEPS}"
-                    )
-                self.feedback(
-                    handle,
-                    "GRASP_SETTLE",
-                    completed / float(harvest.GRASP_SETTLE_STEPS),
-                )
-                self.world.step(render=not harvest.args.headless)
-                grasp_settle_remaining -= 1
-                if self.tree_contact.detected:
-                    raise MotionExecutionError(
-                        "302:COLLISION_RISK",
-                        "GRASP_SETTLE 중 실제 로봇 collider가 나무 collider에 "
-                        f"접촉했습니다: robot={self.tree_contact.robot_path}, "
-                        f"tree={self.tree_contact.tree_path}",
-                    )
-                if self.joint_break.broken:
-                    raise MotionExecutionError(
-                        "302:COLLISION_RISK",
-                        "사과 FixedJoint가 GRASP_SETTLE 중 조기 파손됐습니다.",
-                    )
-                if grasp_settle_remaining == 0:
-                    # ENTER에서 발생한 접촉 기록을 GRASP 손가락 수에 섞지 않는다.
-                    self.apple_contact.reset_finger_contacts()
-                    print("   [GRASP CONTACT] finger contact count reset")
-                continue
-
-            self.joint_break.set_state(motion_state)
-            target, rotation, grip = self.fsm.sample()
-            state_steps = self.fsm.specs[self.fsm.state][2]
-            state_progress = min(
-                1.0,
-                (self.fsm.frame + 1) / float(state_steps),
-            )
-            if motion_state == "TWIST":
-                alpha = min(
-                    1.0,
-                    (self.fsm.frame + 1) / float(harvest.TWIST_STEPS),
-                )
-                max_force = (
-                    harvest.GRIPPER_GRASP_MAX_FORCE
-                    + harvest.smoothstep(alpha)
-                    * (
-                        harvest.GRIPPER_HOLD_MAX_FORCE
-                        - harvest.GRIPPER_GRASP_MAX_FORCE
-                    )
-                )
-                self._set_gripper_drive_max_force(
-                    max_force,
-                    "TWIST RAMP",
-                    report=self.fsm.frame in (0, harvest.TWIST_STEPS - 1),
-                )
-            elif motion_state in {
-                "PULL",
-                "RETREAT",
-                "CLEAR_UP",
-                "TREE_EXIT",
-                "NEUTRAL_TRANSFER",
-                "ALIGN_HALF",
-                "ALIGN_DOWN",
-                "CONVEYOR_OUTSIDE_HIGH",
-                "PLACE_ABOVE",
-                "VERTICAL_DESCENT",
-            }:
-                self._set_gripper_drive_max_force(
-                    harvest.GRIPPER_HOLD_MAX_FORCE,
-                    motion_state,
-                    report=reported_force_state != "HOLD",
-                )
-                reported_force_state = "HOLD"
-            elif motion_state in {"PREGRASP", "ENTER", "ENTER_SLOW"}:
-                # 진입 중 손가락이 측정 자세를 유지해야 swept clearance 판정이
-                # 유효하다. GRASP 저토크는 사과 접촉 직전에만 적용한다.
-                self._set_gripper_drive_max_force(
-                    harvest.GRIPPER_ENTRY_MAX_FORCE,
-                    motion_state,
-                    report=reported_force_state != "ENTRY",
-                )
-                reported_force_state = "ENTRY"
-            elif motion_state in {"RELEASE", "LIFT", "EXIT"}:
-                self._set_gripper_drive_max_force(
-                    harvest.GRIPPER_GRASP_MAX_FORCE,
-                    motion_state,
-                    report=reported_force_state != "RELEASE",
-                )
-                reported_force_state = "RELEASE"
-            if motion_state in {"GRASP", "RELEASE"}:
-                # 파지/개방 중 RMPflow의 미세 Cartesian 보정을 막고,
-                # Action 시작 시점의 관절 자세를 유지한다.
-                action = harvest.ArticulationAction(
-                    joint_positions=hold_arm_positions,
-                    joint_indices=self.arm_indices,
-                )
-                solved = True
-            else:
-                self.collision_motion.set_target(target, rotation)
-                action = self.collision_motion.next_action()
-                solved = (
-                    action.joint_positions is not None
-                    and harvest.np.all(harvest.np.isfinite(action.joint_positions))
-                )
-            if solved:
-                self.robot.apply_action(action)
-                failures = 0
-                actual, actual_rotation = self._current_tcp_pose()
-                advance_result = self.fsm.advance(
-                    actual,
-                    actual_rotation,
-                    completion_allowed=True,
-                )
-                if advance_result == "timeout":
-                    if motion_state == "ENTER_SLOW":
-                        raise MotionExecutionError(
-                            "302:COLLISION_RISK",
-                            "저속 최종 접근에서 palm-사과 접촉이 확인되지 않았습니다.",
-                        )
-                    raise MotionExecutionError(
-                        "304:MOTION_TIMEOUT",
-                        "TCP가 목표를 제한 시간 안에 추종하지 못했습니다: "
-                        f"state={motion_state}, "
-                        f"position={self.fsm.last_position_error_m:.4f} m, "
-                        "rotation="
-                        f"{self.fsm.last_orientation_error_deg:.2f} deg, "
-                        f"joint_broken={self.joint_break.broken}, "
-                        f"break_state={self.joint_break.break_state or 'NONE'}, "
-                        f"palm_contacted={self.apple_contact.palm_contacted}",
-                    )
-            else:
-                failures += 1
-                if failures >= harvest.MAX_CONSECUTIVE_IK_FAILURES:
-                    raise MotionExecutionError(
-                        "300:IK_FAILED",
-                        "RMPflow 관절 목표가 연속으로 유효하지 않습니다.",
-                    )
-            if motion_state == "GRASP" and grasp_contact_hold_positions is not None:
-                harvest.apply_gripper_positions(
-                    self.robot,
-                    self.gripper_indices,
-                    grasp_contact_hold_positions,
-                )
-            else:
-                harvest.apply_gripper_target(
-                    self.robot,
-                    self.gripper_indices,
-                    grip,
-                    open_positions=self.entry_preshape,
-                )
-            # advance()가 마지막 표본에서 다음 상태로 넘어가더라도 방금 실제로
-            # 실행한 상태 이름으로 feedback을 보낸다. 다음 상태가 실행되기 전에
-            # RETREAT 100%처럼 보이는 오표시를 방지한다.
-            self.feedback(handle, motion_state, state_progress)
-            self.world.step(render=not harvest.args.headless)
-            if (
-                motion_state == "GRASP"
-                and grasp_contact_hold_positions is None
-                and self.apple_contact.finger_contacted
-            ):
-                grasp_contact_hold_positions = (
-                    self._require_gripper_joint_positions().copy()
-                )
-                print(
-                    "   [GRASP CONTACT HOLD] first finger contacted; "
-                    "현재 실제 관절 자세에서 추가 폐합을 중지합니다."
-                )
-            self._handle_entry_apple_contact(
-                motion_state, self._require_arm_joint_positions()
-            )
-            if self._check_entry_arm_deviation(motion_state):
-                continue
-            if self.tree_contact.detected:
-                raise MotionExecutionError(
-                    "302:COLLISION_RISK",
-                    f"{motion_state} 중 실제 로봇 collider가 나무 collider에 "
-                    f"접촉했습니다: robot={self.tree_contact.robot_path}, "
-                    f"tree={self.tree_contact.tree_path}",
-                )
-            if (
-                self.joint_break.broken
-                and self.joint_break.break_state not in {"TWIST", "PULL"}
-            ):
-                raise MotionExecutionError(
-                    "302:COLLISION_RISK",
-                    f"사과 FixedJoint가 {self.joint_break.break_state} 중 조기 파손됐습니다.",
-                )
-        self._check_execution_guard()
-        # stop_state는 아직 실행하지 않은 다음 상태다. 바로 전에 완료한 상태를
-        # 100%로 보고해야 coordinator 로그와 실제 FSM 진행이 일치한다.
-        completed_index = max(0, self.fsm.state - 1)
-        completed_state = self.fsm.NAMES[completed_index]
-        self.feedback(handle, completed_state, 1.0)
-
-    def _run_rrt_fsm_state(self, handle, motion_state):
-        """비접촉 장거리 FSM 상태를 RRT→trajectory→RMPflow로 실행한다."""
-        target, rotation, state_steps, _grip0, grip1 = self.fsm.specs[
-            self.fsm.state
-        ]
-        self.feedback(handle, f"{motion_state}_RRT_PLANNING", 0.0)
-        print(f"   [RRT PLANNING] {motion_state}: CPU/GPU planner 호출", flush=True)
-        trajectory = self.collision_motion.plan_rrt_trajectory(
-            self.robot,
-            target,
-            rotation,
-            motion_state,
-        )
-        if trajectory is None:
-            raise harvest.ApproachUnreachableError(
-                f"{motion_state} Lula RRT/trajectory 생성에 실패했습니다."
-            )
-        duration = float(trajectory.end_time - trajectory.start_time)
-        sample_count = max(
-            2,
-            int(
-                harvest.np.ceil(
-                    duration / harvest.RRT_TRAJECTORY_SAMPLE_DT_S
-                )
-            )
-            + 1,
-        )
-        self._set_gripper_drive_max_force(
-            (
-                harvest.GRIPPER_HOLD_MAX_FORCE
-                if grip1 > 0.5
-                else harvest.GRIPPER_GRASP_MAX_FORCE
-            ),
-            f"{motion_state} RRT",
-            report=True,
-        )
-        for sample_index, sample_time in enumerate(
-            harvest.np.linspace(
-                trajectory.start_time,
-                trajectory.end_time,
-                sample_count,
-            )
-        ):
-            self._check_execution_guard()
-            pause_reported = False
-            while not self.world.is_playing():
-                self._check_execution_guard()
-                if not pause_reported:
-                    self._publish_pause()
-                    pause_reported = True
-                harvest.simulation_app.update()
-            if pause_reported:
-                self._publish_resume()
-            joint_target, _joint_velocity = trajectory.get_joint_targets(
-                sample_time
-            )
-            self.collision_motion.set_trajectory_cspace_target(joint_target)
-            action = self.collision_motion.next_action()
-            if action.joint_positions is None or not harvest.np.all(
-                harvest.np.isfinite(action.joint_positions)
-            ):
-                raise MotionExecutionError(
-                    "300:IK_FAILED",
-                    f"{motion_state} trajectory 추종 중 RMPflow 목표가 유효하지 않습니다.",
-                )
-            self.robot.apply_action(action)
-            harvest.apply_gripper_target(
-                self.robot,
-                self.gripper_indices,
-                grip1,
-                open_positions=self.entry_preshape,
-            )
-            self.feedback(
-                handle,
-                motion_state,
-                (sample_index + 1) / float(sample_count),
-            )
-            self.world.step(render=not harvest.args.headless)
-            if self.tree_contact.detected:
-                raise MotionExecutionError(
-                    "302:COLLISION_RISK",
-                    f"{motion_state} RRT 실행 중 실제 로봇 collider가 나무와 "
-                    f"접촉했습니다: robot={self.tree_contact.robot_path}, "
-                    f"tree={self.tree_contact.tree_path}",
-                )
-            if sample_index == 0 or (sample_index + 1) % 60 == 0:
-                actual, actual_rotation = self._current_tcp_pose()
-                print(
-                    f"   RRT FSM      {motion_state:8s} "
-                    f"{sample_index + 1:3d}/{sample_count} "
-                    f"position {harvest.np.linalg.norm(target - actual):.4f} m, "
-                    f"rotation {harvest.rotation_error_deg(actual_rotation, rotation):.2f} deg"
-                )
-
-        # 시간 궤적 추종 뒤 남은 오차는 같은 planning world의 task-space
-        # 목표로 제한된 횟수만 정착시킨다.
-        self.collision_motion.set_target(target, rotation)
-        actual = None
-        actual_rotation = None
-        for settle_index in range(harvest.MAX_TARGET_SETTLE_STEPS):
-            self._check_execution_guard()
-            pause_reported = False
-            while not self.world.is_playing():
-                self._check_execution_guard()
-                if not pause_reported:
-                    self._publish_pause()
-                    pause_reported = True
-                harvest.simulation_app.update()
-            if pause_reported:
-                self._publish_resume()
-            action = self.collision_motion.next_action()
-            if action.joint_positions is None or not harvest.np.all(
-                harvest.np.isfinite(action.joint_positions)
-            ):
-                raise MotionExecutionError(
-                    "300:IK_FAILED",
-                    f"{motion_state} 최종 pose 정착 목표가 유효하지 않습니다.",
-                )
-            self.robot.apply_action(action)
-            harvest.apply_gripper_target(
-                self.robot,
-                self.gripper_indices,
-                grip1,
-                open_positions=self.entry_preshape,
-            )
-            self.world.step(render=not harvest.args.headless)
-            actual, actual_rotation = self._current_tcp_pose()
-            position_error = float(harvest.np.linalg.norm(target - actual))
-            orientation_error = harvest.rotation_error_deg(
-                actual_rotation,
-                rotation,
-            )
-            if (
-                position_error <= harvest.TARGET_POSITION_TOLERANCE_M
-                and orientation_error <= harvest.TARGET_ORIENTATION_TOLERANCE_DEG
-            ):
-                break
-            if self.tree_contact.detected:
-                raise MotionExecutionError(
-                    "302:COLLISION_RISK",
-                    f"{motion_state} 정착 중 실제 로봇 collider가 나무와 접촉했습니다.",
-                )
-        else:
-            raise MotionExecutionError(
-                "304:MOTION_TIMEOUT",
-                f"{motion_state} RRT trajectory 최종 pose에 정착하지 못했습니다.",
-            )
-
-        self.fsm.frame = state_steps
-        advance_result = self.fsm.advance(actual, actual_rotation)
-        if advance_result not in {"advanced", "done"}:
-            raise MotionExecutionError(
-                "304:MOTION_TIMEOUT",
-                f"{motion_state} RRT 상태 완료 판정에 실패했습니다: {advance_result}",
-            )
-
-    def _return_to_initial(self, handle):
-        """컨베이어 이탈 후 저장된 초기 관절 자세로 안전하게 복귀한다."""
-        if self.collision_motion is None:
-            raise MotionExecutionError(
-                "306:GOAL_REJECTED",
-                "초기 자세 복귀에 사용할 planning world가 없습니다.",
-            )
-        self.tree_contact.reset()
-        self.tree_contact.set_state("RETURN_INITIAL")
-        self.feedback(handle, "RETURN_INITIAL_RRT_PLANNING", 0.0)
-        print("   [RETURN INITIAL] saved c-space goal planning", flush=True)
-        trajectory = self.collision_motion.plan_rrt_cspace_trajectory(
-            self.robot,
-            self.initial_arm_positions,
-            "RETURN_INITIAL",
-        )
-        if trajectory is None:
-            raise harvest.ApproachUnreachableError(
-                "초기 관절 자세로 돌아가는 Lula RRT/trajectory 생성에 실패했습니다."
-            )
-
-        duration = float(trajectory.end_time - trajectory.start_time)
-        sample_count = max(
-            2,
-            int(
-                harvest.np.ceil(
-                    duration / harvest.RRT_TRAJECTORY_SAMPLE_DT_S
-                )
-            )
-            + 1,
-        )
-        self._set_gripper_drive_max_force(
-            harvest.GRIPPER_GRASP_MAX_FORCE,
-            "RETURN_INITIAL",
-            report=True,
-        )
-        for sample_index, sample_time in enumerate(
-            harvest.np.linspace(
-                trajectory.start_time,
-                trajectory.end_time,
-                sample_count,
-            )
-        ):
-            self._check_execution_guard()
-            pause_reported = False
-            while not self.world.is_playing():
-                self._check_execution_guard()
-                if not pause_reported:
-                    self._publish_pause()
-                    pause_reported = True
-                harvest.simulation_app.update()
-            if pause_reported:
-                self._publish_resume()
-            joint_target, _joint_velocity = trajectory.get_joint_targets(sample_time)
-            self.collision_motion.set_trajectory_cspace_target(joint_target)
-            action = self.collision_motion.next_action()
-            if action.joint_positions is None or not harvest.np.all(
-                harvest.np.isfinite(action.joint_positions)
-            ):
-                raise MotionExecutionError(
-                    "300:IK_FAILED",
-                    "RETURN_INITIAL trajectory 추종 목표가 유효하지 않습니다.",
-                )
-            self.robot.apply_action(action)
-            harvest.apply_gripper_target(
-                self.robot,
-                self.gripper_indices,
-                0.0,
-                open_positions=self.initial_gripper_positions,
-            )
-            self.feedback(
-                handle,
-                "RETURN_INITIAL",
-                0.9 * (sample_index + 1) / float(sample_count),
-            )
-            self.world.step(render=not harvest.args.headless)
-            if self.tree_contact.detected:
-                raise MotionExecutionError(
-                    "302:COLLISION_RISK",
-                    "RETURN_INITIAL 중 실제 로봇 collider가 나무와 접촉했습니다: "
-                    f"robot={self.tree_contact.robot_path}, "
-                    f"tree={self.tree_contact.tree_path}",
-                )
-
-        # RRT는 현재 자세에서 가까운 q±2π 등가 초기 자세를 선택할 수 있다.
-        # 정착 단계에서 원본 [0, 0, -π/2, 0, π/2, 0]을 다시 명령하면
-        # joint_4/joint_6이 불필요하게 한 바퀴 재회전하므로, 궤적의 마지막
-        # 등가 목표를 그대로 유지한다. 완료 여부는 아래에서 초기 TCP pose로
-        # 판정하므로 공간상의 초기 자세 기준은 바뀌지 않는다.
-        settle_joint_target = harvest.np.asarray(joint_target, dtype=float).copy()
-        for settle_index in range(harvest.MAX_TARGET_SETTLE_STEPS):
-            self._check_execution_guard()
-            pause_reported = False
-            while not self.world.is_playing():
-                self._check_execution_guard()
-                if not pause_reported:
-                    self._publish_pause()
-                    pause_reported = True
-                harvest.simulation_app.update()
-            if pause_reported:
-                self._publish_resume()
-            # 충돌 검증을 마친 RRT 종점 근처의 잔여 오차만 줄이는 구간이다.
-            # RMPflow의 c-space 감쇠를 다시 거치지 않고 강한 팔 위치 Drive에
-            # 동일한 최종 목표를 직접 유지해 제한된 정착 시간 안에 수렴한다.
-            self.robot.apply_action(
-                harvest.ArticulationAction(
-                    joint_positions=settle_joint_target,
-                    joint_indices=self.arm_indices,
-                )
-            )
-            harvest.apply_gripper_target(
-                self.robot,
-                self.gripper_indices,
-                0.0,
-                open_positions=self.initial_gripper_positions,
-            )
-            self.world.step(render=not harvest.args.headless)
-            if self.tree_contact.detected:
-                raise MotionExecutionError(
-                    "302:COLLISION_RISK",
-                    "RETURN_INITIAL 정착 중 실제 로봇 collider가 나무와 접촉했습니다.",
-                )
-            actual_tcp, actual_rotation = self._current_tcp_pose()
-            position_error = float(
-                harvest.np.linalg.norm(
-                    actual_tcp - self.initial_tcp_position
-                )
-            )
-            orientation_error = harvest.rotation_error_deg(
-                actual_rotation,
-                self.initial_tcp_rotation,
-            )
-            if (
-                position_error <= harvest.TARGET_POSITION_TOLERANCE_M
-                and orientation_error
-                <= harvest.TARGET_ORIENTATION_TOLERANCE_DEG
-            ):
-                self.feedback(handle, "RETURN_INITIAL", 1.0)
-                print(
-                    "   [RETURN INITIAL] complete: "
-                    f"position {position_error:.4f} m, "
-                    f"rotation {orientation_error:.2f} deg, "
-                    f"settle {settle_index + 1} steps"
-                )
-                return
-        raise MotionExecutionError(
-            "304:MOTION_TIMEOUT",
-            "초기 자세에 정착하지 못했습니다: "
-            f"position={position_error:.4f} m, "
-            f"rotation={orientation_error:.2f} deg",
-        )
+# ══════════════════════════════════════════════════════════════
+# 실행
+# ══════════════════════════════════════════════════════════════
+def error_code_for(error):
+    """apple_pick 예외를 300번대 코드 문자열로 바꾼다."""
+    if isinstance(error, harvest.HarvestError):
+        return error.error_code
+    return ERROR_CODES["INTERNAL_ERROR"]
 
 
 def main():
-    stage = harvest.open_project_stage()
-    apply_runtime_diagnostic_overrides(stage)
-    if DISABLE_CAMERA_RUNTIME:
-        print("   [DIAGNOSTIC] Base camera ROS graph creation skipped")
-    else:
-        create_base_camera_graph(stage)
-    harvest.configure_breakable_joint(stage)
-    harvest.configure_contact_colliders(stage)
-    harvest.configure_joint_drives(stage)
-    disable_camera_runtime_assets(stage)
-    world = harvest.World(
-        stage_units_in_meters=1.0, physics_prim_path="/physicsScene",
-        physics_dt=1.0 / 60.0, rendering_dt=1.0 / 60.0,
-    )
-    pusher_actuator = None
-    pusher_timing = None
-    sort_runtime_type = None
-    if pushers_enabled():
-        try:
-            from conveyor_sort_controller import SortRuntime, TimingConfig
-        except ImportError as exc:
-            raise RuntimeError(
-                "푸셔 기능을 활성화하려면 APPLEPROJ_INTERFACES_PREFIX에 "
-                "SortCommand와 SortStatus가 빌드되어 있어야 합니다"
-            ) from exc
-        pusher_configs, pusher_timing = load_pusher_configuration(TimingConfig)
-        pusher_actuator = IsaacPrismaticPusherActuator(world, pusher_configs)
-        sort_runtime_type = SortRuntime
-    else:
-        print(
-            "   [PUSHER] 비활성화: APPLEPROJ_ENABLE_PUSHERS=1일 때만 "
-            "SortCommand/SortStatus와 푸셔 articulation을 초기화합니다."
-        )
-    robot = harvest.create_robot(world)
-    if pusher_actuator is not None:
-        pusher_actuator.validate_initialized()
-        pusher_actuator.try_home_all()
-    # create_robot 안의 world.reset()이 articulation과 PhysX view를 초기화한
-    # 뒤라야 TF/JointState 노드가 articulation을 찾을 수 있다. 그 전에 그래프를
-    # 만들면 "did not match any articulations"로 빈 TF만 발행된다.
-    create_robot_tf_graph(stage)
-    rclpy.init()
-    node = RobotMotionNode()
-    sort_runtime = (
-        sort_runtime_type(node, pusher_actuator, pusher_timing)
-        if sort_runtime_type is not None
-        else None
-    )
-    engine = MotionEngine(
-        world,
-        robot,
-        stage,
-        node.publish_state,
-        node.execution_version,
-        node.publish_motion_plan,
-        node.publish_motion_failure,
-    )
-    conveyor_lifecycle = ConveyorLifecycleRuntime(node, engine, stage, world)
-    executor = MultiThreadedExecutor(num_threads=2)
-    executor.add_node(node)
-    ros_thread = threading.Thread(target=executor.spin, daemon=True)
-    ros_thread.start()
-    reset_id = 1
-    scene_version = 1
+    print("\n══════ GPU PC 1 Isaac 수확 서버 ══════")
+    print(f"   구동 로봇 : {', '.join(ROBOT_IDS)}")
+    print(f"   ROS_DOMAIN: {os.environ.get('ROS_DOMAIN_ID')}")
 
-    def publish_current_scene():
-        specs = harvest.extract_static_planning_proxy_specs(stage)
-        base_pose = harvest.get_prim_world_pose(stage, harvest.ROBOT_BASE_PATH)
-        tcp_pose = harvest.current_tcp_pose(robot)
-        node.publish_scene(
-            reset_id,
-            scene_version,
-            specs,
-            base_pose,
-            tcp_pose,
-        )
+    enable_extension("isaacsim.ros2.bridge")
+    # 컨베이어 OmniGraph 노드 타입이 이 확장에 있다. 켜지 않으면 저장된
+    # ConveyorBeltGraph 가 로드되지 않아 벨트가 서 있고, 사과를 올려놓아도
+    # 검사 구간으로 흘러가지 않는다.
+    enable_extension("isaacsim.asset.gen.conveyor")
+    harvest.simulation_app.update()
+
+    world = None
+    node = None
+    executor = None
+    job_queue = queue.Queue()
 
     try:
-        print_startup_lifecycle("before publish INITIALIZING", stage, world)
-        node.publish_state(SimulationState.INITIALIZING, "Stage와 물리를 초기화합니다.")
-        print_startup_lifecycle("before world.play", stage, world)
-        world.play()
-        print_startup_lifecycle("after world.play", stage, world)
-        print_startup_lifecycle("before first world.step", stage, world)
-        world.step(render=not harvest.args.headless)
-        print_startup_lifecycle("after first world.step", stage, world)
-        publish_current_scene()
-        print_startup_lifecycle("after planning scene publish", stage, world)
-        published_tree_signature = harvest.tree_scene_signature(stage)
-        node.publish_state(SimulationState.READY, "planning scene 동기화가 완료됐습니다.")
-        node.publish_state(SimulationState.PLAYING, "Isaac Sim Timeline이 실행 중입니다.")
-        published_state = SimulationState.PLAYING
-        stopped_needs_reset = False
+        world = HarvestWorld(ROBOT_IDS)
+
+        build_clock_graph(world.stage)
+        build_conveyor_camera_graph(world.stage)
+        set_conveyor_speed(world.stage)
+        for robot_id in ROBOT_IDS:
+            profile = harvest.ROBOT_RUNTIME_PROFILES[robot_id]
+            names = HarvestNames(robot_id)
+            build_camera_graph(world.stage, profile, names)
+            build_robot_state_graph(world.stage, profile, names)
+
+        state = {"state": SimulationState.INITIALIZING, "message": "초기화 중"}
+        first_runtime = world.runtimes[ROBOT_IDS[0]]
+
+        def state_provider():
+            base_position, base_rotation = first_runtime.base_pose()
+            tcp_position, tcp_rotation = first_runtime.current_tcp_pose()
+            return {
+                "state": state["state"],
+                "reset_id": world.reset_id,
+                "scene_version": world.scene_version,
+                "message": state["message"],
+                "robot_base_position": base_position,
+                "robot_base_rotation": base_rotation,
+                "tcp_position": tcp_position,
+                "tcp_rotation": tcp_rotation,
+                "proxies": world.all_proxies(),
+            }
+
+        rclpy.init()
+        node = HarvestServerNode(ROBOT_IDS, job_queue, state_provider)
+        executor = MultiThreadedExecutor()
+        executor.add_node(node)
+        threading.Thread(target=executor.spin, daemon=True).start()
+
+        world.world.play()
+        state["state"] = SimulationState.PLAYING
+        state["message"] = "Timeline PLAYING"
+        node.publish_planning_scene(state_provider())
+        print("\n   준비 완료. Goal 을 기다립니다.\n")
+
+        steps = 0
         while harvest.simulation_app.is_running():
-            if world.is_stopped():
-                if published_state != SimulationState.STOPPED:
-                    if sort_runtime is not None:
-                        sort_runtime.reset()
-                    conveyor_lifecycle.reset()
-                    node.publish_state(
-                        SimulationState.STOPPED,
-                        "Timeline Stop: 실행 중 Goal과 이전 계획을 폐기합니다.",
-                    )
-                    published_state = SimulationState.STOPPED
-                stopped_needs_reset = True
-                harvest.simulation_app.update()
-                continue
-            if not world.is_playing():
-                if published_state != SimulationState.PAUSED:
-                    node.publish_state(
-                        SimulationState.PAUSED,
-                        "Timeline Pause: Goal 실행을 일시 정지합니다.",
-                    )
-                    published_state = SimulationState.PAUSED
-                harvest.simulation_app.update()
-                continue
-            if stopped_needs_reset:
-                node.publish_state(
-                    SimulationState.INITIALIZING,
-                    "Stop 이후 Articulation과 planning scene을 재초기화합니다.",
-                )
-                engine.close()
-                world.reset()
-                if pusher_actuator is not None:
-                    pusher_actuator.validate_initialized()
-                    pusher_actuator.try_home_all()
-                engine = MotionEngine(
-                    world,
-                    robot,
-                    stage,
-                    node.publish_state,
-                    node.execution_version,
-                    node.publish_motion_plan,
-                    node.publish_motion_failure,
-                )
-                conveyor_lifecycle.engine = engine
-                conveyor_lifecycle.reset()
-                world.play()
-                world.step(render=not harvest.args.headless)
-                reset_id += 1
-                scene_version += 1
-                publish_current_scene()
-                published_tree_signature = harvest.tree_scene_signature(stage)
-                node.publish_state(
-                    SimulationState.READY,
-                    "새 reset의 planning scene 동기화가 완료됐습니다.",
-                )
-                stopped_needs_reset = False
-            if published_state != SimulationState.PLAYING:
-                node.publish_state(
-                    SimulationState.PLAYING, "Isaac Sim Timeline이 실행 중입니다."
-                )
-                published_state = SimulationState.PLAYING
-            current_tree_signature = harvest.tree_scene_signature(stage)
-            if current_tree_signature != published_tree_signature:
-                node.publish_state(
-                    SimulationState.INITIALIZING,
-                    "나무 transform 변경: 기존 계획을 폐기하고 scene을 재생성합니다.",
-                )
-                scene_version += 1
-                engine.accept_scene_signature(current_tree_signature)
-                publish_current_scene()
-                published_tree_signature = current_tree_signature
-                node.publish_state(
-                    SimulationState.READY,
-                    "이동된 나무 planning scene 동기화가 완료됐습니다.",
-                )
-                node.publish_state(
-                    SimulationState.PLAYING,
-                    "새 scene_version으로 실행 중입니다.",
-                )
-                continue
-            if sort_runtime is not None:
-                sort_runtime.process(float(world.current_time), simulation_ready=True)
             try:
-                pending = node.requests.get_nowait()
+                job = job_queue.get_nowait()
             except queue.Empty:
-                world.step(render=not harvest.args.headless)
-                conveyor_lifecycle.process()
-                continue
-            if world.is_stopped() or not robot.handles_initialized:
-                node.get_logger().warning(
-                    "Articulation handle이 해제되어 물리와 MotionEngine을 재초기화합니다."
-                )
-                node.publish_state(
-                    SimulationState.INITIALIZING,
-                    "Articulation handle 재초기화 중입니다.",
-                )
-                engine.close()
-                world.reset()
-                if pusher_actuator is not None:
-                    pusher_actuator.validate_initialized()
-                    pusher_actuator.try_home_all()
-                engine = MotionEngine(
-                    world,
-                    robot,
-                    stage,
-                    node.publish_state,
-                    node.execution_version,
-                    node.publish_motion_plan,
-                    node.publish_motion_failure,
-                )
-                conveyor_lifecycle.engine = engine
-                conveyor_lifecycle.reset()
-                world.play()
-                world.step(render=not harvest.args.headless)
-                reset_id += 1
-                scene_version += 1
-                publish_current_scene()
-                published_tree_signature = harvest.tree_scene_signature(stage)
-                node.publish_state(
-                    SimulationState.PLAYING,
-                    "Articulation과 planning scene 재동기화가 완료됐습니다.",
-                )
-            pending.result = engine.execute(
-                pending.handle, *node.execution_version()
-            )
-            pending.finished.set()
-            conveyor_lifecycle.process()
-    except BaseException as error:
-        print(
-            f"   [LIFECYCLE EXIT] {type(error).__name__}: {error!r}",
-            flush=True,
-        )
-        print_startup_lifecycle("BaseException", stage, world)
+                job = None
+
+            if job is not None:
+                try:
+                    job.progress = 0.1
+                    world.execute(job)
+                    job.progress = 1.0
+                    job.success = True
+                except harvest.HarvestError as error:
+                    job.success = False
+                    job.error_code = error_code_for(error)
+                    job.message = str(error)
+                    print(
+                        f"   [FAIL] {job.robot_id} {job.error_code}: {error}",
+                        file=sys.stderr,
+                    )
+                except Exception as error:  # noqa: BLE001
+                    job.success = False
+                    job.error_code = ERROR_CODES["INTERNAL_ERROR"]
+                    job.message = str(error)
+                    traceback.print_exc()
+                finally:
+                    job.done.set()
+            else:
+                world.world.step(render=True)
+                steps += 1
+                if steps % 120 == 0 and world.refresh_scene_if_moved():
+                    print(f"   나무 이동 감지. scene_version -> {world.scene_version}")
+                    node.publish_planning_scene(state_provider())
+
+            if harvest.args.max_steps and steps >= harvest.args.max_steps:
+                break
+        return 0
+    except Exception:  # noqa: BLE001
         traceback.print_exc()
-        raise
+        return 1
     finally:
-        if sort_runtime is not None:
-            sort_runtime.reset()
-        conveyor_lifecycle.close()
-        engine.close()
-        executor.shutdown()
-        node.destroy_node()
+        if executor is not None:
+            executor.shutdown()
+        if node is not None:
+            node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()
-        world.stop()
+        if world is not None:
+            world.close()
         harvest.simulation_app.close()
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

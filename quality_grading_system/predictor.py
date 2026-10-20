@@ -311,6 +311,12 @@ class OnnxMeasurementPredictor:
 
 
 def load_measurement_predictor(model_path: str | Path, *, backend: str = "auto"):
+    # 학습 모델 없이 OpenCV 임계값만으로 착색 mask를 만드는 경로. 모델 파일이
+    # 필요 없으므로 model_path 는 무시한다.
+    if backend == "opencv_color":
+        from opencv_color_predictor import OpenCvColorPredictor
+
+        return OpenCvColorPredictor()
     path = Path(model_path)
     selected = (
         "onnx" if path.suffix.lower() == ".onnx" else "torch"
@@ -319,7 +325,9 @@ def load_measurement_predictor(model_path: str | Path, *, backend: str = "auto")
         return OnnxMeasurementPredictor(path)
     if selected == "torch":
         return TorchMeasurementPredictor(path)
-    raise ValueError("backend must be auto, onnx, or torch")
+    raise ValueError(
+        "backend must be auto, onnx, torch, or opencv_color"
+    )
 
 
 def predict_declared_frames(

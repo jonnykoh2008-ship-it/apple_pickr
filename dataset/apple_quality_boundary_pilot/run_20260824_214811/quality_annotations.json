@@ -1,0 +1,2432 @@
+{
+  "rgb_0000.png": {
+    "group_id": "scenario_000",
+    "target_color_mask": "masks/target_color_mask_0000.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0000.png",
+    "damage_mask": "masks/damage_mask_0000.png",
+    "ignore_mask": "masks/ignore_mask_0000.png",
+    "apple_mask": "masks/apple_mask_0000.png",
+    "depth": "distance_to_image_plane_0000.npy",
+    "camera_params": "camera_params_0000.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0000.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0000.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0000.png",
+      "damage_browning": "masks/damage_browning_mask_0000.png",
+      "damage_bruise": "masks/damage_bruise_mask_0000.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0000.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0000.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0000.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0000.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0000.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0000.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0000.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0000.png"
+    }
+  },
+  "rgb_0001.png": {
+    "group_id": "scenario_000",
+    "target_color_mask": "masks/target_color_mask_0001.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0001.png",
+    "damage_mask": "masks/damage_mask_0001.png",
+    "ignore_mask": "masks/ignore_mask_0001.png",
+    "apple_mask": "masks/apple_mask_0001.png",
+    "depth": "distance_to_image_plane_0001.npy",
+    "camera_params": "camera_params_0001.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0001.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0001.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0001.png",
+      "damage_browning": "masks/damage_browning_mask_0001.png",
+      "damage_bruise": "masks/damage_bruise_mask_0001.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0001.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0001.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0001.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0001.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0001.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0001.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0001.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0001.png"
+    }
+  },
+  "rgb_0002.png": {
+    "group_id": "scenario_000",
+    "target_color_mask": "masks/target_color_mask_0002.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0002.png",
+    "damage_mask": "masks/damage_mask_0002.png",
+    "ignore_mask": "masks/ignore_mask_0002.png",
+    "apple_mask": "masks/apple_mask_0002.png",
+    "depth": "distance_to_image_plane_0002.npy",
+    "camera_params": "camera_params_0002.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0002.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0002.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0002.png",
+      "damage_browning": "masks/damage_browning_mask_0002.png",
+      "damage_bruise": "masks/damage_bruise_mask_0002.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0002.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0002.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0002.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0002.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0002.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0002.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0002.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0002.png"
+    }
+  },
+  "rgb_0003.png": {
+    "group_id": "scenario_000",
+    "target_color_mask": "masks/target_color_mask_0003.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0003.png",
+    "damage_mask": "masks/damage_mask_0003.png",
+    "ignore_mask": "masks/ignore_mask_0003.png",
+    "apple_mask": "masks/apple_mask_0003.png",
+    "depth": "distance_to_image_plane_0003.npy",
+    "camera_params": "camera_params_0003.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0003.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0003.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0003.png",
+      "damage_browning": "masks/damage_browning_mask_0003.png",
+      "damage_bruise": "masks/damage_bruise_mask_0003.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0003.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0003.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0003.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0003.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0003.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0003.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0003.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0003.png"
+    }
+  },
+  "rgb_0004.png": {
+    "group_id": "scenario_000",
+    "target_color_mask": "masks/target_color_mask_0004.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0004.png",
+    "damage_mask": "masks/damage_mask_0004.png",
+    "ignore_mask": "masks/ignore_mask_0004.png",
+    "apple_mask": "masks/apple_mask_0004.png",
+    "depth": "distance_to_image_plane_0004.npy",
+    "camera_params": "camera_params_0004.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0004.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0004.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0004.png",
+      "damage_browning": "masks/damage_browning_mask_0004.png",
+      "damage_bruise": "masks/damage_bruise_mask_0004.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0004.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0004.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0004.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0004.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0004.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0004.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0004.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0004.png"
+    }
+  },
+  "rgb_0005.png": {
+    "group_id": "scenario_001",
+    "target_color_mask": "masks/target_color_mask_0005.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0005.png",
+    "damage_mask": "masks/damage_mask_0005.png",
+    "ignore_mask": "masks/ignore_mask_0005.png",
+    "apple_mask": "masks/apple_mask_0005.png",
+    "depth": "distance_to_image_plane_0005.npy",
+    "camera_params": "camera_params_0005.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0005.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0005.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0005.png",
+      "damage_browning": "masks/damage_browning_mask_0005.png",
+      "damage_bruise": "masks/damage_bruise_mask_0005.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0005.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0005.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0005.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0005.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0005.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0005.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0005.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0005.png"
+    }
+  },
+  "rgb_0006.png": {
+    "group_id": "scenario_001",
+    "target_color_mask": "masks/target_color_mask_0006.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0006.png",
+    "damage_mask": "masks/damage_mask_0006.png",
+    "ignore_mask": "masks/ignore_mask_0006.png",
+    "apple_mask": "masks/apple_mask_0006.png",
+    "depth": "distance_to_image_plane_0006.npy",
+    "camera_params": "camera_params_0006.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0006.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0006.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0006.png",
+      "damage_browning": "masks/damage_browning_mask_0006.png",
+      "damage_bruise": "masks/damage_bruise_mask_0006.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0006.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0006.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0006.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0006.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0006.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0006.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0006.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0006.png"
+    }
+  },
+  "rgb_0007.png": {
+    "group_id": "scenario_001",
+    "target_color_mask": "masks/target_color_mask_0007.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0007.png",
+    "damage_mask": "masks/damage_mask_0007.png",
+    "ignore_mask": "masks/ignore_mask_0007.png",
+    "apple_mask": "masks/apple_mask_0007.png",
+    "depth": "distance_to_image_plane_0007.npy",
+    "camera_params": "camera_params_0007.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0007.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0007.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0007.png",
+      "damage_browning": "masks/damage_browning_mask_0007.png",
+      "damage_bruise": "masks/damage_bruise_mask_0007.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0007.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0007.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0007.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0007.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0007.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0007.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0007.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0007.png"
+    }
+  },
+  "rgb_0008.png": {
+    "group_id": "scenario_001",
+    "target_color_mask": "masks/target_color_mask_0008.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0008.png",
+    "damage_mask": "masks/damage_mask_0008.png",
+    "ignore_mask": "masks/ignore_mask_0008.png",
+    "apple_mask": "masks/apple_mask_0008.png",
+    "depth": "distance_to_image_plane_0008.npy",
+    "camera_params": "camera_params_0008.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0008.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0008.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0008.png",
+      "damage_browning": "masks/damage_browning_mask_0008.png",
+      "damage_bruise": "masks/damage_bruise_mask_0008.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0008.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0008.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0008.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0008.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0008.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0008.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0008.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0008.png"
+    }
+  },
+  "rgb_0009.png": {
+    "group_id": "scenario_001",
+    "target_color_mask": "masks/target_color_mask_0009.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0009.png",
+    "damage_mask": "masks/damage_mask_0009.png",
+    "ignore_mask": "masks/ignore_mask_0009.png",
+    "apple_mask": "masks/apple_mask_0009.png",
+    "depth": "distance_to_image_plane_0009.npy",
+    "camera_params": "camera_params_0009.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0009.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0009.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0009.png",
+      "damage_browning": "masks/damage_browning_mask_0009.png",
+      "damage_bruise": "masks/damage_bruise_mask_0009.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0009.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0009.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0009.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0009.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0009.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0009.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0009.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0009.png"
+    }
+  },
+  "rgb_0010.png": {
+    "group_id": "scenario_002",
+    "target_color_mask": "masks/target_color_mask_0010.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0010.png",
+    "damage_mask": "masks/damage_mask_0010.png",
+    "ignore_mask": "masks/ignore_mask_0010.png",
+    "apple_mask": "masks/apple_mask_0010.png",
+    "depth": "distance_to_image_plane_0010.npy",
+    "camera_params": "camera_params_0010.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0010.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0010.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0010.png",
+      "damage_browning": "masks/damage_browning_mask_0010.png",
+      "damage_bruise": "masks/damage_bruise_mask_0010.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0010.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0010.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0010.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0010.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0010.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0010.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0010.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0010.png"
+    }
+  },
+  "rgb_0011.png": {
+    "group_id": "scenario_002",
+    "target_color_mask": "masks/target_color_mask_0011.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0011.png",
+    "damage_mask": "masks/damage_mask_0011.png",
+    "ignore_mask": "masks/ignore_mask_0011.png",
+    "apple_mask": "masks/apple_mask_0011.png",
+    "depth": "distance_to_image_plane_0011.npy",
+    "camera_params": "camera_params_0011.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0011.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0011.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0011.png",
+      "damage_browning": "masks/damage_browning_mask_0011.png",
+      "damage_bruise": "masks/damage_bruise_mask_0011.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0011.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0011.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0011.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0011.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0011.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0011.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0011.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0011.png"
+    }
+  },
+  "rgb_0012.png": {
+    "group_id": "scenario_002",
+    "target_color_mask": "masks/target_color_mask_0012.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0012.png",
+    "damage_mask": "masks/damage_mask_0012.png",
+    "ignore_mask": "masks/ignore_mask_0012.png",
+    "apple_mask": "masks/apple_mask_0012.png",
+    "depth": "distance_to_image_plane_0012.npy",
+    "camera_params": "camera_params_0012.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0012.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0012.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0012.png",
+      "damage_browning": "masks/damage_browning_mask_0012.png",
+      "damage_bruise": "masks/damage_bruise_mask_0012.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0012.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0012.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0012.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0012.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0012.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0012.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0012.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0012.png"
+    }
+  },
+  "rgb_0013.png": {
+    "group_id": "scenario_002",
+    "target_color_mask": "masks/target_color_mask_0013.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0013.png",
+    "damage_mask": "masks/damage_mask_0013.png",
+    "ignore_mask": "masks/ignore_mask_0013.png",
+    "apple_mask": "masks/apple_mask_0013.png",
+    "depth": "distance_to_image_plane_0013.npy",
+    "camera_params": "camera_params_0013.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0013.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0013.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0013.png",
+      "damage_browning": "masks/damage_browning_mask_0013.png",
+      "damage_bruise": "masks/damage_bruise_mask_0013.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0013.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0013.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0013.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0013.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0013.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0013.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0013.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0013.png"
+    }
+  },
+  "rgb_0014.png": {
+    "group_id": "scenario_002",
+    "target_color_mask": "masks/target_color_mask_0014.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0014.png",
+    "damage_mask": "masks/damage_mask_0014.png",
+    "ignore_mask": "masks/ignore_mask_0014.png",
+    "apple_mask": "masks/apple_mask_0014.png",
+    "depth": "distance_to_image_plane_0014.npy",
+    "camera_params": "camera_params_0014.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0014.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0014.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0014.png",
+      "damage_browning": "masks/damage_browning_mask_0014.png",
+      "damage_bruise": "masks/damage_bruise_mask_0014.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0014.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0014.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0014.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0014.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0014.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0014.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0014.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0014.png"
+    }
+  },
+  "rgb_0015.png": {
+    "group_id": "scenario_003",
+    "target_color_mask": "masks/target_color_mask_0015.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0015.png",
+    "damage_mask": "masks/damage_mask_0015.png",
+    "ignore_mask": "masks/ignore_mask_0015.png",
+    "apple_mask": "masks/apple_mask_0015.png",
+    "depth": "distance_to_image_plane_0015.npy",
+    "camera_params": "camera_params_0015.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0015.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0015.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0015.png",
+      "damage_browning": "masks/damage_browning_mask_0015.png",
+      "damage_bruise": "masks/damage_bruise_mask_0015.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0015.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0015.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0015.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0015.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0015.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0015.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0015.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0015.png"
+    }
+  },
+  "rgb_0016.png": {
+    "group_id": "scenario_003",
+    "target_color_mask": "masks/target_color_mask_0016.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0016.png",
+    "damage_mask": "masks/damage_mask_0016.png",
+    "ignore_mask": "masks/ignore_mask_0016.png",
+    "apple_mask": "masks/apple_mask_0016.png",
+    "depth": "distance_to_image_plane_0016.npy",
+    "camera_params": "camera_params_0016.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0016.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0016.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0016.png",
+      "damage_browning": "masks/damage_browning_mask_0016.png",
+      "damage_bruise": "masks/damage_bruise_mask_0016.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0016.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0016.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0016.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0016.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0016.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0016.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0016.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0016.png"
+    }
+  },
+  "rgb_0017.png": {
+    "group_id": "scenario_003",
+    "target_color_mask": "masks/target_color_mask_0017.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0017.png",
+    "damage_mask": "masks/damage_mask_0017.png",
+    "ignore_mask": "masks/ignore_mask_0017.png",
+    "apple_mask": "masks/apple_mask_0017.png",
+    "depth": "distance_to_image_plane_0017.npy",
+    "camera_params": "camera_params_0017.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0017.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0017.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0017.png",
+      "damage_browning": "masks/damage_browning_mask_0017.png",
+      "damage_bruise": "masks/damage_bruise_mask_0017.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0017.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0017.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0017.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0017.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0017.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0017.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0017.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0017.png"
+    }
+  },
+  "rgb_0018.png": {
+    "group_id": "scenario_003",
+    "target_color_mask": "masks/target_color_mask_0018.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0018.png",
+    "damage_mask": "masks/damage_mask_0018.png",
+    "ignore_mask": "masks/ignore_mask_0018.png",
+    "apple_mask": "masks/apple_mask_0018.png",
+    "depth": "distance_to_image_plane_0018.npy",
+    "camera_params": "camera_params_0018.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0018.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0018.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0018.png",
+      "damage_browning": "masks/damage_browning_mask_0018.png",
+      "damage_bruise": "masks/damage_bruise_mask_0018.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0018.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0018.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0018.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0018.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0018.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0018.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0018.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0018.png"
+    }
+  },
+  "rgb_0019.png": {
+    "group_id": "scenario_003",
+    "target_color_mask": "masks/target_color_mask_0019.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0019.png",
+    "damage_mask": "masks/damage_mask_0019.png",
+    "ignore_mask": "masks/ignore_mask_0019.png",
+    "apple_mask": "masks/apple_mask_0019.png",
+    "depth": "distance_to_image_plane_0019.npy",
+    "camera_params": "camera_params_0019.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0019.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0019.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0019.png",
+      "damage_browning": "masks/damage_browning_mask_0019.png",
+      "damage_bruise": "masks/damage_bruise_mask_0019.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0019.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0019.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0019.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0019.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0019.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0019.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0019.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0019.png"
+    }
+  },
+  "rgb_0020.png": {
+    "group_id": "scenario_004",
+    "target_color_mask": "masks/target_color_mask_0020.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0020.png",
+    "damage_mask": "masks/damage_mask_0020.png",
+    "ignore_mask": "masks/ignore_mask_0020.png",
+    "apple_mask": "masks/apple_mask_0020.png",
+    "depth": "distance_to_image_plane_0020.npy",
+    "camera_params": "camera_params_0020.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0020.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0020.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0020.png",
+      "damage_browning": "masks/damage_browning_mask_0020.png",
+      "damage_bruise": "masks/damage_bruise_mask_0020.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0020.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0020.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0020.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0020.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0020.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0020.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0020.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0020.png"
+    }
+  },
+  "rgb_0021.png": {
+    "group_id": "scenario_004",
+    "target_color_mask": "masks/target_color_mask_0021.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0021.png",
+    "damage_mask": "masks/damage_mask_0021.png",
+    "ignore_mask": "masks/ignore_mask_0021.png",
+    "apple_mask": "masks/apple_mask_0021.png",
+    "depth": "distance_to_image_plane_0021.npy",
+    "camera_params": "camera_params_0021.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0021.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0021.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0021.png",
+      "damage_browning": "masks/damage_browning_mask_0021.png",
+      "damage_bruise": "masks/damage_bruise_mask_0021.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0021.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0021.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0021.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0021.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0021.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0021.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0021.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0021.png"
+    }
+  },
+  "rgb_0022.png": {
+    "group_id": "scenario_004",
+    "target_color_mask": "masks/target_color_mask_0022.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0022.png",
+    "damage_mask": "masks/damage_mask_0022.png",
+    "ignore_mask": "masks/ignore_mask_0022.png",
+    "apple_mask": "masks/apple_mask_0022.png",
+    "depth": "distance_to_image_plane_0022.npy",
+    "camera_params": "camera_params_0022.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0022.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0022.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0022.png",
+      "damage_browning": "masks/damage_browning_mask_0022.png",
+      "damage_bruise": "masks/damage_bruise_mask_0022.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0022.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0022.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0022.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0022.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0022.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0022.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0022.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0022.png"
+    }
+  },
+  "rgb_0023.png": {
+    "group_id": "scenario_004",
+    "target_color_mask": "masks/target_color_mask_0023.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0023.png",
+    "damage_mask": "masks/damage_mask_0023.png",
+    "ignore_mask": "masks/ignore_mask_0023.png",
+    "apple_mask": "masks/apple_mask_0023.png",
+    "depth": "distance_to_image_plane_0023.npy",
+    "camera_params": "camera_params_0023.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0023.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0023.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0023.png",
+      "damage_browning": "masks/damage_browning_mask_0023.png",
+      "damage_bruise": "masks/damage_bruise_mask_0023.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0023.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0023.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0023.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0023.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0023.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0023.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0023.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0023.png"
+    }
+  },
+  "rgb_0024.png": {
+    "group_id": "scenario_004",
+    "target_color_mask": "masks/target_color_mask_0024.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0024.png",
+    "damage_mask": "masks/damage_mask_0024.png",
+    "ignore_mask": "masks/ignore_mask_0024.png",
+    "apple_mask": "masks/apple_mask_0024.png",
+    "depth": "distance_to_image_plane_0024.npy",
+    "camera_params": "camera_params_0024.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0024.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0024.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0024.png",
+      "damage_browning": "masks/damage_browning_mask_0024.png",
+      "damage_bruise": "masks/damage_bruise_mask_0024.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0024.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0024.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0024.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0024.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0024.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0024.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0024.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0024.png"
+    }
+  },
+  "rgb_0025.png": {
+    "group_id": "scenario_005",
+    "target_color_mask": "masks/target_color_mask_0025.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0025.png",
+    "damage_mask": "masks/damage_mask_0025.png",
+    "ignore_mask": "masks/ignore_mask_0025.png",
+    "apple_mask": "masks/apple_mask_0025.png",
+    "depth": "distance_to_image_plane_0025.npy",
+    "camera_params": "camera_params_0025.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0025.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0025.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0025.png",
+      "damage_browning": "masks/damage_browning_mask_0025.png",
+      "damage_bruise": "masks/damage_bruise_mask_0025.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0025.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0025.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0025.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0025.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0025.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0025.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0025.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0025.png"
+    }
+  },
+  "rgb_0026.png": {
+    "group_id": "scenario_005",
+    "target_color_mask": "masks/target_color_mask_0026.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0026.png",
+    "damage_mask": "masks/damage_mask_0026.png",
+    "ignore_mask": "masks/ignore_mask_0026.png",
+    "apple_mask": "masks/apple_mask_0026.png",
+    "depth": "distance_to_image_plane_0026.npy",
+    "camera_params": "camera_params_0026.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0026.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0026.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0026.png",
+      "damage_browning": "masks/damage_browning_mask_0026.png",
+      "damage_bruise": "masks/damage_bruise_mask_0026.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0026.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0026.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0026.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0026.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0026.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0026.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0026.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0026.png"
+    }
+  },
+  "rgb_0027.png": {
+    "group_id": "scenario_005",
+    "target_color_mask": "masks/target_color_mask_0027.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0027.png",
+    "damage_mask": "masks/damage_mask_0027.png",
+    "ignore_mask": "masks/ignore_mask_0027.png",
+    "apple_mask": "masks/apple_mask_0027.png",
+    "depth": "distance_to_image_plane_0027.npy",
+    "camera_params": "camera_params_0027.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0027.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0027.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0027.png",
+      "damage_browning": "masks/damage_browning_mask_0027.png",
+      "damage_bruise": "masks/damage_bruise_mask_0027.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0027.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0027.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0027.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0027.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0027.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0027.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0027.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0027.png"
+    }
+  },
+  "rgb_0028.png": {
+    "group_id": "scenario_005",
+    "target_color_mask": "masks/target_color_mask_0028.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0028.png",
+    "damage_mask": "masks/damage_mask_0028.png",
+    "ignore_mask": "masks/ignore_mask_0028.png",
+    "apple_mask": "masks/apple_mask_0028.png",
+    "depth": "distance_to_image_plane_0028.npy",
+    "camera_params": "camera_params_0028.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0028.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0028.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0028.png",
+      "damage_browning": "masks/damage_browning_mask_0028.png",
+      "damage_bruise": "masks/damage_bruise_mask_0028.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0028.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0028.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0028.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0028.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0028.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0028.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0028.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0028.png"
+    }
+  },
+  "rgb_0029.png": {
+    "group_id": "scenario_005",
+    "target_color_mask": "masks/target_color_mask_0029.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0029.png",
+    "damage_mask": "masks/damage_mask_0029.png",
+    "ignore_mask": "masks/ignore_mask_0029.png",
+    "apple_mask": "masks/apple_mask_0029.png",
+    "depth": "distance_to_image_plane_0029.npy",
+    "camera_params": "camera_params_0029.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0029.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0029.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0029.png",
+      "damage_browning": "masks/damage_browning_mask_0029.png",
+      "damage_bruise": "masks/damage_bruise_mask_0029.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0029.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0029.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0029.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0029.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0029.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0029.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0029.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0029.png"
+    }
+  },
+  "rgb_0030.png": {
+    "group_id": "scenario_006",
+    "target_color_mask": "masks/target_color_mask_0030.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0030.png",
+    "damage_mask": "masks/damage_mask_0030.png",
+    "ignore_mask": "masks/ignore_mask_0030.png",
+    "apple_mask": "masks/apple_mask_0030.png",
+    "depth": "distance_to_image_plane_0030.npy",
+    "camera_params": "camera_params_0030.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0030.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0030.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0030.png",
+      "damage_browning": "masks/damage_browning_mask_0030.png",
+      "damage_bruise": "masks/damage_bruise_mask_0030.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0030.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0030.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0030.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0030.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0030.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0030.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0030.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0030.png"
+    }
+  },
+  "rgb_0031.png": {
+    "group_id": "scenario_006",
+    "target_color_mask": "masks/target_color_mask_0031.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0031.png",
+    "damage_mask": "masks/damage_mask_0031.png",
+    "ignore_mask": "masks/ignore_mask_0031.png",
+    "apple_mask": "masks/apple_mask_0031.png",
+    "depth": "distance_to_image_plane_0031.npy",
+    "camera_params": "camera_params_0031.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0031.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0031.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0031.png",
+      "damage_browning": "masks/damage_browning_mask_0031.png",
+      "damage_bruise": "masks/damage_bruise_mask_0031.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0031.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0031.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0031.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0031.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0031.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0031.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0031.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0031.png"
+    }
+  },
+  "rgb_0032.png": {
+    "group_id": "scenario_006",
+    "target_color_mask": "masks/target_color_mask_0032.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0032.png",
+    "damage_mask": "masks/damage_mask_0032.png",
+    "ignore_mask": "masks/ignore_mask_0032.png",
+    "apple_mask": "masks/apple_mask_0032.png",
+    "depth": "distance_to_image_plane_0032.npy",
+    "camera_params": "camera_params_0032.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0032.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0032.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0032.png",
+      "damage_browning": "masks/damage_browning_mask_0032.png",
+      "damage_bruise": "masks/damage_bruise_mask_0032.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0032.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0032.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0032.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0032.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0032.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0032.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0032.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0032.png"
+    }
+  },
+  "rgb_0033.png": {
+    "group_id": "scenario_006",
+    "target_color_mask": "masks/target_color_mask_0033.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0033.png",
+    "damage_mask": "masks/damage_mask_0033.png",
+    "ignore_mask": "masks/ignore_mask_0033.png",
+    "apple_mask": "masks/apple_mask_0033.png",
+    "depth": "distance_to_image_plane_0033.npy",
+    "camera_params": "camera_params_0033.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0033.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0033.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0033.png",
+      "damage_browning": "masks/damage_browning_mask_0033.png",
+      "damage_bruise": "masks/damage_bruise_mask_0033.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0033.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0033.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0033.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0033.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0033.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0033.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0033.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0033.png"
+    }
+  },
+  "rgb_0034.png": {
+    "group_id": "scenario_006",
+    "target_color_mask": "masks/target_color_mask_0034.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0034.png",
+    "damage_mask": "masks/damage_mask_0034.png",
+    "ignore_mask": "masks/ignore_mask_0034.png",
+    "apple_mask": "masks/apple_mask_0034.png",
+    "depth": "distance_to_image_plane_0034.npy",
+    "camera_params": "camera_params_0034.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0034.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0034.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0034.png",
+      "damage_browning": "masks/damage_browning_mask_0034.png",
+      "damage_bruise": "masks/damage_bruise_mask_0034.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0034.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0034.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0034.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0034.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0034.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0034.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0034.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0034.png"
+    }
+  },
+  "rgb_0035.png": {
+    "group_id": "scenario_007",
+    "target_color_mask": "masks/target_color_mask_0035.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0035.png",
+    "damage_mask": "masks/damage_mask_0035.png",
+    "ignore_mask": "masks/ignore_mask_0035.png",
+    "apple_mask": "masks/apple_mask_0035.png",
+    "depth": "distance_to_image_plane_0035.npy",
+    "camera_params": "camera_params_0035.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0035.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0035.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0035.png",
+      "damage_browning": "masks/damage_browning_mask_0035.png",
+      "damage_bruise": "masks/damage_bruise_mask_0035.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0035.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0035.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0035.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0035.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0035.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0035.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0035.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0035.png"
+    }
+  },
+  "rgb_0036.png": {
+    "group_id": "scenario_007",
+    "target_color_mask": "masks/target_color_mask_0036.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0036.png",
+    "damage_mask": "masks/damage_mask_0036.png",
+    "ignore_mask": "masks/ignore_mask_0036.png",
+    "apple_mask": "masks/apple_mask_0036.png",
+    "depth": "distance_to_image_plane_0036.npy",
+    "camera_params": "camera_params_0036.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0036.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0036.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0036.png",
+      "damage_browning": "masks/damage_browning_mask_0036.png",
+      "damage_bruise": "masks/damage_bruise_mask_0036.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0036.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0036.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0036.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0036.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0036.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0036.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0036.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0036.png"
+    }
+  },
+  "rgb_0037.png": {
+    "group_id": "scenario_007",
+    "target_color_mask": "masks/target_color_mask_0037.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0037.png",
+    "damage_mask": "masks/damage_mask_0037.png",
+    "ignore_mask": "masks/ignore_mask_0037.png",
+    "apple_mask": "masks/apple_mask_0037.png",
+    "depth": "distance_to_image_plane_0037.npy",
+    "camera_params": "camera_params_0037.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0037.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0037.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0037.png",
+      "damage_browning": "masks/damage_browning_mask_0037.png",
+      "damage_bruise": "masks/damage_bruise_mask_0037.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0037.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0037.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0037.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0037.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0037.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0037.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0037.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0037.png"
+    }
+  },
+  "rgb_0038.png": {
+    "group_id": "scenario_007",
+    "target_color_mask": "masks/target_color_mask_0038.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0038.png",
+    "damage_mask": "masks/damage_mask_0038.png",
+    "ignore_mask": "masks/ignore_mask_0038.png",
+    "apple_mask": "masks/apple_mask_0038.png",
+    "depth": "distance_to_image_plane_0038.npy",
+    "camera_params": "camera_params_0038.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0038.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0038.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0038.png",
+      "damage_browning": "masks/damage_browning_mask_0038.png",
+      "damage_bruise": "masks/damage_bruise_mask_0038.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0038.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0038.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0038.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0038.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0038.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0038.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0038.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0038.png"
+    }
+  },
+  "rgb_0039.png": {
+    "group_id": "scenario_007",
+    "target_color_mask": "masks/target_color_mask_0039.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0039.png",
+    "damage_mask": "masks/damage_mask_0039.png",
+    "ignore_mask": "masks/ignore_mask_0039.png",
+    "apple_mask": "masks/apple_mask_0039.png",
+    "depth": "distance_to_image_plane_0039.npy",
+    "camera_params": "camera_params_0039.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0039.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0039.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0039.png",
+      "damage_browning": "masks/damage_browning_mask_0039.png",
+      "damage_bruise": "masks/damage_bruise_mask_0039.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0039.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0039.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0039.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0039.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0039.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0039.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0039.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0039.png"
+    }
+  },
+  "rgb_0040.png": {
+    "group_id": "scenario_008",
+    "target_color_mask": "masks/target_color_mask_0040.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0040.png",
+    "damage_mask": "masks/damage_mask_0040.png",
+    "ignore_mask": "masks/ignore_mask_0040.png",
+    "apple_mask": "masks/apple_mask_0040.png",
+    "depth": "distance_to_image_plane_0040.npy",
+    "camera_params": "camera_params_0040.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0040.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0040.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0040.png",
+      "damage_browning": "masks/damage_browning_mask_0040.png",
+      "damage_bruise": "masks/damage_bruise_mask_0040.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0040.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0040.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0040.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0040.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0040.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0040.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0040.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0040.png"
+    }
+  },
+  "rgb_0041.png": {
+    "group_id": "scenario_008",
+    "target_color_mask": "masks/target_color_mask_0041.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0041.png",
+    "damage_mask": "masks/damage_mask_0041.png",
+    "ignore_mask": "masks/ignore_mask_0041.png",
+    "apple_mask": "masks/apple_mask_0041.png",
+    "depth": "distance_to_image_plane_0041.npy",
+    "camera_params": "camera_params_0041.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0041.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0041.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0041.png",
+      "damage_browning": "masks/damage_browning_mask_0041.png",
+      "damage_bruise": "masks/damage_bruise_mask_0041.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0041.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0041.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0041.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0041.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0041.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0041.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0041.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0041.png"
+    }
+  },
+  "rgb_0042.png": {
+    "group_id": "scenario_008",
+    "target_color_mask": "masks/target_color_mask_0042.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0042.png",
+    "damage_mask": "masks/damage_mask_0042.png",
+    "ignore_mask": "masks/ignore_mask_0042.png",
+    "apple_mask": "masks/apple_mask_0042.png",
+    "depth": "distance_to_image_plane_0042.npy",
+    "camera_params": "camera_params_0042.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0042.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0042.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0042.png",
+      "damage_browning": "masks/damage_browning_mask_0042.png",
+      "damage_bruise": "masks/damage_bruise_mask_0042.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0042.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0042.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0042.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0042.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0042.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0042.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0042.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0042.png"
+    }
+  },
+  "rgb_0043.png": {
+    "group_id": "scenario_008",
+    "target_color_mask": "masks/target_color_mask_0043.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0043.png",
+    "damage_mask": "masks/damage_mask_0043.png",
+    "ignore_mask": "masks/ignore_mask_0043.png",
+    "apple_mask": "masks/apple_mask_0043.png",
+    "depth": "distance_to_image_plane_0043.npy",
+    "camera_params": "camera_params_0043.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0043.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0043.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0043.png",
+      "damage_browning": "masks/damage_browning_mask_0043.png",
+      "damage_bruise": "masks/damage_bruise_mask_0043.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0043.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0043.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0043.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0043.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0043.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0043.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0043.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0043.png"
+    }
+  },
+  "rgb_0044.png": {
+    "group_id": "scenario_008",
+    "target_color_mask": "masks/target_color_mask_0044.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0044.png",
+    "damage_mask": "masks/damage_mask_0044.png",
+    "ignore_mask": "masks/ignore_mask_0044.png",
+    "apple_mask": "masks/apple_mask_0044.png",
+    "depth": "distance_to_image_plane_0044.npy",
+    "camera_params": "camera_params_0044.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0044.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0044.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0044.png",
+      "damage_browning": "masks/damage_browning_mask_0044.png",
+      "damage_bruise": "masks/damage_bruise_mask_0044.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0044.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0044.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0044.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0044.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0044.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0044.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0044.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0044.png"
+    }
+  },
+  "rgb_0045.png": {
+    "group_id": "scenario_009",
+    "target_color_mask": "masks/target_color_mask_0045.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0045.png",
+    "damage_mask": "masks/damage_mask_0045.png",
+    "ignore_mask": "masks/ignore_mask_0045.png",
+    "apple_mask": "masks/apple_mask_0045.png",
+    "depth": "distance_to_image_plane_0045.npy",
+    "camera_params": "camera_params_0045.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0045.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0045.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0045.png",
+      "damage_browning": "masks/damage_browning_mask_0045.png",
+      "damage_bruise": "masks/damage_bruise_mask_0045.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0045.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0045.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0045.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0045.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0045.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0045.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0045.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0045.png"
+    }
+  },
+  "rgb_0046.png": {
+    "group_id": "scenario_009",
+    "target_color_mask": "masks/target_color_mask_0046.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0046.png",
+    "damage_mask": "masks/damage_mask_0046.png",
+    "ignore_mask": "masks/ignore_mask_0046.png",
+    "apple_mask": "masks/apple_mask_0046.png",
+    "depth": "distance_to_image_plane_0046.npy",
+    "camera_params": "camera_params_0046.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0046.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0046.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0046.png",
+      "damage_browning": "masks/damage_browning_mask_0046.png",
+      "damage_bruise": "masks/damage_bruise_mask_0046.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0046.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0046.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0046.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0046.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0046.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0046.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0046.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0046.png"
+    }
+  },
+  "rgb_0047.png": {
+    "group_id": "scenario_009",
+    "target_color_mask": "masks/target_color_mask_0047.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0047.png",
+    "damage_mask": "masks/damage_mask_0047.png",
+    "ignore_mask": "masks/ignore_mask_0047.png",
+    "apple_mask": "masks/apple_mask_0047.png",
+    "depth": "distance_to_image_plane_0047.npy",
+    "camera_params": "camera_params_0047.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0047.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0047.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0047.png",
+      "damage_browning": "masks/damage_browning_mask_0047.png",
+      "damage_bruise": "masks/damage_bruise_mask_0047.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0047.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0047.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0047.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0047.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0047.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0047.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0047.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0047.png"
+    }
+  },
+  "rgb_0048.png": {
+    "group_id": "scenario_009",
+    "target_color_mask": "masks/target_color_mask_0048.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0048.png",
+    "damage_mask": "masks/damage_mask_0048.png",
+    "ignore_mask": "masks/ignore_mask_0048.png",
+    "apple_mask": "masks/apple_mask_0048.png",
+    "depth": "distance_to_image_plane_0048.npy",
+    "camera_params": "camera_params_0048.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0048.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0048.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0048.png",
+      "damage_browning": "masks/damage_browning_mask_0048.png",
+      "damage_bruise": "masks/damage_bruise_mask_0048.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0048.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0048.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0048.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0048.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0048.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0048.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0048.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0048.png"
+    }
+  },
+  "rgb_0049.png": {
+    "group_id": "scenario_009",
+    "target_color_mask": "masks/target_color_mask_0049.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0049.png",
+    "damage_mask": "masks/damage_mask_0049.png",
+    "ignore_mask": "masks/ignore_mask_0049.png",
+    "apple_mask": "masks/apple_mask_0049.png",
+    "depth": "distance_to_image_plane_0049.npy",
+    "camera_params": "camera_params_0049.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0049.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0049.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0049.png",
+      "damage_browning": "masks/damage_browning_mask_0049.png",
+      "damage_bruise": "masks/damage_bruise_mask_0049.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0049.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0049.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0049.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0049.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0049.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0049.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0049.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0049.png"
+    }
+  },
+  "rgb_0050.png": {
+    "group_id": "scenario_010",
+    "target_color_mask": "masks/target_color_mask_0050.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0050.png",
+    "damage_mask": "masks/damage_mask_0050.png",
+    "ignore_mask": "masks/ignore_mask_0050.png",
+    "apple_mask": "masks/apple_mask_0050.png",
+    "depth": "distance_to_image_plane_0050.npy",
+    "camera_params": "camera_params_0050.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0050.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0050.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0050.png",
+      "damage_browning": "masks/damage_browning_mask_0050.png",
+      "damage_bruise": "masks/damage_bruise_mask_0050.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0050.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0050.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0050.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0050.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0050.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0050.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0050.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0050.png"
+    }
+  },
+  "rgb_0051.png": {
+    "group_id": "scenario_010",
+    "target_color_mask": "masks/target_color_mask_0051.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0051.png",
+    "damage_mask": "masks/damage_mask_0051.png",
+    "ignore_mask": "masks/ignore_mask_0051.png",
+    "apple_mask": "masks/apple_mask_0051.png",
+    "depth": "distance_to_image_plane_0051.npy",
+    "camera_params": "camera_params_0051.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0051.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0051.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0051.png",
+      "damage_browning": "masks/damage_browning_mask_0051.png",
+      "damage_bruise": "masks/damage_bruise_mask_0051.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0051.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0051.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0051.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0051.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0051.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0051.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0051.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0051.png"
+    }
+  },
+  "rgb_0052.png": {
+    "group_id": "scenario_010",
+    "target_color_mask": "masks/target_color_mask_0052.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0052.png",
+    "damage_mask": "masks/damage_mask_0052.png",
+    "ignore_mask": "masks/ignore_mask_0052.png",
+    "apple_mask": "masks/apple_mask_0052.png",
+    "depth": "distance_to_image_plane_0052.npy",
+    "camera_params": "camera_params_0052.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0052.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0052.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0052.png",
+      "damage_browning": "masks/damage_browning_mask_0052.png",
+      "damage_bruise": "masks/damage_bruise_mask_0052.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0052.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0052.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0052.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0052.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0052.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0052.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0052.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0052.png"
+    }
+  },
+  "rgb_0053.png": {
+    "group_id": "scenario_010",
+    "target_color_mask": "masks/target_color_mask_0053.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0053.png",
+    "damage_mask": "masks/damage_mask_0053.png",
+    "ignore_mask": "masks/ignore_mask_0053.png",
+    "apple_mask": "masks/apple_mask_0053.png",
+    "depth": "distance_to_image_plane_0053.npy",
+    "camera_params": "camera_params_0053.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0053.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0053.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0053.png",
+      "damage_browning": "masks/damage_browning_mask_0053.png",
+      "damage_bruise": "masks/damage_bruise_mask_0053.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0053.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0053.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0053.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0053.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0053.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0053.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0053.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0053.png"
+    }
+  },
+  "rgb_0054.png": {
+    "group_id": "scenario_010",
+    "target_color_mask": "masks/target_color_mask_0054.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0054.png",
+    "damage_mask": "masks/damage_mask_0054.png",
+    "ignore_mask": "masks/ignore_mask_0054.png",
+    "apple_mask": "masks/apple_mask_0054.png",
+    "depth": "distance_to_image_plane_0054.npy",
+    "camera_params": "camera_params_0054.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0054.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0054.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0054.png",
+      "damage_browning": "masks/damage_browning_mask_0054.png",
+      "damage_bruise": "masks/damage_bruise_mask_0054.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0054.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0054.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0054.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0054.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0054.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0054.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0054.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0054.png"
+    }
+  },
+  "rgb_0055.png": {
+    "group_id": "scenario_011",
+    "target_color_mask": "masks/target_color_mask_0055.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0055.png",
+    "damage_mask": "masks/damage_mask_0055.png",
+    "ignore_mask": "masks/ignore_mask_0055.png",
+    "apple_mask": "masks/apple_mask_0055.png",
+    "depth": "distance_to_image_plane_0055.npy",
+    "camera_params": "camera_params_0055.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0055.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0055.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0055.png",
+      "damage_browning": "masks/damage_browning_mask_0055.png",
+      "damage_bruise": "masks/damage_bruise_mask_0055.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0055.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0055.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0055.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0055.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0055.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0055.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0055.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0055.png"
+    }
+  },
+  "rgb_0056.png": {
+    "group_id": "scenario_011",
+    "target_color_mask": "masks/target_color_mask_0056.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0056.png",
+    "damage_mask": "masks/damage_mask_0056.png",
+    "ignore_mask": "masks/ignore_mask_0056.png",
+    "apple_mask": "masks/apple_mask_0056.png",
+    "depth": "distance_to_image_plane_0056.npy",
+    "camera_params": "camera_params_0056.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0056.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0056.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0056.png",
+      "damage_browning": "masks/damage_browning_mask_0056.png",
+      "damage_bruise": "masks/damage_bruise_mask_0056.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0056.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0056.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0056.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0056.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0056.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0056.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0056.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0056.png"
+    }
+  },
+  "rgb_0057.png": {
+    "group_id": "scenario_011",
+    "target_color_mask": "masks/target_color_mask_0057.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0057.png",
+    "damage_mask": "masks/damage_mask_0057.png",
+    "ignore_mask": "masks/ignore_mask_0057.png",
+    "apple_mask": "masks/apple_mask_0057.png",
+    "depth": "distance_to_image_plane_0057.npy",
+    "camera_params": "camera_params_0057.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0057.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0057.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0057.png",
+      "damage_browning": "masks/damage_browning_mask_0057.png",
+      "damage_bruise": "masks/damage_bruise_mask_0057.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0057.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0057.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0057.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0057.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0057.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0057.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0057.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0057.png"
+    }
+  },
+  "rgb_0058.png": {
+    "group_id": "scenario_011",
+    "target_color_mask": "masks/target_color_mask_0058.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0058.png",
+    "damage_mask": "masks/damage_mask_0058.png",
+    "ignore_mask": "masks/ignore_mask_0058.png",
+    "apple_mask": "masks/apple_mask_0058.png",
+    "depth": "distance_to_image_plane_0058.npy",
+    "camera_params": "camera_params_0058.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0058.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0058.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0058.png",
+      "damage_browning": "masks/damage_browning_mask_0058.png",
+      "damage_bruise": "masks/damage_bruise_mask_0058.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0058.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0058.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0058.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0058.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0058.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0058.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0058.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0058.png"
+    }
+  },
+  "rgb_0059.png": {
+    "group_id": "scenario_011",
+    "target_color_mask": "masks/target_color_mask_0059.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0059.png",
+    "damage_mask": "masks/damage_mask_0059.png",
+    "ignore_mask": "masks/ignore_mask_0059.png",
+    "apple_mask": "masks/apple_mask_0059.png",
+    "depth": "distance_to_image_plane_0059.npy",
+    "camera_params": "camera_params_0059.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0059.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0059.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0059.png",
+      "damage_browning": "masks/damage_browning_mask_0059.png",
+      "damage_bruise": "masks/damage_bruise_mask_0059.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0059.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0059.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0059.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0059.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0059.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0059.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0059.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0059.png"
+    }
+  },
+  "rgb_0060.png": {
+    "group_id": "scenario_012",
+    "target_color_mask": "masks/target_color_mask_0060.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0060.png",
+    "damage_mask": "masks/damage_mask_0060.png",
+    "ignore_mask": "masks/ignore_mask_0060.png",
+    "apple_mask": "masks/apple_mask_0060.png",
+    "depth": "distance_to_image_plane_0060.npy",
+    "camera_params": "camera_params_0060.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0060.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0060.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0060.png",
+      "damage_browning": "masks/damage_browning_mask_0060.png",
+      "damage_bruise": "masks/damage_bruise_mask_0060.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0060.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0060.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0060.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0060.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0060.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0060.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0060.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0060.png"
+    }
+  },
+  "rgb_0061.png": {
+    "group_id": "scenario_012",
+    "target_color_mask": "masks/target_color_mask_0061.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0061.png",
+    "damage_mask": "masks/damage_mask_0061.png",
+    "ignore_mask": "masks/ignore_mask_0061.png",
+    "apple_mask": "masks/apple_mask_0061.png",
+    "depth": "distance_to_image_plane_0061.npy",
+    "camera_params": "camera_params_0061.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0061.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0061.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0061.png",
+      "damage_browning": "masks/damage_browning_mask_0061.png",
+      "damage_bruise": "masks/damage_bruise_mask_0061.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0061.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0061.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0061.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0061.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0061.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0061.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0061.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0061.png"
+    }
+  },
+  "rgb_0062.png": {
+    "group_id": "scenario_012",
+    "target_color_mask": "masks/target_color_mask_0062.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0062.png",
+    "damage_mask": "masks/damage_mask_0062.png",
+    "ignore_mask": "masks/ignore_mask_0062.png",
+    "apple_mask": "masks/apple_mask_0062.png",
+    "depth": "distance_to_image_plane_0062.npy",
+    "camera_params": "camera_params_0062.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0062.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0062.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0062.png",
+      "damage_browning": "masks/damage_browning_mask_0062.png",
+      "damage_bruise": "masks/damage_bruise_mask_0062.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0062.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0062.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0062.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0062.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0062.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0062.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0062.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0062.png"
+    }
+  },
+  "rgb_0063.png": {
+    "group_id": "scenario_012",
+    "target_color_mask": "masks/target_color_mask_0063.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0063.png",
+    "damage_mask": "masks/damage_mask_0063.png",
+    "ignore_mask": "masks/ignore_mask_0063.png",
+    "apple_mask": "masks/apple_mask_0063.png",
+    "depth": "distance_to_image_plane_0063.npy",
+    "camera_params": "camera_params_0063.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0063.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0063.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0063.png",
+      "damage_browning": "masks/damage_browning_mask_0063.png",
+      "damage_bruise": "masks/damage_bruise_mask_0063.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0063.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0063.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0063.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0063.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0063.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0063.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0063.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0063.png"
+    }
+  },
+  "rgb_0064.png": {
+    "group_id": "scenario_012",
+    "target_color_mask": "masks/target_color_mask_0064.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0064.png",
+    "damage_mask": "masks/damage_mask_0064.png",
+    "ignore_mask": "masks/ignore_mask_0064.png",
+    "apple_mask": "masks/apple_mask_0064.png",
+    "depth": "distance_to_image_plane_0064.npy",
+    "camera_params": "camera_params_0064.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0064.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0064.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0064.png",
+      "damage_browning": "masks/damage_browning_mask_0064.png",
+      "damage_bruise": "masks/damage_bruise_mask_0064.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0064.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0064.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0064.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0064.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0064.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0064.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0064.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0064.png"
+    }
+  },
+  "rgb_0065.png": {
+    "group_id": "scenario_013",
+    "target_color_mask": "masks/target_color_mask_0065.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0065.png",
+    "damage_mask": "masks/damage_mask_0065.png",
+    "ignore_mask": "masks/ignore_mask_0065.png",
+    "apple_mask": "masks/apple_mask_0065.png",
+    "depth": "distance_to_image_plane_0065.npy",
+    "camera_params": "camera_params_0065.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0065.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0065.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0065.png",
+      "damage_browning": "masks/damage_browning_mask_0065.png",
+      "damage_bruise": "masks/damage_bruise_mask_0065.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0065.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0065.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0065.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0065.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0065.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0065.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0065.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0065.png"
+    }
+  },
+  "rgb_0066.png": {
+    "group_id": "scenario_013",
+    "target_color_mask": "masks/target_color_mask_0066.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0066.png",
+    "damage_mask": "masks/damage_mask_0066.png",
+    "ignore_mask": "masks/ignore_mask_0066.png",
+    "apple_mask": "masks/apple_mask_0066.png",
+    "depth": "distance_to_image_plane_0066.npy",
+    "camera_params": "camera_params_0066.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0066.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0066.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0066.png",
+      "damage_browning": "masks/damage_browning_mask_0066.png",
+      "damage_bruise": "masks/damage_bruise_mask_0066.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0066.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0066.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0066.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0066.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0066.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0066.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0066.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0066.png"
+    }
+  },
+  "rgb_0067.png": {
+    "group_id": "scenario_013",
+    "target_color_mask": "masks/target_color_mask_0067.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0067.png",
+    "damage_mask": "masks/damage_mask_0067.png",
+    "ignore_mask": "masks/ignore_mask_0067.png",
+    "apple_mask": "masks/apple_mask_0067.png",
+    "depth": "distance_to_image_plane_0067.npy",
+    "camera_params": "camera_params_0067.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0067.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0067.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0067.png",
+      "damage_browning": "masks/damage_browning_mask_0067.png",
+      "damage_bruise": "masks/damage_bruise_mask_0067.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0067.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0067.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0067.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0067.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0067.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0067.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0067.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0067.png"
+    }
+  },
+  "rgb_0068.png": {
+    "group_id": "scenario_013",
+    "target_color_mask": "masks/target_color_mask_0068.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0068.png",
+    "damage_mask": "masks/damage_mask_0068.png",
+    "ignore_mask": "masks/ignore_mask_0068.png",
+    "apple_mask": "masks/apple_mask_0068.png",
+    "depth": "distance_to_image_plane_0068.npy",
+    "camera_params": "camera_params_0068.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0068.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0068.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0068.png",
+      "damage_browning": "masks/damage_browning_mask_0068.png",
+      "damage_bruise": "masks/damage_bruise_mask_0068.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0068.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0068.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0068.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0068.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0068.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0068.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0068.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0068.png"
+    }
+  },
+  "rgb_0069.png": {
+    "group_id": "scenario_013",
+    "target_color_mask": "masks/target_color_mask_0069.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0069.png",
+    "damage_mask": "masks/damage_mask_0069.png",
+    "ignore_mask": "masks/ignore_mask_0069.png",
+    "apple_mask": "masks/apple_mask_0069.png",
+    "depth": "distance_to_image_plane_0069.npy",
+    "camera_params": "camera_params_0069.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0069.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0069.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0069.png",
+      "damage_browning": "masks/damage_browning_mask_0069.png",
+      "damage_bruise": "masks/damage_bruise_mask_0069.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0069.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0069.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0069.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0069.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0069.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0069.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0069.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0069.png"
+    }
+  },
+  "rgb_0070.png": {
+    "group_id": "scenario_014",
+    "target_color_mask": "masks/target_color_mask_0070.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0070.png",
+    "damage_mask": "masks/damage_mask_0070.png",
+    "ignore_mask": "masks/ignore_mask_0070.png",
+    "apple_mask": "masks/apple_mask_0070.png",
+    "depth": "distance_to_image_plane_0070.npy",
+    "camera_params": "camera_params_0070.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0070.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0070.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0070.png",
+      "damage_browning": "masks/damage_browning_mask_0070.png",
+      "damage_bruise": "masks/damage_bruise_mask_0070.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0070.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0070.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0070.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0070.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0070.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0070.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0070.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0070.png"
+    }
+  },
+  "rgb_0071.png": {
+    "group_id": "scenario_014",
+    "target_color_mask": "masks/target_color_mask_0071.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0071.png",
+    "damage_mask": "masks/damage_mask_0071.png",
+    "ignore_mask": "masks/ignore_mask_0071.png",
+    "apple_mask": "masks/apple_mask_0071.png",
+    "depth": "distance_to_image_plane_0071.npy",
+    "camera_params": "camera_params_0071.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0071.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0071.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0071.png",
+      "damage_browning": "masks/damage_browning_mask_0071.png",
+      "damage_bruise": "masks/damage_bruise_mask_0071.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0071.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0071.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0071.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0071.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0071.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0071.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0071.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0071.png"
+    }
+  },
+  "rgb_0072.png": {
+    "group_id": "scenario_014",
+    "target_color_mask": "masks/target_color_mask_0072.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0072.png",
+    "damage_mask": "masks/damage_mask_0072.png",
+    "ignore_mask": "masks/ignore_mask_0072.png",
+    "apple_mask": "masks/apple_mask_0072.png",
+    "depth": "distance_to_image_plane_0072.npy",
+    "camera_params": "camera_params_0072.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0072.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0072.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0072.png",
+      "damage_browning": "masks/damage_browning_mask_0072.png",
+      "damage_bruise": "masks/damage_bruise_mask_0072.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0072.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0072.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0072.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0072.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0072.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0072.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0072.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0072.png"
+    }
+  },
+  "rgb_0073.png": {
+    "group_id": "scenario_014",
+    "target_color_mask": "masks/target_color_mask_0073.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0073.png",
+    "damage_mask": "masks/damage_mask_0073.png",
+    "ignore_mask": "masks/ignore_mask_0073.png",
+    "apple_mask": "masks/apple_mask_0073.png",
+    "depth": "distance_to_image_plane_0073.npy",
+    "camera_params": "camera_params_0073.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0073.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0073.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0073.png",
+      "damage_browning": "masks/damage_browning_mask_0073.png",
+      "damage_bruise": "masks/damage_bruise_mask_0073.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0073.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0073.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0073.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0073.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0073.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0073.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0073.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0073.png"
+    }
+  },
+  "rgb_0074.png": {
+    "group_id": "scenario_014",
+    "target_color_mask": "masks/target_color_mask_0074.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0074.png",
+    "damage_mask": "masks/damage_mask_0074.png",
+    "ignore_mask": "masks/ignore_mask_0074.png",
+    "apple_mask": "masks/apple_mask_0074.png",
+    "depth": "distance_to_image_plane_0074.npy",
+    "camera_params": "camera_params_0074.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0074.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0074.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0074.png",
+      "damage_browning": "masks/damage_browning_mask_0074.png",
+      "damage_bruise": "masks/damage_bruise_mask_0074.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0074.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0074.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0074.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0074.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0074.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0074.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0074.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0074.png"
+    }
+  },
+  "rgb_0075.png": {
+    "group_id": "scenario_015",
+    "target_color_mask": "masks/target_color_mask_0075.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0075.png",
+    "damage_mask": "masks/damage_mask_0075.png",
+    "ignore_mask": "masks/ignore_mask_0075.png",
+    "apple_mask": "masks/apple_mask_0075.png",
+    "depth": "distance_to_image_plane_0075.npy",
+    "camera_params": "camera_params_0075.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0075.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0075.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0075.png",
+      "damage_browning": "masks/damage_browning_mask_0075.png",
+      "damage_bruise": "masks/damage_bruise_mask_0075.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0075.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0075.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0075.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0075.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0075.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0075.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0075.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0075.png"
+    }
+  },
+  "rgb_0076.png": {
+    "group_id": "scenario_015",
+    "target_color_mask": "masks/target_color_mask_0076.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0076.png",
+    "damage_mask": "masks/damage_mask_0076.png",
+    "ignore_mask": "masks/ignore_mask_0076.png",
+    "apple_mask": "masks/apple_mask_0076.png",
+    "depth": "distance_to_image_plane_0076.npy",
+    "camera_params": "camera_params_0076.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0076.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0076.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0076.png",
+      "damage_browning": "masks/damage_browning_mask_0076.png",
+      "damage_bruise": "masks/damage_bruise_mask_0076.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0076.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0076.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0076.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0076.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0076.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0076.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0076.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0076.png"
+    }
+  },
+  "rgb_0077.png": {
+    "group_id": "scenario_015",
+    "target_color_mask": "masks/target_color_mask_0077.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0077.png",
+    "damage_mask": "masks/damage_mask_0077.png",
+    "ignore_mask": "masks/ignore_mask_0077.png",
+    "apple_mask": "masks/apple_mask_0077.png",
+    "depth": "distance_to_image_plane_0077.npy",
+    "camera_params": "camera_params_0077.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0077.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0077.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0077.png",
+      "damage_browning": "masks/damage_browning_mask_0077.png",
+      "damage_bruise": "masks/damage_bruise_mask_0077.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0077.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0077.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0077.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0077.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0077.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0077.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0077.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0077.png"
+    }
+  },
+  "rgb_0078.png": {
+    "group_id": "scenario_015",
+    "target_color_mask": "masks/target_color_mask_0078.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0078.png",
+    "damage_mask": "masks/damage_mask_0078.png",
+    "ignore_mask": "masks/ignore_mask_0078.png",
+    "apple_mask": "masks/apple_mask_0078.png",
+    "depth": "distance_to_image_plane_0078.npy",
+    "camera_params": "camera_params_0078.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0078.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0078.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0078.png",
+      "damage_browning": "masks/damage_browning_mask_0078.png",
+      "damage_bruise": "masks/damage_bruise_mask_0078.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0078.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0078.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0078.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0078.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0078.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0078.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0078.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0078.png"
+    }
+  },
+  "rgb_0079.png": {
+    "group_id": "scenario_015",
+    "target_color_mask": "masks/target_color_mask_0079.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0079.png",
+    "damage_mask": "masks/damage_mask_0079.png",
+    "ignore_mask": "masks/ignore_mask_0079.png",
+    "apple_mask": "masks/apple_mask_0079.png",
+    "depth": "distance_to_image_plane_0079.npy",
+    "camera_params": "camera_params_0079.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0079.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0079.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0079.png",
+      "damage_browning": "masks/damage_browning_mask_0079.png",
+      "damage_bruise": "masks/damage_bruise_mask_0079.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0079.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0079.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0079.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0079.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0079.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0079.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0079.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0079.png"
+    }
+  },
+  "rgb_0080.png": {
+    "group_id": "scenario_016",
+    "target_color_mask": "masks/target_color_mask_0080.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0080.png",
+    "damage_mask": "masks/damage_mask_0080.png",
+    "ignore_mask": "masks/ignore_mask_0080.png",
+    "apple_mask": "masks/apple_mask_0080.png",
+    "depth": "distance_to_image_plane_0080.npy",
+    "camera_params": "camera_params_0080.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0080.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0080.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0080.png",
+      "damage_browning": "masks/damage_browning_mask_0080.png",
+      "damage_bruise": "masks/damage_bruise_mask_0080.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0080.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0080.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0080.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0080.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0080.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0080.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0080.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0080.png"
+    }
+  },
+  "rgb_0081.png": {
+    "group_id": "scenario_016",
+    "target_color_mask": "masks/target_color_mask_0081.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0081.png",
+    "damage_mask": "masks/damage_mask_0081.png",
+    "ignore_mask": "masks/ignore_mask_0081.png",
+    "apple_mask": "masks/apple_mask_0081.png",
+    "depth": "distance_to_image_plane_0081.npy",
+    "camera_params": "camera_params_0081.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0081.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0081.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0081.png",
+      "damage_browning": "masks/damage_browning_mask_0081.png",
+      "damage_bruise": "masks/damage_bruise_mask_0081.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0081.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0081.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0081.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0081.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0081.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0081.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0081.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0081.png"
+    }
+  },
+  "rgb_0082.png": {
+    "group_id": "scenario_016",
+    "target_color_mask": "masks/target_color_mask_0082.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0082.png",
+    "damage_mask": "masks/damage_mask_0082.png",
+    "ignore_mask": "masks/ignore_mask_0082.png",
+    "apple_mask": "masks/apple_mask_0082.png",
+    "depth": "distance_to_image_plane_0082.npy",
+    "camera_params": "camera_params_0082.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0082.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0082.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0082.png",
+      "damage_browning": "masks/damage_browning_mask_0082.png",
+      "damage_bruise": "masks/damage_bruise_mask_0082.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0082.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0082.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0082.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0082.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0082.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0082.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0082.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0082.png"
+    }
+  },
+  "rgb_0083.png": {
+    "group_id": "scenario_016",
+    "target_color_mask": "masks/target_color_mask_0083.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0083.png",
+    "damage_mask": "masks/damage_mask_0083.png",
+    "ignore_mask": "masks/ignore_mask_0083.png",
+    "apple_mask": "masks/apple_mask_0083.png",
+    "depth": "distance_to_image_plane_0083.npy",
+    "camera_params": "camera_params_0083.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0083.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0083.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0083.png",
+      "damage_browning": "masks/damage_browning_mask_0083.png",
+      "damage_bruise": "masks/damage_bruise_mask_0083.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0083.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0083.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0083.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0083.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0083.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0083.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0083.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0083.png"
+    }
+  },
+  "rgb_0084.png": {
+    "group_id": "scenario_016",
+    "target_color_mask": "masks/target_color_mask_0084.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0084.png",
+    "damage_mask": "masks/damage_mask_0084.png",
+    "ignore_mask": "masks/ignore_mask_0084.png",
+    "apple_mask": "masks/apple_mask_0084.png",
+    "depth": "distance_to_image_plane_0084.npy",
+    "camera_params": "camera_params_0084.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0084.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0084.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0084.png",
+      "damage_browning": "masks/damage_browning_mask_0084.png",
+      "damage_bruise": "masks/damage_bruise_mask_0084.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0084.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0084.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0084.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0084.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0084.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0084.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0084.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0084.png"
+    }
+  },
+  "rgb_0085.png": {
+    "group_id": "scenario_017",
+    "target_color_mask": "masks/target_color_mask_0085.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0085.png",
+    "damage_mask": "masks/damage_mask_0085.png",
+    "ignore_mask": "masks/ignore_mask_0085.png",
+    "apple_mask": "masks/apple_mask_0085.png",
+    "depth": "distance_to_image_plane_0085.npy",
+    "camera_params": "camera_params_0085.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0085.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0085.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0085.png",
+      "damage_browning": "masks/damage_browning_mask_0085.png",
+      "damage_bruise": "masks/damage_bruise_mask_0085.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0085.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0085.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0085.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0085.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0085.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0085.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0085.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0085.png"
+    }
+  },
+  "rgb_0086.png": {
+    "group_id": "scenario_017",
+    "target_color_mask": "masks/target_color_mask_0086.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0086.png",
+    "damage_mask": "masks/damage_mask_0086.png",
+    "ignore_mask": "masks/ignore_mask_0086.png",
+    "apple_mask": "masks/apple_mask_0086.png",
+    "depth": "distance_to_image_plane_0086.npy",
+    "camera_params": "camera_params_0086.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0086.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0086.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0086.png",
+      "damage_browning": "masks/damage_browning_mask_0086.png",
+      "damage_bruise": "masks/damage_bruise_mask_0086.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0086.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0086.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0086.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0086.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0086.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0086.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0086.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0086.png"
+    }
+  },
+  "rgb_0087.png": {
+    "group_id": "scenario_017",
+    "target_color_mask": "masks/target_color_mask_0087.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0087.png",
+    "damage_mask": "masks/damage_mask_0087.png",
+    "ignore_mask": "masks/ignore_mask_0087.png",
+    "apple_mask": "masks/apple_mask_0087.png",
+    "depth": "distance_to_image_plane_0087.npy",
+    "camera_params": "camera_params_0087.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0087.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0087.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0087.png",
+      "damage_browning": "masks/damage_browning_mask_0087.png",
+      "damage_bruise": "masks/damage_bruise_mask_0087.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0087.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0087.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0087.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0087.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0087.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0087.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0087.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0087.png"
+    }
+  },
+  "rgb_0088.png": {
+    "group_id": "scenario_017",
+    "target_color_mask": "masks/target_color_mask_0088.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0088.png",
+    "damage_mask": "masks/damage_mask_0088.png",
+    "ignore_mask": "masks/ignore_mask_0088.png",
+    "apple_mask": "masks/apple_mask_0088.png",
+    "depth": "distance_to_image_plane_0088.npy",
+    "camera_params": "camera_params_0088.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0088.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0088.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0088.png",
+      "damage_browning": "masks/damage_browning_mask_0088.png",
+      "damage_bruise": "masks/damage_bruise_mask_0088.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0088.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0088.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0088.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0088.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0088.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0088.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0088.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0088.png"
+    }
+  },
+  "rgb_0089.png": {
+    "group_id": "scenario_017",
+    "target_color_mask": "masks/target_color_mask_0089.png",
+    "non_target_color_mask": "masks/non_target_color_mask_0089.png",
+    "damage_mask": "masks/damage_mask_0089.png",
+    "ignore_mask": "masks/ignore_mask_0089.png",
+    "apple_mask": "masks/apple_mask_0089.png",
+    "depth": "distance_to_image_plane_0089.npy",
+    "camera_params": "camera_params_0089.json",
+    "detail_masks": {
+      "non_target_color_yellow": "masks/non_target_color_yellow_mask_0089.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_mask_0089.png",
+      "damage_bright_wound": "masks/damage_bright_wound_mask_0089.png",
+      "damage_browning": "masks/damage_browning_mask_0089.png",
+      "damage_bruise": "masks/damage_bruise_mask_0089.png"
+    },
+    "range_verified_masks": {
+      "red_target": "masks/red_target_range_verified_mask_0089.png",
+      "non_target_color_yellow": "masks/non_target_color_yellow_range_verified_mask_0089.png",
+      "non_target_color_light_green": "masks/non_target_color_light_green_range_verified_mask_0089.png",
+      "damage_bright_wound": "masks/damage_bright_wound_range_verified_mask_0089.png",
+      "damage_browning": "masks/damage_browning_range_verified_mask_0089.png",
+      "damage_bruise": "masks/damage_bruise_range_verified_mask_0089.png",
+      "damage_bruise_candidate": "masks/damage_bruise_candidate_range_verified_mask_0089.png",
+      "damage_bruise_lab_delta_e": "masks/damage_bruise_lab_delta_e_range_verified_mask_0089.png"
+    }
+  }
+}
