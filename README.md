@@ -9,6 +9,11 @@
 
 **이 브랜치는 RRT + RMPflow 수확 로직을 보존한 `restore/rrt-rmpflow`입니다.** 기준 구현은 커밋 [`92d5365`](https://github.com/jonnykoh2008-ship-it/apple_pickr/commit/92d53651c7def809c34560a5ece80579718a99b6)이며, 이후 멀티로봇 통합 버전과 실행 구조가 다릅니다. USD에는 두 로봇이 있고 실행 시 한 로봇의 프로파일을 선택합니다.
 
+
+## 발표 자료
+
+[발표 자료 PDF](docs/applepickr_presentation.pdf)
+
 ## 핵심 기능
 
 | 기능 | 구현 내용 | 주요 근거 |
