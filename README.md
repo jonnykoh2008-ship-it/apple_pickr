@@ -5,6 +5,8 @@ NVIDIA Isaac Sim과 ROS 2 Jazzy를 이용해 사과를 수확하고 컨베이어
 개인 PC 1은 수확 target을 계산하며, GPU PC 2는 품질 결과를 생성하고, 개인 PC 2는
 운영 상태를 표시한다.
 
+**버전 구분:** 최신 `main`은 멀티로봇 통합 버전입니다. RRT + RMPflow 기반 수확 구현은 별도 브랜치 [`restore/rrt-rmpflow`](https://github.com/jonnykoh2008-ship-it/apple_pickr/tree/restore/rrt-rmpflow)에 있습니다.
+
 ## 발표 자료
 
 [프로젝트 발표 자료 (PDF)](docs/applepickr_presentation.pdf)
