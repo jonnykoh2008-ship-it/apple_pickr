@@ -9,7 +9,6 @@
 
 **이 브랜치는 RRT + RMPflow 수확 로직을 보존한 `restore/rrt-rmpflow`입니다.** 기준 구현은 커밋 [`92d5365`](https://github.com/jonnykoh2008-ship-it/apple_pickr/commit/92d53651c7def809c34560a5ece80579718a99b6)이며, 이후 멀티로봇 통합 버전과 실행 구조가 다릅니다. USD에는 두 로봇이 있고 실행 시 한 로봇의 프로파일을 선택합니다.
 
-
 ## 발표 자료
 
 [발표 자료 PDF](docs/applepickr_presentation.pdf)
@@ -29,21 +28,7 @@
 
 ## 수확이 진행되는 방식
 
-```mermaid
-flowchart TD
-  A["RGB-D 사과 검출<br/>depth·TF로 world 좌표 계산"] --> B["목표 세대·시간·상태 검증<br/>안정 좌표 대기열"]
-  B --> C["접근축·그리퍼 자세 후보 검사<br/>IK · 전체 링크 충돌 · 진입 여유"]
-  C --> D["Lula RRT 경로 탐색<br/>시간 매개화 궤적 생성·재검증"]
-  D --> E["RMPflow 실행<br/>나무 바깥 → staging → pre-grasp"]
-  E --> F["저속 진입 · palm 접촉 확인<br/>그리퍼 포위 파지"]
-  F --> G["손목 비틀기 → 직선 당김<br/>stem joint 분리 확인"]
-  G --> H["나무 밖으로 운반<br/>컨베이어 배치 → 개방"]
-  H --> I["초기 관절 자세 복귀<br/>다음 사과 처리"]
-  J["PhysX 접촉 감시<br/>실행 세대·취소·정체 검사"] -.-> E
-  J -.-> F
-  J -.-> G
-  J -.-> H
-```
+![RRT와 RMPflow 기반 사과 수확 플로차트](docs/architecture/harvest_flowchart.svg)
 
 ### 1. 경로 계획과 물리 실행을 분리합니다
 
@@ -80,27 +65,7 @@ flowchart TD
 
 ## 시스템 구성
 
-```mermaid
-flowchart LR
-  subgraph SIM["GPU PC 1 · Isaac Sim"]
-    CAM["RGB-D · CameraInfo · TF"]
-    CO["목표 검증 · 수확 조정"]
-    PLAN["Lula RRT<br/>trajectory generation"]
-    EXEC["RobotMotion Action<br/>RMPflow · PhysX"]
-    CONV["컨베이어 물리<br/>착지 · checkpoint"]
-    CO --> PLAN --> EXEC --> CONV
-  end
-  subgraph PC1["개인 PC 1"]
-    V["사과 검출<br/>depth projection · world target"]
-    RV["RViz"]
-  end
-  CAM -- "RGB-D · TF" --> V
-  V -- "HarvestTarget" --> CO
-  PLAN -- "경로 · 장애물" --> RV
-  EXEC -- "실행 상태" --> RV
-  CONV -- "checkpoint" --> MON["개인 PC 2<br/>공정 · 품질 결과 모니터"]
-  Q["GPU PC 2<br/>품질 검사"] -- "품질 결과" --> MON
-```
+![분산 시스템 구성 플로차트](docs/architecture/system_flowchart.png)
 
 수확 경로의 계획과 최종 실행 판단은 GPU PC 1이 담당합니다. 개인 PC 1은 영상에서 목표 좌표를 계산하고 계획 결과를 표시합니다. RViz는 표시 경로이며, 안전 정지 판단은 GPU PC 1에서 수행합니다.
 
