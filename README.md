@@ -5,6 +5,10 @@ NVIDIA Isaac Sim과 ROS 2 Jazzy를 이용해 사과를 수확하고 컨베이어
 개인 PC 1은 수확 target을 계산하며, GPU PC 2는 품질 결과를 생성하고, 개인 PC 2는
 운영 상태를 표시한다.
 
+## 발표 자료
+
+[프로젝트 발표 자료 (PDF)](docs/applepickr_presentation.pdf)
+
 ## 1. 시스템 설계와 전체 흐름
 
 ![시스템 전체 플로우차트](docs/architecture/system_flowchart.png)
@@ -34,7 +38,7 @@ GPU PC 1 Isaac Sim
 
 | PC | 역할 | 주요 파일 |
 |---|---|---|
-| GPU PC 1 | Isaac Sim, 물리·센서·TF·컨베이어, Lula RRT/RMPflow, 로봇 실행·안전 감시 | `vision_apple_pick.py`, `apple_pick.py`, `conveyor_camera_publish.py`, `base_camera_publish.py` |
+| GPU PC 1 | Isaac Sim, 물리·센서·TF·컨베이어, 로봇 모션 실행·안전 감시 | `vision_apple_pick.py`, `apple_pick.py`, `conveyor_camera_publish.py`, `base_camera_publish.py` |
 | GPU PC 2 | 컨베이어 영상 수신, ROI/tracker, 검사 프레임 구성, 품질 추론·통합 | `quality_grading_system/conveyor_camera_adapter_node.py`, `quality_grading_system/quality_inspection_node.py` |
 | 개인 PC 1 | RGB-D 사과 검출, depth projection, world target 발행, RViz | `base_apple_detector.py`, `harvest_multi_robot.launch.py` |
 | 개인 PC 2 | 품질 결과·checkpoint 모니터링과 운영 로그 | `appleproj_personal_pc2/` |
